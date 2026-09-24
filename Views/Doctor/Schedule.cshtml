@@ -1,0 +1,46 @@
+@model List<DoctorSchedule>
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Lịch Trực Ca Khám";
+    var doctor = ViewBag.Doctor as Doctor;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-calendar-week text-primary me-2"></i>Lịch Trực & Ca Khám Của Bác Sĩ</h2>
+        <p class="text-muted mb-0">Bác sĩ: <strong>@doctor?.Title @doctor?.User?.FullName</strong> | Phòng: <strong>@doctor?.RoomNumber</strong></p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-4">Về Tổng Quan</a>
+</div>
+
+<div class="card card-doctor p-4">
+    @if (Model.Any())
+    {
+        var grouped = Model.GroupBy(s => s.WorkDate.Date);
+        <div class="row g-4">
+            @foreach (var g in grouped)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="border rounded-4 p-3 h-100 bg-light">
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                            <strong class="text-primary fs-6"><i class="fa-regular fa-calendar me-1"></i>@g.Key.ToString("dd/MM/yyyy")</strong>
+                            <span class="badge bg-secondary">@g.Key.ToString("dddd")</span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var slot in g)
+                            {
+                                <span class="badge @(slot.IsAvailable ? "bg-success-subtle text-success border border-success" : "bg-danger-subtle text-danger border border-danger") py-2 px-3 rounded-pill">
+                                    @slot.TimeSlot @(slot.IsAvailable ? "(Trống)" : "(Đã đặt)")
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 text-muted">Chưa có lịch trực được phân bổ.</div>
+    }
+</div>

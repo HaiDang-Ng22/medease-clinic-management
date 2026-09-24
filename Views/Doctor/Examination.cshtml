@@ -1,0 +1,107 @@
+@model Appointment
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Phòng Khám - " + Model.Patient?.FullName;
+    var history = ViewBag.PatientHistory as List<Appointment> ?? new List<Appointment>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-stethoscope text-primary me-2"></i>Bàn Khám Bệnh & Chẩn Đoán</h2>
+        <p class="text-muted mb-0">Mã ca khám: <strong>@Model.AppointmentCode</strong> | Khung giờ: <strong>@Model.TimeSlot</strong> (Ngày @Model.AppointmentDate.ToString("dd/MM/yyyy"))</p>
+    </div>
+    <a asp-action="Queue" class="btn btn-outline-secondary rounded-pill px-4">
+        <i class="fa-solid fa-arrow-left me-1"></i>Quay Lại Hàng Đợi
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Left: Patient Info & Medical History -->
+    <div class="col-lg-4">
+        <div class="card card-doctor p-4 mb-4">
+            <h5 class="fw-bold mb-3 text-primary"><i class="fa-solid fa-id-card me-2"></i>Thông Tin Bệnh Nhân</h5>
+            <div class="mb-2"><strong>Họ và tên:</strong> @Model.Patient?.FullName</div>
+            <div class="mb-2"><strong>Ngày sinh:</strong> @(Model.Patient?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa rõ") (@Model.Patient?.Gender)</div>
+            <div class="mb-2"><strong>Số điện thoại:</strong> @Model.Patient?.PhoneNumber</div>
+            <div class="mb-2"><strong>Địa chỉ:</strong> @(Model.Patient?.Address ?? "Chưa cung cấp")</div>
+            <div class="p-3 bg-light rounded-3 mt-3">
+                <strong>Triệu chứng ban đầu:</strong>
+                <p class="text-danger fw-semibold mb-0 mt-1">@Model.ReasonForVisit</p>
+            </div>
+        </div>
+
+        <div class="card card-doctor p-4">
+            <h5 class="fw-bold mb-3 text-secondary"><i class="fa-solid fa-clock-rotate-left me-2"></i>Lịch Sử Khám Trước Đây</h5>
+            @if (history.Any())
+            {
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var h in history)
+                    {
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="badge bg-secondary">@h.AppointmentDate.ToString("dd/MM/yyyy")</span>
+                                <small class="text-muted">@h.Specialty?.Name</small>
+                            </div>
+                            <small class="text-muted d-block">BS: @h.Doctor?.Title @h.Doctor?.User?.FullName</small>
+                            <small class="text-dark d-block mt-1">Lý do: @h.ReasonForVisit</small>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-muted small">Đây là lần đầu bệnh nhân đến khám tại phòng khám.</div>
+            }
+        </div>
+    </div>
+
+    <!-- Right: Clinical Diagnosis & e-Prescription -->
+    <div class="col-lg-8">
+        <div class="card card-doctor p-4 p-md-5">
+            <h4 class="fw-bold mb-3 text-dark">
+                <i class="fa-solid fa-file-medical text-primary me-2"></i>Kết Quả Khám & Kê Đơn Thuốc Điện Tử
+            </h4>
+
+            @if (Model.Status == "Completed")
+            {
+                <div class="alert alert-success rounded-4 p-4 mb-4">
+                    <h5 class="fw-bold"><i class="fa-solid fa-circle-check me-2"></i>Ca khám này đã hoàn tất!</h5>
+                    <p class="mb-0">Kết quả khám và đơn thuốc điện tử đã được chuyển đến tài khoản của bệnh nhân và bộ phận kế toán.</p>
+                </div>
+            }
+
+            <form asp-action="CompleteExamination" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="appointmentId" value="@Model.Id" />
+
+                <!-- Clinical Diagnosis -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold fs-6">1. Chẩn Đoán Lâm Sàng (Diagnosis) <span class="text-danger">*</span></label>
+                    <textarea name="diagnosis" rows="3" class="form-control rounded-3" required 
+                              placeholder="Nhập chẩn đoán bệnh của bác sĩ (ví dụ: Viêm họng cấp tính, Tăng huyết áp độ 1, v.v.)..."></textarea>
+                </div>
+
+                <!-- Laboratory / Imaging Requests -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold fs-6">2. Chỉ Định Cận Lâm Sàng (Xét nghiệm / X-Quang / Siêu âm nếu có)</label>
+                    <textarea name="labRequest" rows="2" class="form-control rounded-3" 
+                              placeholder="Ví dụ: Chỉ định làm Công thức máu 24 thông số, Siêu âm tim Doppler..."></textarea>
+                </div>
+
+                <!-- e-Prescription -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold fs-6">3. Kê Đơn Thuốc Điện Tử (e-Prescription) <span class="text-danger">*</span></label>
+                    <textarea name="prescription" rows="5" class="form-control rounded-3 font-monospace" required 
+                              placeholder="1. Amoxicillin 500mg - 20 viên (Uống 1 viên x 2 lần/ngày sau ăn)&#10;2. Paracetamol 500mg - 10 viên (Uống khi sốt > 38.5 độ)&#10;3. Vitamin C 500mg - 10 viên (Uống sáng 1 viên)..."></textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-3 pt-3 border-top">
+                    <a asp-action="Queue" class="btn btn-outline-secondary rounded-pill px-4">Tạm dừng</a>
+                    <button type="submit" class="btn btn-success btn-lg rounded-pill px-5 fw-bold shadow">
+                        <i class="fa-solid fa-circle-check me-2"></i>LƯU KẾT QUẢ & HOÀN TẤT CA KHÁM
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

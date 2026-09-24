@@ -1,0 +1,114 @@
+@{
+    Layout = "_ReceptionistLayout";
+    ViewData["Title"] = "Bàn Tiếp Đón Lễ Tân";
+    var todayAppointments = ViewBag.TodayAppointments as List<Appointment> ?? new List<Appointment>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-headset text-success me-2"></i>Bàn Tiếp Đón & Điều Phối Lễ Tân</h2>
+        <p class="text-muted mb-0">Hôm nay: <strong>@DateTime.Today.ToString("dddd, dd/MM/yyyy")</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="CreateAppointment" class="btn btn-success rounded-pill px-4 fw-bold">
+            <i class="fa-solid fa-user-plus me-1"></i>Tiếp Nhận Tại Quầy
+        </a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-reception p-3 border-start border-success border-4">
+            <div class="text-muted small fw-semibold">Tổng Lịch Hẹn Hôm Nay</div>
+            <div class="display-6 fw-bold text-dark">@ViewBag.TotalToday</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-reception p-3 border-start border-warning border-4">
+            <div class="text-muted small fw-semibold">Cần Xác Nhận Trực Tuyến</div>
+            <div class="display-6 fw-bold text-warning">@ViewBag.PendingConfirmation</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-reception p-3 border-start border-primary border-4">
+            <div class="text-muted small fw-semibold">Đã Tiếp Nhận & Xác Nhận</div>
+            <div class="display-6 fw-bold text-primary">@ViewBag.ConfirmedToday</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-reception p-3 border-start border-info border-4">
+            <div class="text-muted small fw-semibold">Đã Khám Xong</div>
+            <div class="display-6 fw-bold text-info">@ViewBag.CompletedToday</div>
+        </div>
+    </div>
+</div>
+
+<!-- Table of Today Appointments -->
+<div class="card card-reception p-4">
+    <h5 class="fw-bold mb-3"><i class="fa-solid fa-clipboard-list text-success me-2"></i>Lịch Hẹn Khám Trong Ngày</h5>
+    @if (todayAppointments.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Giờ hẹn</th>
+                        <th>Mã lịch</th>
+                        <th>Bệnh nhân</th>
+                        <th>Số điện thoại</th>
+                        <th>Bác sĩ & Phòng</th>
+                        <th>Trạng thái</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in todayAppointments)
+                    {
+                        <tr>
+                            <td class="fw-bold text-success">@a.TimeSlot</td>
+                            <td><span class="badge bg-light text-dark border">@a.AppointmentCode</span></td>
+                            <td><strong>@a.Patient?.FullName</strong></td>
+                            <td>@a.Patient?.PhoneNumber</td>
+                            <td>@a.Doctor?.Title @a.Doctor?.User?.FullName (@a.Doctor?.RoomNumber)</td>
+                            <td>
+                                @if (a.Status == "Confirmed")
+                                {
+                                    <span class="badge bg-success-subtle text-success">Đã xác nhận</span>
+                                }
+                                else if (a.Status == "Pending")
+                                {
+                                    <span class="badge bg-warning-subtle text-dark">Chờ xác nhận</span>
+                                }
+                                else if (a.Status == "Completed")
+                                {
+                                    <span class="badge bg-info-subtle text-info">Đã khám</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (a.Status == "Pending")
+                                {
+                                    <form asp-action="Confirm" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@a.Id" />
+                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                                            <i class="fa-solid fa-check me-1"></i>Xác nhận
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">OK</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-4 text-muted">Hôm nay chưa có lịch hẹn nào.</div>
+    }
+</div>

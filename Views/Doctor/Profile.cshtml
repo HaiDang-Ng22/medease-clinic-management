@@ -1,0 +1,54 @@
+@model Doctor
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Hồ Sơ Chuyên Môn Bác Sĩ";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card card-doctor p-4 p-md-5">
+            <h3 class="fw-bold mb-4 pb-3 border-bottom"><i class="fa-solid fa-hospital-user text-primary me-2"></i>Cập Nhật Hồ Sơ Chuyên Môn Bác Sĩ</h3>
+
+            <form asp-action="Profile" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Họ và tên bác sĩ</label>
+                        <input type="text" class="form-control bg-light" value="@Model.User?.FullName" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Email</label>
+                        <input type="text" class="form-control bg-light" value="@Model.User?.Email" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Chuyên khoa</label>
+                        <input type="text" class="form-control bg-light" value="@Model.Specialty?.Name" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Học vị / Chức danh</label>
+                        <input type="text" class="form-control bg-light" value="@Model.Title" readonly />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Phòng khám phụ trách <span class="text-danger">*</span></label>
+                        <input type="text" name="roomNumber" class="form-control" value="@Model.RoomNumber" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Phí khám cơ bản (VNĐ) <span class="text-danger">*</span></label>
+                        <input type="number" name="consultationFee" class="form-control" value="@Model.ConsultationFee" required />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Tiểu sử & Kinh nghiệm chuyên môn <span class="text-danger">*</span></label>
+                        <textarea name="bio" rows="4" class="form-control" required>@Model.Bio</textarea>
+                    </div>
+                    <div class="col-12 mt-4 text-end">
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold">
+                            <i class="fa-solid fa-floppy-disk me-2"></i>Lưu Thay Đổi
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

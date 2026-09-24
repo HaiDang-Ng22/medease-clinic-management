@@ -1,0 +1,107 @@
+@model ContactMessage
+@{
+    ViewData["Title"] = "Liên Hệ & Hỗ Trợ Trực Tuyến";
+}
+
+<div class="bg-primary text-white py-5">
+    <div class="container text-center">
+        <h1 class="fw-bold">Liên Hệ Phòng Khám Healthy System</h1>
+        <p class="lead text-white-50 mx-auto" style="max-width: 600px;">
+            Đội ngũ chăm sóc khách hàng và tư vấn y tế luôn sẵn sàng hỗ trợ, giải đáp mọi thắc mắc của quý bệnh nhân 24/7.
+        </p>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row g-5">
+        <!-- Contact Info -->
+        <div class="col-lg-5">
+            <h3 class="fw-bold mb-4">Thông Tin Phòng Khám</h3>
+            <div class="d-flex flex-column gap-4">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="bg-primary text-white p-3 rounded-circle">
+                        <i class="fa-solid fa-location-dot fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Địa chỉ phòng khám:</h6>
+                        <p class="text-muted mb-0">280 An Dương Vương, Phường 4, Quận 5, TP. Hồ Chí Minh</p>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-start gap-3">
+                    <div class="bg-warning text-dark p-3 rounded-circle">
+                        <i class="fa-solid fa-phone-volume fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Đường dây nóng (Hotline):</h6>
+                        <p class="mb-0"><a href="tel:19008888" class="text-primary fw-bold text-decoration-none fs-5">1900 8888</a> (Miễn cước)</p>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-start gap-3">
+                    <div class="bg-secondary text-white p-3 rounded-circle">
+                        <i class="fa-solid fa-envelope fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Email liên hệ:</h6>
+                        <p class="text-muted mb-0">contact@healthysystem.vn / tuvan@healthysystem.vn</p>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-start gap-3">
+                    <div class="bg-success text-white p-3 rounded-circle">
+                        <i class="fa-solid fa-clock fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Thời gian làm việc:</h6>
+                        <p class="text-muted mb-0">Thứ 2 - Thứ 7: 07:30 - 20:00<br>Chủ Nhật: 08:00 - 12:00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Form -->
+        <div class="col-lg-7">
+            <div class="card card-custom p-4 p-md-5">
+                <h3 class="fw-bold mb-2">Gửi Câu Hỏi & Yêu Cầu Tư Vấn</h3>
+                <p class="text-muted mb-4 small">Vui lòng điền thông tin bên dưới, chuyên viên tư vấn sẽ liên hệ lại qua số điện thoại hoặc email của bạn.</p>
+
+                <form asp-action="SubmitContact" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                            <input asp-for="FullName" class="form-control rounded-3" placeholder="Ví dụ: Nguyễn Văn A" />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                            <input asp-for="Email" class="form-control rounded-3" placeholder="email@example.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số điện thoại</label>
+                            <input asp-for="Phone" class="form-control rounded-3" placeholder="0901234567" />
+                            <span asp-validation-for="Phone" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Chủ đề cần tư vấn <span class="text-danger">*</span></label>
+                            <input asp-for="Subject" class="form-control rounded-3" placeholder="Ví dụ: Tư vấn khám tim mạch" />
+                            <span asp-validation-for="Subject" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Nội dung câu hỏi hoặc triệu chứng <span class="text-danger">*</span></label>
+                            <textarea asp-for="Message" rows="4" class="form-control rounded-3" placeholder="Mô tả cụ thể câu hỏi hoặc thắc mắc của bạn..."></textarea>
+                            <span asp-validation-for="Message" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 fw-bold w-100">
+                                <i class="fa-solid fa-paper-plane me-2"></i>Gửi Yêu Cầu Tư Vấn
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,74 @@
+@model List<Appointment>
+@{
+    Layout = "_ReceptionistLayout";
+    ViewData["Title"] = "Quản Lý Lịch Hẹn Toàn Phòng Khám";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0"><i class="fa-solid fa-calendar-check text-success me-2"></i>Quản Lý Toàn Bộ Lịch Hẹn</h2>
+    <a asp-action="CreateAppointment" class="btn btn-success rounded-pill px-4">Đặt Lịch Tại Quầy</a>
+</div>
+
+<div class="card card-reception p-4 mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-6">
+            <input type="text" name="search" class="form-control" placeholder="Tìm theo tên bệnh nhân, SĐT hoặc mã lịch hẹn..." value="@ViewBag.SearchTerm" />
+        </div>
+        <div class="col-md-4">
+            <select name="status" class="form-select">
+                <option value="">-- Tất cả trạng thái --</option>
+                <option value="Pending" selected="@(ViewBag.SelectedStatus == "Pending")">Chờ xác nhận</option>
+                <option value="Confirmed" selected="@(ViewBag.SelectedStatus == "Confirmed")">Đã xác nhận</option>
+                <option value="Completed" selected="@(ViewBag.SelectedStatus == "Completed")">Đã hoàn thành</option>
+                <option value="Cancelled" selected="@(ViewBag.SelectedStatus == "Cancelled")">Đã hủy</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100 rounded-pill">Tìm kiếm</button>
+        </div>
+    </form>
+</div>
+
+<div class="card card-reception p-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã hẹn</th>
+                    <th>Ngày khám</th>
+                    <th>Giờ khám</th>
+                    <th>Bệnh nhân</th>
+                    <th>Bác sĩ</th>
+                    <th>Trạng thái</th>
+                    <th class="text-center">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    <tr>
+                        <td><span class="badge bg-light text-dark border">@a.AppointmentCode</span></td>
+                        <td>@a.AppointmentDate.ToString("dd/MM/yyyy")</td>
+                        <td class="fw-bold text-success">@a.TimeSlot</td>
+                        <td>
+                            <strong>@a.Patient?.FullName</strong>
+                            <small class="text-muted d-block">@a.Patient?.PhoneNumber</small>
+                        </td>
+                        <td>@a.Doctor?.Title @a.Doctor?.User?.FullName</td>
+                        <td><span class="badge bg-secondary">@a.Status</span></td>
+                        <td class="text-center">
+                            @if (a.Status == "Pending")
+                            {
+                                <form asp-action="Confirm" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@a.Id" />
+                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">Xác nhận</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

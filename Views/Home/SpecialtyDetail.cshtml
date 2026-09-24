@@ -1,0 +1,102 @@
+@model Specialty
+@{
+    ViewData["Title"] = "Chuyên Khoa " + Model.Name;
+}
+
+<div class="bg-light py-5 border-bottom">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a asp-action="Index">Trang chủ</a></li>
+                        <li class="breadcrumb-item"><a asp-action="Specialties">Chuyên khoa</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+                    </ol>
+                </nav>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="bg-primary text-white p-3 rounded-4 fs-2">
+                        <i class="fa-solid @Model.Icon"></i>
+                    </div>
+                    <div>
+                        <h1 class="fw-bold mb-1">Chuyên Khoa @Model.Name</h1>
+                        <span class="badge bg-secondary">Mã chuyên khoa: @Model.Code</span>
+                    </div>
+                </div>
+                <p class="lead text-muted">@Model.Description</p>
+                <div class="d-flex gap-3 mt-4">
+                    <a asp-controller="Appointment" asp-action="Book" asp-route-specialtyId="@Model.Id" class="btn btn-primary rounded-pill px-4 py-2">
+                        <i class="fa-solid fa-calendar-check me-2"></i>Đặt Lịch Khám Chuyên Khoa Này
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center">
+                <img src="@(Model.ImageUrl ?? "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=600&auto=format&fit=crop&q=80")" 
+                     alt="@Model.Name" class="img-fluid rounded-4 shadow" style="max-height: 250px; object-fit: cover;" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <h3 class="fw-bold mb-4"><i class="fa-solid fa-user-doctor text-primary me-2"></i>Bác Sĩ Thuộc Chuyên Khoa @Model.Name</h3>
+    <div class="row g-4 mb-5">
+        @if (Model.Doctors != null && Model.Doctors.Any())
+        {
+            foreach (var doc in Model.Doctors)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card card-custom h-100 p-3 text-center">
+                        <img src="@(doc.User?.AvatarUrl ?? "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=400&auto=format&fit=crop&q=80")" 
+                             alt="@doc.User?.FullName" class="rounded-circle mx-auto mb-3" style="width: 120px; height: 120px; object-fit: cover;" />
+                        <h5 class="fw-bold mb-1">@doc.User?.FullName</h5>
+                        <p class="text-muted small mb-2">@doc.Title</p>
+                        <div class="text-warning small mb-3">
+                            <i class="fa-solid fa-star"></i> @doc.Rating.ToString("0.0") (@doc.ReviewCount đánh giá)
+                        </div>
+                        <div class="d-flex justify-content-center gap-2 mt-auto">
+                            <a asp-action="DoctorDetail" asp-route-id="@doc.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Chi tiết</a>
+                            <a asp-controller="Appointment" asp-action="Book" asp-route-doctorId="@doc.Id" class="btn btn-sm btn-primary rounded-pill px-3">Đặt khám</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert alert-info rounded-4">Hiện đang cập nhật danh sách bác sĩ cho chuyên khoa này.</div>
+            </div>
+        }
+    </div>
+
+    @if (Model.Services != null && Model.Services.Any())
+    {
+        <h3 class="fw-bold mb-4"><i class="fa-solid fa-notes-medical text-primary me-2"></i>Bảng Giá Dịch Vụ Khám Thuộc Chuyên Khoa</h3>
+        <div class="card card-custom overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Tên dịch vụ</th>
+                            <th>Phân loại</th>
+                            <th>Thời lượng dự kiến</th>
+                            <th class="text-end pe-4">Giá dịch vụ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model.Services)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-semibold">@s.Name</td>
+                                <td><span class="badge bg-light text-dark border">@s.Category</span></td>
+                                <td>@s.EstimatedDurationMinutes phút</td>
+                                <td class="text-end pe-4 fw-bold text-primary">@s.Price.ToString("N0") đ</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

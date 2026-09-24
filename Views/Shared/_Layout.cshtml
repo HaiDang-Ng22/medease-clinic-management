@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Phòng Khám Healthy System</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --primary-light: #e0f2fe;
+            --secondary: #0d9488;
+            --accent: #f59e0b;
+            --dark: #0f172a;
+            --gray-100: #f8fafc;
+            --gray-200: #e2e8f0;
+            --gray-600: #475569;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #334155;
+            background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background-color: #0f172a;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            padding: 8px 0;
+        }
+        .top-bar a {
+            color: #cbd5e1;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .top-bar a:hover {
+            color: #38bdf8;
+        }
+
+        /* Navbar */
+        .navbar-main {
+            background: #ffffff;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+            padding: 12px 0;
+        }
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.45rem;
+            color: var(--primary) !important;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .navbar-brand i {
+            font-size: 1.8rem;
+            color: var(--secondary);
+        }
+        .nav-link {
+            font-weight: 600;
+            color: #334155 !important;
+            padding: 8px 16px !important;
+            transition: all 0.2s;
+            border-radius: 8px;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary) !important;
+            background-color: var(--primary-light);
+        }
+        .btn-booking {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #ffffff !important;
+            font-weight: 700;
+            border: none;
+            border-radius: 9999px;
+            padding: 10px 24px;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-booking:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
+        }
+
+        /* Hero */
+        .hero-section {
+            background: linear-gradient(135deg, #0284c7 0%, #0d9488 100%);
+            color: white;
+            padding: 80px 0 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Card Styles */
+        .card-custom {
+            border: 1px solid var(--gray-200);
+            border-radius: 16px;
+            background: #ffffff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        .card-custom:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+            border-color: #bae6fd;
+        }
+
+        /* Section Titles */
+        .section-badge {
+            display: inline-block;
+            background-color: var(--primary-light);
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 14px;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #0f172a;
+            color: #94a3b8;
+            padding: 60px 0 24px;
+            margin-top: 60px;
+        }
+        footer h5 {
+            color: #ffffff;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        footer a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        footer a:hover {
+            color: #38bdf8;
+        }
+        .footer-bottom {
+            border-top: 1px solid #1e293b;
+            padding-top: 24px;
+            margin-top: 40px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar d-none d-md-block">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex gap-4">
+                <span><i class="fa-solid fa-location-dot text-primary me-2"></i>280 An Dương Vương, P.4, Q.5, TP. Hồ Chí Minh</span>
+                <span><i class="fa-solid fa-clock text-primary me-2"></i>Giờ mở cửa: Thứ 2 - Thứ 7 (07:30 - 20:00)</span>
+            </div>
+            <div class="d-flex gap-3 align-items-center">
+                <a href="tel:19008888" class="fw-bold text-warning"><i class="fa-solid fa-phone-volume me-1"></i>Hotline: 1900 8888</a>
+                <span class="text-secondary">|</span>
+                <a href="/Home/Contact">Tư Vấn Trực Tuyến</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-main sticky-top">
+        <div class="container">
+            <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                <i class="fa-solid fa-hospital-user"></i>
+                <span>HEALTHY<span class="text-secondary">SYSTEM</span></span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Specialties">Chuyên khoa</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Doctors">Bác sĩ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Services">Dịch vụ & Bảng giá</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Equipment">Thiết bị y tế</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Contact">Liên hệ</a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-3">
+                    @if (User.IsInRole("Doctor"))
+                    {
+                        <a asp-controller="Doctor" asp-action="Dashboard" class="btn btn-primary rounded-pill px-3 fw-bold">
+                            <i class="fa-solid fa-user-doctor me-1"></i>Vào Cổng Bác Sĩ
+                        </a>
+                    }
+                    else if (User.IsInRole("Receptionist"))
+                    {
+                        <a asp-controller="Receptionist" asp-action="Dashboard" class="btn btn-success rounded-pill px-3 fw-bold">
+                            <i class="fa-solid fa-headset me-1"></i>Vào Bàn Lễ Tân
+                        </a>
+                    }
+                    else if (User.IsInRole("Admin"))
+                    {
+                        <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-danger rounded-pill px-3 fw-bold">
+                            <i class="fa-solid fa-gear me-1"></i>Quản Trị Hệ Thống
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Appointment" asp-action="Book" class="btn btn-booking">
+                            <i class="fa-solid fa-calendar-check me-2"></i>Đặt Lịch Khám
+                        </a>
+                    }
+
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary dropdown-toggle rounded-pill px-3 py-2 fw-semibold" type="button" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-circle-user me-1 text-primary"></i>
+                                @User.Identity.Name
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2" style="min-width: 240px;">
+                                <li>
+                                    <div class="px-3 py-2 border-bottom">
+                                        <div class="fw-bold">@User.Identity.Name</div>
+                                        <small class="badge bg-primary-subtle text-primary">
+                                            @(User.IsInRole("Doctor") ? "Bác sĩ Chuyên khoa" : (User.IsInRole("Receptionist") ? "Nhân viên Lễ tân" : (User.IsInRole("Admin") ? "Quản trị viên" : "Bệnh nhân")))
+                                        </small>
+                                    </div>
+                                </li>
+
+                                @if (User.IsInRole("Doctor"))
+                                {
+                                    <li>
+                                        <a class="dropdown-item py-2 fw-semibold text-primary" asp-controller="Doctor" asp-action="Dashboard">
+                                            <i class="fa-solid fa-gauge-high me-2"></i>Bàn làm việc Bác sĩ
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Doctor" asp-action="Queue">
+                                            <i class="fa-solid fa-list-ol text-info me-2"></i>Hàng đợi khám hôm nay
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Doctor" asp-action="Schedule">
+                                            <i class="fa-solid fa-calendar-week text-success me-2"></i>Lịch trực / ca khám
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Doctor" asp-action="Profile">
+                                            <i class="fa-solid fa-hospital-user text-secondary me-2"></i>Hồ sơ chuyên môn
+                                        </a>
+                                    </li>
+                                }
+                                else if (User.IsInRole("Receptionist"))
+                                {
+                                    <li>
+                                        <a class="dropdown-item py-2 fw-semibold text-success" asp-controller="Receptionist" asp-action="Dashboard">
+                                            <i class="fa-solid fa-headset me-2"></i>Bàn tiếp đón Lễ tân
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Receptionist" asp-action="Appointments">
+                                            <i class="fa-solid fa-calendar-check text-primary me-2"></i>Toàn bộ lịch hẹn
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Receptionist" asp-action="CreateAppointment">
+                                            <i class="fa-solid fa-user-plus text-warning me-2"></i>Đặt lịch tại quầy
+                                        </a>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Appointment" asp-action="MyAppointments">
+                                            <i class="fa-solid fa-calendar-days text-primary me-2"></i>Lịch hẹn của tôi
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Appointment" asp-action="Notifications">
+                                            <i class="fa-solid fa-bell text-warning me-2"></i>Thông báo
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2" asp-controller="Account" asp-action="Profile">
+                                            <i class="fa-solid fa-id-card text-info me-2"></i>Hồ sơ cá nhân
+                                        </a>
+                                    </li>
+                                }
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="dropdown-item py-2 text-danger">
+                                            <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex gap-2">
+                            <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary rounded-pill px-3 fw-semibold">Đăng nhập</a>
+                            <a asp-controller="Account" asp-action="Register" class="btn btn-primary rounded-pill px-3 fw-semibold">Đăng ký</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Global Alert Messages -->
+    <div class="container mt-3">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm border-0 d-flex align-items-center" role="alert">
+                <i class="fa-solid fa-circle-check fs-4 me-3 text-success"></i>
+                <div class="flex-grow-1">@TempData["SuccessMessage"]</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm border-0 d-flex align-items-center" role="alert">
+                <i class="fa-solid fa-triangle-exclamation fs-4 me-3 text-danger"></i>
+                <div class="flex-grow-1">@TempData["ErrorMessage"]</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+    </div>
+
+    <!-- Body Content -->
+    <main class="main-content">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="fa-solid fa-hospital-user text-primary fs-3"></i>
+                        <span class="fs-4 fw-bold text-white">HEALTHY<span class="text-secondary">SYSTEM</span></span>
+                    </div>
+                    <p class="text-muted pe-lg-4">
+                        Hệ thống phòng khám đa khoa tư nhân chuẩn mực quốc tế, hội tụ đội ngũ chuyên gia đầu ngành cùng hệ thống trang thiết bị chẩn đoán hiện đại bậc nhất.
+                    </p>
+                    <div class="d-flex gap-3 mt-3">
+                        <a href="#" class="btn btn-sm btn-outline-light rounded-circle"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="btn btn-sm btn-outline-light rounded-circle"><i class="fa-brands fa-youtube"></i></a>
+                        <a href="#" class="btn btn-sm btn-outline-light rounded-circle"><i class="fa-brands fa-tiktok"></i></a>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-md-6">
+                    <h5>Liên Kết Nhanh</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="/Home/Specialties">Chuyên khoa khám</a></li>
+                        <li class="mb-2"><a href="/Home/Doctors">Đội ngũ bác sĩ</a></li>
+                        <li class="mb-2"><a href="/Home/Services">Bảng giá dịch vụ</a></li>
+                        <li class="mb-2"><a href="/Home/Equipment">Trang thiết bị</a></li>
+                        <li class="mb-2"><a href="/Appointment/Book">Đặt lịch khám</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h5>Thời Gian Làm Việc</h5>
+                    <ul class="list-unstyled text-muted">
+                        <li class="mb-2"><strong class="text-white">Thứ 2 - Thứ 7:</strong> 07:30 - 20:00</li>
+                        <li class="mb-2"><strong class="text-white">Chủ Nhật:</strong> 08:00 - 12:00 (Cấp cứu 24/7)</li>
+                        <li class="mb-2"><strong class="text-white">Đặt lịch hẹn:</strong> 24/7 qua Website</li>
+                        <li class="mt-3"><span class="badge bg-success py-2 px-3"><i class="fa-solid fa-shield-halved me-1"></i>Bảo hiểm y tế & Bảo lãnh viện phí</span></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h5>Thông Tin Liên Hệ</h5>
+                    <ul class="list-unstyled text-muted">
+                        <li class="mb-2"><i class="fa-solid fa-location-dot text-primary me-2"></i>280 An Dương Vương, P.4, Q.5, TP.HCM</li>
+                        <li class="mb-2"><i class="fa-solid fa-phone text-primary me-2"></i>Hotline: 1900 8888</li>
+                        <li class="mb-2"><i class="fa-solid fa-envelope text-primary me-2"></i>contact@healthysystem.vn</li>
+                        <li class="mb-2"><i class="fa-solid fa-globe text-primary me-2"></i>www.healthysystem.vn</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                <div>&copy; 2026 Healthy System. Đồ án môn Công nghệ Phần mềm Nâng cao - Nhóm Case Study 04.</div>
+                <div>Nền tảng ASP.NET Core MVC 8.0 & PostgreSQL Supabase</div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

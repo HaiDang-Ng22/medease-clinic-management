@@ -1,0 +1,106 @@
+@model List<User>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Quản Trị Hệ Thống Healthy System";
+}
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fa-solid fa-screwdriver-wrench text-primary me-2"></i>Bảng Quản Trị Hệ Thống</h2>
+            <p class="text-muted mb-0">Quản lý người dùng, phân quyền vai trò và giám sát hoạt động phòng khám</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="Doctor" asp-action="Dashboard" class="btn btn-outline-primary rounded-pill">Vào Cổng Bác Sĩ</a>
+            <a asp-controller="Receptionist" asp-action="Dashboard" class="btn btn-outline-success rounded-pill">Vào Cổng Lễ Tân</a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 text-center">
+                <div class="text-muted small">Tổng Người Dùng</div>
+                <div class="display-6 fw-bold text-primary">@ViewBag.TotalUsers</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 text-center">
+                <div class="text-muted small">Bệnh Nhân Đăng Ký</div>
+                <div class="display-6 fw-bold text-success">@ViewBag.TotalPatients</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 text-center">
+                <div class="text-muted small">Bác Sĩ Hệ Thống</div>
+                <div class="display-6 fw-bold text-info">@ViewBag.TotalDoctors</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 text-center">
+                <div class="text-muted small">Tổng Lịch Hẹn Đã Đặt</div>
+                <div class="display-6 fw-bold text-warning">@ViewBag.TotalAppointments</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users List -->
+    <div class="card card-custom p-4">
+        <h5 class="fw-bold mb-3"><i class="fa-solid fa-users me-2"></i>Danh Sách Tài Khoản Trong Hệ Thống</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Họ và tên</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Vai trò (Role)</th>
+                        <th>Ngày tạo</th>
+                        <th class="text-end pe-3">Phân Quyền Vai Trò</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold">@u.FullName</td>
+                            <td>@u.Email</td>
+                            <td>@u.PhoneNumber</td>
+                            <td>
+                                @switch (u.Role)
+                                {
+                                    case "Doctor":
+                                        <span class="badge bg-primary py-2 px-3 rounded-pill"><i class="fa-solid fa-user-doctor me-1"></i>Bác sĩ</span>
+                                        break;
+                                    case "Receptionist":
+                                        <span class="badge bg-success py-2 px-3 rounded-pill"><i class="fa-solid fa-headset me-1"></i>Lễ tân</span>
+                                        break;
+                                    case "Admin":
+                                        <span class="badge bg-danger py-2 px-3 rounded-pill"><i class="fa-solid fa-shield-halved me-1"></i>Quản trị viên</span>
+                                        break;
+                                    default:
+                                        <span class="badge bg-secondary py-2 px-3 rounded-pill"><i class="fa-solid fa-user me-1"></i>Bệnh nhân</span>
+                                        break;
+                                }
+                            </td>
+                            <td>@u.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end pe-3">
+                                <form asp-action="ChangeRole" method="post" class="d-inline-flex gap-1 align-items-center">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@u.Id" />
+                                    <select name="newRole" class="form-select form-select-sm" style="width: auto;">
+                                        <option value="Patient" selected="@(u.Role == "Patient")">Bệnh nhân</option>
+                                        <option value="Doctor" selected="@(u.Role == "Doctor")">Bác sĩ</option>
+                                        <option value="Receptionist" selected="@(u.Role == "Receptionist")">Lễ tân</option>
+                                        <option value="Admin" selected="@(u.Role == "Admin")">Quản trị viên</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill px-3">Lưu</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

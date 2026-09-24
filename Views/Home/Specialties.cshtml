@@ -1,0 +1,49 @@
+@model List<Specialty>
+@{
+    ViewData["Title"] = "Chuyên Khoa Khám Bệnh";
+}
+
+<div class="bg-primary text-white py-5">
+    <div class="container text-center">
+        <h1 class="fw-bold">Danh Sách Chuyên Khoa</h1>
+        <p class="lead text-white-50 mx-auto" style="max-width: 600px;">
+            Healthy System trang bị đầy đủ các chuyên khoa với đội ngũ bác sĩ chuyên khoa giàu kinh nghiệm và hệ thống phòng ốc đạt chuẩn y tế.
+        </p>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row g-4">
+        @foreach (var spec in Model)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-custom h-100 p-4 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="bg-primary-subtle text-primary p-3 rounded-4 fs-3">
+                                <i class="fa-solid @spec.Icon"></i>
+                            </div>
+                            <div>
+                                <h4 class="fw-bold mb-0">@spec.Name</h4>
+                                <span class="badge bg-light text-secondary border">Mã: @spec.Code</span>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-4">@spec.Description</p>
+                        <div class="mb-3 small text-secondary">
+                            <i class="fa-solid fa-user-doctor me-1"></i> Có <strong>@(spec.Doctors?.Count ?? 0)</strong> bác sĩ trực tiếp khám
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a asp-action="SpecialtyDetail" asp-route-id="@spec.Id" class="btn btn-outline-primary rounded-pill px-3 btn-sm">
+                            Xem chi tiết
+                        </a>
+                        <a asp-controller="Appointment" asp-action="Book" asp-route-specialtyId="@spec.Id" class="btn btn-primary rounded-pill px-3 btn-sm">
+                            Đặt lịch khám
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

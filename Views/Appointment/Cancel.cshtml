@@ -1,0 +1,53 @@
+@model CancelAppointmentViewModel
+@{
+    ViewData["Title"] = "Hủy Lịch Hẹn";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card card-custom p-4 p-md-5 border-danger border-opacity-25">
+                <div class="text-center mb-4">
+                    <div class="bg-danger-subtle text-danger d-inline-block p-3 rounded-circle mb-2">
+                        <i class="fa-solid fa-calendar-xmark fs-3"></i>
+                    </div>
+                    <h2 class="fw-bold text-danger">Xác Nhận Hủy Lịch Hẹn</h2>
+                    <p class="text-muted small">Bạn có chắc chắn muốn hủy lịch hẹn khám này không?</p>
+                </div>
+
+                <div class="border rounded-4 p-3 bg-light mb-4">
+                    <div class="mb-2"><strong>Mã lịch hẹn:</strong> <span class="badge bg-secondary">@Model.AppointmentCode</span></div>
+                    <div class="mb-2"><strong>Bác sĩ:</strong> @Model.DoctorName</div>
+                    <div class="mb-0"><strong>Thời gian:</strong> @Model.TimeSlot - Ngày @Model.AppointmentDate.ToString("dd/MM/yyyy")</div>
+                </div>
+
+                <form asp-action="Cancel" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="AppointmentId" />
+                    <input type="hidden" asp-for="AppointmentCode" />
+                    <input type="hidden" asp-for="DoctorName" />
+                    <input type="hidden" asp-for="AppointmentDate" />
+                    <input type="hidden" asp-for="TimeSlot" />
+
+                    <div class="mb-4">
+                        <label asp-for="CancellationReason" class="form-label fw-bold"></label>
+                        <textarea asp-for="CancellationReason" rows="3" class="form-control rounded-3" 
+                                  placeholder="Vui lòng cho biết lý do bạn muốn hủy lịch hẹn..."></textarea>
+                        <span asp-validation-for="CancellationReason" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Details" asp-route-id="@Model.AppointmentId" class="btn btn-outline-secondary rounded-pill px-4">Không, giữ lại</a>
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">
+                            <i class="fa-solid fa-trash-can me-1"></i>Đồng Ý Hủy Lịch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

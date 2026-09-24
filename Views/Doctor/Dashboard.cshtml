@@ -1,0 +1,195 @@
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Bảng Điều Khiển Ca Khám Bác Sĩ";
+    var doctor = ViewBag.Doctor as Doctor;
+    var todayAppointments = ViewBag.TodayAppointments as List<Appointment> ?? new List<Appointment>();
+    var upcomingAppointments = ViewBag.UpcomingAppointments as List<Appointment> ?? new List<Appointment>();
+}
+
+<!-- Welcome Doctor Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="fw-bold mb-1">
+            <i class="fa-solid fa-stethoscope text-primary me-2"></i>Bàn Làm Việc: @doctor?.Title @doctor?.User?.FullName
+        </h2>
+        <p class="text-muted mb-0">
+            Chuyên khoa: <strong>@doctor?.Specialty?.Name</strong> | Vị trí: <strong>@doctor?.RoomNumber</strong> | Hôm nay: <strong>@DateTime.Today.ToString("dddd, dd/MM/yyyy")</strong>
+        </p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a asp-action="Queue" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm">
+            <i class="fa-solid fa-play me-2"></i>BẮT ĐẦU KHÁM BỆNH
+        </a>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-doctor p-3 border-start border-primary border-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Tổng Ca Hôm Nay</div>
+                    <div class="display-6 fw-bold text-dark">@ViewBag.TotalToday</div>
+                </div>
+                <div class="p-3 bg-primary-subtle text-primary rounded-circle">
+                    <i class="fa-solid fa-calendar-day fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-doctor p-3 border-start border-warning border-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Đang Chờ Khám</div>
+                    <div class="display-6 fw-bold text-warning">@ViewBag.WaitingCount</div>
+                </div>
+                <div class="p-3 bg-warning-subtle text-warning rounded-circle">
+                    <i class="fa-solid fa-user-clock fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-doctor p-3 border-start border-success border-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Đã Khám Xong</div>
+                    <div class="display-6 fw-bold text-success">@ViewBag.CompletedCount</div>
+                </div>
+                <div class="p-3 bg-success-subtle text-success rounded-circle">
+                    <i class="fa-solid fa-circle-check fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card card-doctor p-3 border-start border-info border-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Đánh Giá Bác Sĩ</div>
+                    <div class="display-6 fw-bold text-info">@doctor?.Rating.ToString("0.0") <small class="fs-6 text-muted">/ 5.0</small></div>
+                </div>
+                <div class="p-3 bg-info-subtle text-info rounded-circle">
+                    <i class="fa-solid fa-star fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Workspace Grid -->
+<div class="row g-4">
+    <!-- Today's Queue -->
+    <div class="col-lg-8">
+        <div class="card card-doctor p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">
+                    <i class="fa-solid fa-list-check text-primary me-2"></i>Danh Sách Bệnh Nhân Hôm Nay
+                </h5>
+                <a asp-action="Queue" class="btn btn-sm btn-outline-primary rounded-pill">Xem tất cả</a>
+            </div>
+
+            @if (todayAppointments.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Khung giờ</th>
+                                <th>Mã hẹn</th>
+                                <th>Bệnh nhân</th>
+                                <th>Triệu chứng ban đầu</th>
+                                <th>Trạng thái</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var appt in todayAppointments)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-primary">@appt.TimeSlot</td>
+                                    <td><span class="badge bg-light text-dark border">@appt.AppointmentCode</span></td>
+                                    <td>
+                                        <div class="fw-bold">@appt.Patient?.FullName</div>
+                                        <small class="text-muted">@appt.Patient?.PhoneNumber | @appt.Patient?.Gender</small>
+                                    </td>
+                                    <td><small class="text-muted text-truncate d-inline-block" style="max-width: 200px;">@appt.ReasonForVisit</small></td>
+                                    <td>
+                                        @if (appt.Status == "Completed")
+                                        {
+                                            <span class="badge bg-success-subtle text-success">Đã hoàn thành</span>
+                                        }
+                                        else if (appt.Status == "Confirmed")
+                                        {
+                                            <span class="badge bg-primary-subtle text-primary">Đã xác nhận</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning-subtle text-dark">Chờ khám</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (appt.Status != "Completed")
+                                        {
+                                            <a asp-action="Examination" asp-route-id="@appt.Id" class="btn btn-sm btn-primary rounded-pill px-3">
+                                                <i class="fa-solid fa-stethoscope me-1"></i>Vào Khám
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-action="Examination" asp-route-id="@appt.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                                Xem lại
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fa-regular fa-calendar-check text-muted display-4 mb-3"></i>
+                    <h5 class="text-muted">Hôm nay chưa có lịch hẹn nào</h5>
+                    <p class="text-muted small">Các ca khám mới từ bệnh nhân hoặc lễ tân sẽ xuất hiện tại đây</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Upcoming appointments -->
+    <div class="col-lg-4">
+        <div class="card card-doctor p-4 h-100">
+            <h5 class="fw-bold mb-3">
+                <i class="fa-regular fa-calendar-days text-info me-2"></i>Lịch Khám Sắp Tới
+            </h5>
+            @if (upcomingAppointments.Any())
+            {
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var appt in upcomingAppointments)
+                    {
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="badge bg-primary">@appt.AppointmentDate.ToString("dd/MM/yyyy")</span>
+                                <small class="text-muted fw-bold">@appt.TimeSlot</small>
+                            </div>
+                            <div class="fw-bold text-dark">@appt.Patient?.FullName</div>
+                            <small class="text-muted d-block text-truncate">Lý do: @appt.ReasonForVisit</small>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4 text-muted small">Chưa có lịch hẹn những ngày tiếp theo.</div>
+            }
+        </div>
+    </div>
+</div>

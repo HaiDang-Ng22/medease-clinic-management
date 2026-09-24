@@ -1,0 +1,46 @@
+@model List<Doctor>
+@{
+    Layout = "_ReceptionistLayout";
+    ViewData["Title"] = "Lịch Trực Bác Sĩ";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0"><i class="fa-solid fa-calendar-days text-success me-2"></i>Lịch Trực Toàn Bộ Bác Sĩ</h2>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-4">Về Bàn Tiếp Đón</a>
+</div>
+
+<div class="row g-4">
+    @foreach (var doc in Model)
+    {
+        <div class="col-md-6 col-lg-4">
+            <div class="card card-reception p-3 h-100">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <img src="@(doc.User?.AvatarUrl ?? "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=400&auto=format&fit=crop&q=80")" 
+                         alt="" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;" />
+                    <div>
+                        <h6 class="fw-bold mb-0">@doc.User?.FullName</h6>
+                        <small class="text-success fw-semibold">@doc.Specialty?.Name</small>
+                        <small class="text-muted d-block">Phòng: @doc.RoomNumber</small>
+                    </div>
+                </div>
+                <div class="border-top pt-2">
+                    <small class="fw-bold text-muted d-block mb-1">Ca trực tiếp theo:</small>
+                    @if (doc.Schedules != null && doc.Schedules.Any())
+                    {
+                        var nextSlots = doc.Schedules.Take(4);
+                        <div class="d-flex flex-wrap gap-1">
+                            @foreach (var s in nextSlots)
+                            {
+                                <span class="badge bg-light text-dark border small">@s.WorkDate.ToString("dd/MM") - @s.TimeSlot</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <small class="text-muted">Chưa có ca trực được xếp</small>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

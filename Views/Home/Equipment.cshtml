@@ -1,0 +1,39 @@
+@model List<Equipment>
+@{
+    ViewData["Title"] = "Trang Thiết Bị Y Tế Hiện Đại";
+}
+
+<div class="bg-primary text-white py-5">
+    <div class="container text-center">
+        <h1 class="fw-bold">Cơ Sở Vật Chất & Trang Thiết Bị</h1>
+        <p class="lead text-white-50 mx-auto" style="max-width: 600px;">
+            Hệ thống trang thiết bị nhập khẩu trực tiếp từ các quốc gia y học phát triển: Đức, Mỹ, Nhật Bản nhằm tối ưu hóa độ chính xác và giảm đau đớn cho người bệnh.
+        </p>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row g-4">
+        @foreach (var eq in Model)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-custom h-100 overflow-hidden d-flex flex-column">
+                    <img src="@eq.ImageUrl" alt="@eq.Name" class="w-100" style="height: 220px; object-fit: cover;" />
+                    <div class="p-4 d-flex flex-column flex-grow-1 justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-primary-subtle text-primary"><i class="fa-solid fa-flag me-1"></i>Xuất xứ: @eq.Origin</span>
+                                <span class="badge bg-success-subtle text-success">@eq.Status</span>
+                            </div>
+                            <h5 class="fw-bold mb-2">@eq.Name</h5>
+                            <p class="text-muted small">@eq.Description</p>
+                        </div>
+                        <div class="pt-3 border-top small text-secondary">
+                            <i class="fa-solid fa-hospital me-1"></i> Chuyên khoa: @(eq.Specialty?.Name ?? "Đa khoa trung tâm")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

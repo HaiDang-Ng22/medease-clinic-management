@@ -1,0 +1,74 @@
+@{
+    Layout = "_ReceptionistLayout";
+    ViewData["Title"] = "Đặt Lịch Khám Tại Quầy";
+    var specialties = ViewBag.Specialties as List<Specialty> ?? new List<Specialty>();
+    var doctors = ViewBag.Doctors as List<Doctor> ?? new List<Doctor>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card card-reception p-4 p-md-5">
+            <h3 class="fw-bold mb-4 pb-3 border-bottom text-success">
+                <i class="fa-solid fa-user-plus me-2"></i>Tiếp Nhận Bệnh Nhân & Đặt Lịch Tại Quầy
+            </h3>
+
+            <form asp-action="CreateAppointment" method="post">
+                @Html.AntiForgeryToken()
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Họ và tên bệnh nhân <span class="text-danger">*</span></label>
+                        <input type="text" name="patientName" class="form-control" required placeholder="Nguyễn Văn A" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Số điện thoại liên hệ <span class="text-danger">*</span></label>
+                        <input type="text" name="phone" class="form-control" required placeholder="0901234567" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Chuyên khoa khám <span class="text-danger">*</span></label>
+                        <select name="specialtyId" class="form-select" required>
+                            @foreach (var s in specialties)
+                            {
+                                <option value="@s.Id">@s.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Bác sĩ khám <span class="text-danger">*</span></label>
+                        <select name="doctorId" class="form-select" required>
+                            @foreach (var d in doctors)
+                            {
+                                <option value="@d.Id">@d.Title @d.User?.FullName (@d.RoomNumber)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Ngày khám <span class="text-danger">*</span></label>
+                        <input type="date" name="appointmentDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Khung giờ khám <span class="text-danger">*</span></label>
+                        <select name="timeSlot" class="form-select" required>
+                            <option value="08:00 - 08:30">08:00 - 08:30</option>
+                            <option value="08:30 - 09:00">08:30 - 09:00</option>
+                            <option value="09:00 - 09:30">09:00 - 09:30</option>
+                            <option value="09:30 - 10:00">09:30 - 10:00</option>
+                            <option value="10:00 - 10:30">10:00 - 10:30</option>
+                            <option value="13:30 - 14:00">13:30 - 14:00</option>
+                            <option value="14:00 - 14:30">14:00 - 14:30</option>
+                            <option value="14:30 - 15:00">14:30 - 15:00</option>
+                            <option value="15:00 - 15:30">15:00 - 15:30</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Lý do khám / Triệu chứng</label>
+                        <textarea name="reason" rows="2" class="form-control" placeholder="Mô tả triệu chứng bệnh nhân khai báo tại quầy..."></textarea>
+                    </div>
+                    <div class="col-12 mt-4 text-end">
+                        <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-4 me-2">Hủy</a>
+                        <button type="submit" class="btn btn-success rounded-pill px-5 fw-bold">Xác Nhận Tiếp Nhận</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

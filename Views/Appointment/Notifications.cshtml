@@ -1,0 +1,47 @@
+@model List<Notification>
+@{
+    ViewData["Title"] = "Thông Báo & Nhắc Lịch";
+}
+
+<div class="bg-primary text-white py-5">
+    <div class="container">
+        <h1 class="fw-bold mb-1">Thông Báo & Nhắc Lịch Khám</h1>
+        <p class="lead text-white-50 mb-0">Hệ thống thông báo nhắc lịch tự động giúp bạn không bỏ lỡ buổi khám</p>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            @if (Model.Any())
+            {
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var n in Model)
+                    {
+                        <div class="card card-custom p-3 @(n.IsRead ? "bg-white" : "bg-light border-primary")">
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="p-2 rounded-circle @(n.Type == "Reminder" ? "bg-warning-subtle text-dark" : "bg-primary-subtle text-primary")">
+                                    <i class="fa-solid @(n.Type == "Reminder" ? "fa-bell" : "fa-info-circle") fs-5"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <h6 class="fw-bold mb-0 @(n.IsRead ? "text-dark" : "text-primary")">@n.Title</h6>
+                                        <small class="text-muted">@n.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
+                                    </div>
+                                    <p class="text-muted mb-0 small">@n.Message</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fa-regular fa-bell-slash text-muted display-4 mb-3"></i>
+                    <h5 class="text-muted">Bạn chưa có thông báo nào</h5>
+                </div>
+            }
+        </div>
+    </div>
+</div>

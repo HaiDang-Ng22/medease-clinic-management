@@ -1,0 +1,89 @@
+@model List<Appointment>
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Hàng Đợi Khám Hôm Nay";
+    var doctor = ViewBag.Doctor as Doctor;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-list-ol text-primary me-2"></i>Hàng Đợi Bệnh Nhân Khám Trong Ngày</h2>
+        <p class="text-muted mb-0">Hôm nay: <strong>@DateTime.Today.ToString("dddd, dd/MM/yyyy")</strong> | Bác sĩ: <strong>@doctor?.Title @doctor?.User?.FullName</strong></p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-4">
+        <i class="fa-solid fa-arrow-left me-1"></i>Về Tổng Quan
+    </a>
+</div>
+
+<div class="card card-doctor p-4">
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Giờ hẹn</th>
+                        <th>Mã lịch</th>
+                        <th>Họ tên Bệnh nhân</th>
+                        <th>Thông tin liên hệ</th>
+                        <th>Triệu chứng ban đầu</th>
+                        <th>Trạng thái</th>
+                        <th class="text-center pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var appt in Model)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-bold text-primary fs-6">@appt.TimeSlot</td>
+                            <td><span class="badge bg-light text-dark border">@appt.AppointmentCode</span></td>
+                            <td>
+                                <div class="fw-bold">@appt.Patient?.FullName</div>
+                                <small class="text-muted">NS: @(appt.Patient?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa rõ") (@appt.Patient?.Gender)</small>
+                            </td>
+                            <td>
+                                <div><i class="fa-solid fa-phone text-muted me-1 small"></i>@appt.Patient?.PhoneNumber</div>
+                                <small class="text-muted">@appt.Patient?.Email</small>
+                            </td>
+                            <td>
+                                <span class="text-muted small">@appt.ReasonForVisit</span>
+                            </td>
+                            <td>
+                                @if (appt.Status == "Completed")
+                                {
+                                    <span class="badge bg-success-subtle text-success py-2 px-3 rounded-pill fw-bold">
+                                        <i class="fa-solid fa-check me-1"></i>Đã khám xong
+                                    </span>
+                                }
+                                else if (appt.Status == "Confirmed")
+                                {
+                                    <span class="badge bg-primary-subtle text-primary py-2 px-3 rounded-pill fw-bold">
+                                        <i class="fa-solid fa-user-check me-1"></i>Sẵn sàng khám
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning-subtle text-dark py-2 px-3 rounded-pill fw-bold">
+                                        <i class="fa-solid fa-clock me-1"></i>Chờ tiếp nhận
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-center pe-3">
+                                <a asp-action="Examination" asp-route-id="@appt.Id" class="btn btn-primary rounded-pill btn-sm px-4 fw-bold">
+                                    <i class="fa-solid fa-stethoscope me-1"></i>@(appt.Status == "Completed" ? "Xem bệnh án" : "Vào Khám")
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fa-regular fa-clipboard text-muted display-4 mb-3"></i>
+            <h4 class="text-muted">Chưa có bệnh nhân nào trong hàng đợi hôm nay</h4>
+        </div>
+    }
+</div>

@@ -1,0 +1,79 @@
+@model RescheduleViewModel
+@{
+    ViewData["Title"] = "Đổi Thời Gian Lịch Hẹn";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card card-custom p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="bg-warning-subtle text-dark d-inline-block p-3 rounded-circle mb-2">
+                        <i class="fa-solid fa-calendar-days fs-3"></i>
+                    </div>
+                    <h2 class="fw-bold">Thay Đổi Lịch Khám</h2>
+                    <p class="text-muted small">Mã lịch hẹn: <strong>@Model.AppointmentCode</strong></p>
+                </div>
+
+                <div class="alert alert-info rounded-4 p-3 small mb-4">
+                    <div class="mb-1"><strong>Bác sĩ:</strong> @Model.DoctorName (@Model.SpecialtyName)</div>
+                    <div><strong>Lịch hiện tại:</strong> @Model.CurrentTimeSlot - Ngày @Model.CurrentDate.ToString("dd/MM/yyyy")</div>
+                    <div class="mt-2 text-danger"><em>* Quy định: Lịch hẹn chỉ có thể thay đổi trước giờ khám ít nhất 2 tiếng.</em></div>
+                </div>
+
+                <form asp-action="Reschedule" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="AppointmentId" />
+                    <input type="hidden" asp-for="AppointmentCode" />
+                    <input type="hidden" asp-for="DoctorName" />
+                    <input type="hidden" asp-for="SpecialtyName" />
+                    <input type="hidden" asp-for="CurrentDate" />
+                    <input type="hidden" asp-for="CurrentTimeSlot" />
+
+                    <div class="mb-3">
+                        <label asp-for="NewDate" class="form-label fw-bold"></label>
+                        <input asp-for="NewDate" type="date" class="form-control form-control-lg rounded-3" 
+                               min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="NewDate" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="NewTimeSlot" class="form-label fw-bold"></label>
+                        <select asp-for="NewTimeSlot" class="form-select form-select-lg rounded-3">
+                            <option value="">-- Chọn khung giờ mới --</option>
+                            <option value="08:00 - 08:30">08:00 - 08:30</option>
+                            <option value="08:30 - 09:00">08:30 - 09:00</option>
+                            <option value="09:00 - 09:30">09:00 - 09:30</option>
+                            <option value="09:30 - 10:00">09:30 - 10:00</option>
+                            <option value="10:00 - 10:30">10:00 - 10:30</option>
+                            <option value="10:30 - 11:00">10:30 - 11:00</option>
+                            <option value="13:30 - 14:00">13:30 - 14:00</option>
+                            <option value="14:00 - 14:30">14:00 - 14:30</option>
+                            <option value="14:30 - 15:00">14:30 - 15:00</option>
+                            <option value="15:00 - 15:30">15:00 - 15:30</option>
+                            <option value="15:30 - 16:00">15:30 - 16:00</option>
+                            <option value="16:00 - 16:30">16:00 - 16:30</option>
+                        </select>
+                        <span asp-validation-for="NewTimeSlot" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Reason" class="form-label fw-bold"></label>
+                        <textarea asp-for="Reason" rows="2" class="form-control rounded-3" placeholder="Lý do thay đổi (bận việc đột xuất, trùng lịch làm...)"></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Details" asp-route-id="@Model.AppointmentId" class="btn btn-outline-secondary rounded-pill px-4">Quay lại</a>
+                        <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold text-dark">
+                            <i class="fa-solid fa-arrows-rotate me-1"></i>Xác Nhận Đổi Lịch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
