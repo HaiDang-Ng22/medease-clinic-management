@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Healthy_System.Controllers
 {
-    [Authorize(Roles = "Receptionist,Admin")]
+    [Authorize(Roles = "Receptionist")]
     public class ReceptionistController : Controller
     {
         private readonly AppDbContext _context;

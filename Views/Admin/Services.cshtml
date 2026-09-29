@@ -1,0 +1,73 @@
+@model List<Healthy_System.Models.Service>
+@{
+    ViewData["Title"] = "Quản Lý Dịch Vụ & Biểu Giá";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="fw-bold mb-0"><i class="fa-solid fa-list-check me-2" style="color:#7c3aed"></i>Quản Lý Dịch Vụ & Biểu Giá</h4>
+        <p class="text-muted mb-0">Thêm, sửa, xóa danh mục dịch vụ và cập nhật biểu giá niêm yết</p>
+    </div>
+    <a asp-action="CreateService" class="btn btn-sm fw-semibold px-4 rounded-pill text-white" style="background:#7c3aed">
+        <i class="fa-solid fa-plus me-1"></i>Thêm Dịch Vụ Mới
+    </a>
+</div>
+
+<div class="card border-0 rounded-3 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="px-4 py-3">ID</th>
+                        <th class="py-3">Tên Dịch Vụ</th>
+                        <th class="py-3">Danh Mục</th>
+                        <th class="py-3">Chuyên Khoa</th>
+                        <th class="py-3 text-end">Giá (VNĐ)</th>
+                        <th class="py-3">Thời Gian</th>
+                        <th class="py-3">Trạng Thái</th>
+                        <th class="py-3 text-center">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model)
+                    {
+                        <tr>
+                            <td class="px-4 text-muted">#@s.Id</td>
+                            <td>
+                                <div class="fw-semibold">@s.Name</div>
+                                @if (!string.IsNullOrEmpty(s.Description))
+                                {
+                                    <small class="text-muted">@(s.Description.Length > 60 ? s.Description[..60] + "..." : s.Description)</small>
+                                }
+                            </td>
+                            <td><span class="badge bg-light text-dark border">@s.Category</span></td>
+                            <td class="text-muted">@(s.Specialty?.Name ?? "—")</td>
+                            <td class="text-end fw-bold text-success">@s.Price.ToString("N0")</td>
+                            <td class="text-muted">@s.EstimatedDurationMinutes phút</td>
+                            <td>
+                                @if (s.IsActive)
+                                { <span class="badge bg-success rounded-pill">Hoạt động</span> }
+                                else
+                                { <span class="badge bg-secondary rounded-pill">Tạm ngưng</span> }
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="EditService" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <form asp-action="DeleteService" asp-route-id="@s.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('Xóa dịch vụ: @s.Name?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

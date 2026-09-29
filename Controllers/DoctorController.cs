@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Healthy_System.Controllers
 {
-    [Authorize(Roles = "Doctor,Admin")]
+    [Authorize(Roles = "Doctor")]
     public class DoctorController : Controller
     {
         private readonly AppDbContext _context;
@@ -159,28 +159,41 @@ namespace Healthy_System.Controllers
             return View(schedules);
         }
 
-        // US-36: Doctor Profile
+        // US26: Doctor Profile — đầy đủ fields
         public IActionResult Profile()
         {
             var doctor = GetCurrentDoctor();
             if (doctor == null) return NotFound();
 
+            ViewBag.Specialties = _context.Specialties.OrderBy(s => s.Name).ToList();
             return View(doctor);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Profile(int id, string bio, string roomNumber, decimal consultationFee)
+        public IActionResult Profile(int id, string fullName, string phone, string title,
+            int specialtyId, int experienceYears, string roomNumber, decimal consultationFee, string bio)
         {
             var doctor = _context.Doctors.Include(d => d.User).FirstOrDefault(d => d.Id == id);
             if (doctor == null) return NotFound();
 
-            doctor.Bio = bio.Trim();
-            doctor.RoomNumber = roomNumber.Trim();
+            // Cập nhật User
+            if (doctor.User != null)
+            {
+                doctor.User.FullName = fullName?.Trim() ?? doctor.User.FullName;
+                doctor.User.PhoneNumber = phone?.Trim() ?? doctor.User.PhoneNumber;
+            }
+
+            // Cập nhật Doctor
+            doctor.Title = title?.Trim() ?? doctor.Title;
+            doctor.SpecialtyId = specialtyId;
+            doctor.ExperienceYears = experienceYears;
+            doctor.RoomNumber = roomNumber?.Trim() ?? doctor.RoomNumber;
             doctor.ConsultationFee = consultationFee;
+            doctor.Bio = bio?.Trim() ?? string.Empty;
 
             _context.SaveChanges();
-            TempData["SuccessMessage"] = "Cập nhật thông tin hồ sơ bác sĩ thành công!";
+            TempData["SuccessMessage"] = "Cập nhật hồ sơ chuyên môn thành công!";
             return RedirectToAction(nameof(Profile));
         }
     }

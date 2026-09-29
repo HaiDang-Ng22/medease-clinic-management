@@ -1,54 +1,92 @@
-@model Doctor
+@model Healthy_System.Models.Doctor
 @{
-    Layout = "_DoctorLayout";
-    ViewData["Title"] = "Hồ Sơ Chuyên Môn Bác Sĩ";
+    ViewData["Title"] = "Hồ Sơ Chuyên Môn";
+    Layout = "~/Views/Shared/_DoctorLayout.cshtml";
 }
 
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <div class="card card-doctor p-4 p-md-5">
-            <h3 class="fw-bold mb-4 pb-3 border-bottom"><i class="fa-solid fa-hospital-user text-primary me-2"></i>Cập Nhật Hồ Sơ Chuyên Môn Bác Sĩ</h3>
-
-            <form asp-action="Profile" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" value="@Model.Id" />
-
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Họ và tên bác sĩ</label>
-                        <input type="text" class="form-control bg-light" value="@Model.User?.FullName" readonly />
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Email</label>
-                        <input type="text" class="form-control bg-light" value="@Model.User?.Email" readonly />
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Chuyên khoa</label>
-                        <input type="text" class="form-control bg-light" value="@Model.Specialty?.Name" readonly />
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Học vị / Chức danh</label>
-                        <input type="text" class="form-control bg-light" value="@Model.Title" readonly />
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Phòng khám phụ trách <span class="text-danger">*</span></label>
-                        <input type="text" name="roomNumber" class="form-control" value="@Model.RoomNumber" required />
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Phí khám cơ bản (VNĐ) <span class="text-danger">*</span></label>
-                        <input type="number" name="consultationFee" class="form-control" value="@Model.ConsultationFee" required />
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label fw-bold">Tiểu sử & Kinh nghiệm chuyên môn <span class="text-danger">*</span></label>
-                        <textarea name="bio" rows="4" class="form-control" required>@Model.Bio</textarea>
-                    </div>
-                    <div class="col-12 mt-4 text-end">
-                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold">
-                            <i class="fa-solid fa-floppy-disk me-2"></i>Lưu Thay Đổi
-                        </button>
-                    </div>
+        <div class="card border-0 rounded-4 shadow-sm">
+            <div class="card-header bg-white border-0 py-4 px-4 d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold fs-3"
+                     style="width:60px;height:60px;background:linear-gradient(135deg,#0369a1,#0284c7)">
+                    @(Model.User?.FullName?.FirstOrDefault().ToString().ToUpper() ?? "?")
                 </div>
-            </form>
+                <div>
+                    <h5 class="fw-bold mb-0">@Model.User?.FullName</h5>
+                    <span class="badge bg-primary rounded-pill">@Model.Title</span>
+                    <span class="badge bg-light text-dark border ms-1">@Model.Specialty?.Name</span>
+                </div>
+            </div>
+            <div class="card-body px-4 pb-4">
+                <form asp-action="Profile" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+
+                    <h6 class="fw-bold text-muted text-uppercase mb-3" style="font-size:0.75rem;letter-spacing:.08em">
+                        <i class="fa-solid fa-user me-2"></i>Thông Tin Tài Khoản
+                    </h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Họ tên <span class="text-danger">*</span></label>
+                            <input type="text" name="fullName" class="form-control rounded-3" required value="@Model.User?.FullName" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" name="email" class="form-control rounded-3 bg-light" readonly value="@Model.User?.Email" />
+                            <small class="text-muted">Liên hệ Admin để đổi email</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Số điện thoại</label>
+                            <input type="text" name="phone" class="form-control rounded-3" value="@Model.User?.PhoneNumber" maxlength="15" />
+                        </div>
+                    </div>
+
+                    <hr class="my-3" />
+                    <h6 class="fw-bold text-muted text-uppercase mb-3" style="font-size:0.75rem;letter-spacing:.08em">
+                        <i class="fa-solid fa-stethoscope me-2"></i>Thông Tin Chuyên Môn
+                    </h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Chức danh / Học hàm</label>
+                            <input type="text" name="title" class="form-control rounded-3" value="@Model.Title" maxlength="100" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Chuyên khoa</label>
+                            <select name="specialtyId" class="form-select rounded-3">
+                                @foreach (var sp in (List<Healthy_System.Models.Specialty>)ViewBag.Specialties)
+                                {
+                                    if (sp.Id == Model.SpecialtyId) { <option value="@sp.Id" selected>@sp.Name</option> }
+                                    else { <option value="@sp.Id">@sp.Name</option> }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Số năm kinh nghiệm</label>
+                            <input type="number" name="experienceYears" class="form-control rounded-3" min="0" max="60" value="@Model.ExperienceYears" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Phòng khám</label>
+                            <input type="text" name="roomNumber" class="form-control rounded-3" value="@Model.RoomNumber" maxlength="50" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Phí tư vấn (VNĐ)</label>
+                            <input type="number" name="consultationFee" class="form-control rounded-3" min="0" step="10000" value="@Model.ConsultationFee" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Giới thiệu bản thân</label>
+                            <textarea name="bio" class="form-control rounded-3" rows="4" placeholder="Kinh nghiệm, thành tích, lĩnh vực chuyên sâu...">@Model.Bio</textarea>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary fw-semibold px-4 rounded-pill">
+                            <i class="fa-solid fa-floppy-disk me-1"></i>Lưu Thay Đổi
+                        </button>
+                        <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-4">Hủy</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>

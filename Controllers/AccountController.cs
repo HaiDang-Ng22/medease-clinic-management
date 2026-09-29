@@ -148,6 +148,10 @@ namespace Healthy_System.Controllers
         [HttpGet]
         public IActionResult Profile()
         {
+            if (User.IsInRole("Doctor")) return RedirectToAction("Profile", "Doctor");
+            if (User.IsInRole("Admin")) return RedirectToAction("Dashboard", "Admin");
+            if (User.IsInRole("Receptionist")) return RedirectToAction("Dashboard", "Receptionist");
+
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId))
             {

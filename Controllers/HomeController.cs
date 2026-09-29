@@ -17,25 +17,29 @@ namespace Healthy_System.Controllers
             _context = context;
         }
 
+        public override void OnActionExecuting(Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext filterContext)
+        {
+            base.OnActionExecuting(filterContext);
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                if (User.IsInRole("Admin"))
+                {
+                    filterContext.Result = RedirectToAction("Dashboard", "Admin");
+                }
+                else if (User.IsInRole("Doctor"))
+                {
+                    filterContext.Result = RedirectToAction("Dashboard", "Doctor");
+                }
+                else if (User.IsInRole("Receptionist"))
+                {
+                    filterContext.Result = RedirectToAction("Dashboard", "Receptionist");
+                }
+            }
+        }
+
         // US-01: View Homepage
         public IActionResult Index()
         {
-            // If logged in as Doctor, Receptionist or Admin -> redirect to dedicated portal
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                if (User.IsInRole("Doctor"))
-                {
-                    return RedirectToAction("Dashboard", "Doctor");
-                }
-                if (User.IsInRole("Receptionist"))
-                {
-                    return RedirectToAction("Dashboard", "Receptionist");
-                }
-                if (User.IsInRole("Admin"))
-                {
-                    return RedirectToAction("Dashboard", "Admin");
-                }
-            }
 
             ViewBag.Specialties = _context.Specialties.Where(s => s.IsActive).Take(6).ToList();
             ViewBag.Doctors = _context.Doctors
