@@ -129,10 +129,10 @@ dotnet run
 - Tối ưu hiệu năng & bảo mật
 
 ## 👨‍💻 Nhóm Phát Triển
-Nguyễn Hải Đăng Dev/Team Lead
-Nguyễn Phước Sang Dev
-Lâm Gia Bảo Dev/Product Owner
-Nguyễn Hữu Danh Dev/ScrumMaster
+- Nguyễn Hải Đăng Dev/Team Lead
+- Nguyễn Phước Sang Dev
+- Lâm Gia Bảo Dev/Product Owner
+- Nguyễn Hữu Danh Dev/ScrumMaster
 
 
 
