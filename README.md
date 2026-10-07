@@ -6,6 +6,7 @@
 ---
 
 Nguyễn Phước Sang- Thành Viên
+Nguyễn Hữu Danh - Thành Viên
 ## 📋 Giới Thiệu
 
 **MedEase (Healthy System)** là ứng dụng web quản lý phòng khám tư nhân, hỗ trợ đầy đủ quy trình từ đặt lịch hẹn, khám bệnh, đến quản lý hệ thống với 4 vai trò người dùng rõ ràng.
