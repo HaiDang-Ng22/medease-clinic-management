@@ -1,0 +1,149 @@
+@model List<Equipment>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản Lý Danh Mục Trang Thiết Bị Y Tế";
+    var specialties = ViewBag.Specialties as List<Specialty> ?? new List<Specialty>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-microscope text-primary me-2"></i>Quản Lý Danh Mục Trang Thiết Bị Y Tế (US38)</h2>
+        <p class="text-muted mb-0">Theo dõi, cập nhật thông tin và kiểm soát tình trạng vận hành trang thiết bị tại các chuyên khoa.</p>
+    </div>
+    <a asp-action="CreateEquipment" class="btn btn-primary rounded-pill px-4 shadow-sm">
+        <i class="fa-solid fa-plus me-1"></i>Thêm Thiết Bị Mới
+    </a>
+</div>
+
+<!-- Bộ lọc tìm kiếm & chuyên khoa -->
+<div class="card p-3 mb-4 shadow-sm border-0">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" name="searchKeyword" value="@ViewBag.SearchKeyword" class="form-control border-start-0" 
+                       placeholder="Tìm theo tên thiết bị, xuất xứ..." />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="specialtyId" class="form-select">
+                <option value="">-- Tất cả chuyên khoa --</option>
+                @foreach (var spec in specialties)
+                {
+                    <option value="@spec.Id" selected="@(ViewBag.SelectedSpecialty == spec.Id ? "selected" : null)">@spec.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select">
+                <option value="">-- Tình trạng --</option>
+                <option value="Đang vận hành tốt" selected="@(ViewBag.SelectedStatus == "Đang vận hành tốt" ? "selected" : null)">Đang vận hành tốt</option>
+                <option value="Đang bảo trì" selected="@(ViewBag.SelectedStatus == "Đang bảo trì" ? "selected" : null)">Đang bảo trì</option>
+                <option value="Cần kiểm định" selected="@(ViewBag.SelectedStatus == "Cần kiểm định" ? "selected" : null)">Cần kiểm định</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary rounded-pill flex-grow-1">Lọc</button>
+            <a asp-action="Equipments" class="btn btn-outline-secondary rounded-pill">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Bảng danh sách thiết bị -->
+<div class="card shadow-sm border-0 p-4">
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="fa-solid fa-toolbox text-muted display-4 mb-3"></i>
+            <h5 class="text-secondary">Chưa có thiết bị nào phù hợp tiêu chí tìm kiếm.</h5>
+            <p class="text-muted small">Nhấn "Thêm Thiết Bị Mới" để bổ sung trang thiết bị y tế vào hệ thống.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 70px;">Hình ảnh</th>
+                        <th>Tên Trang Thiết Bị</th>
+                        <th>Chuyên Khoa</th>
+                        <th>Xuất Xứ</th>
+                        <th>Mô Tả / Công Năng</th>
+                        <th>Tình Trạng</th>
+                        <th class="text-end">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var eq in Model)
+                    {
+                        <tr>
+                            <td>
+                                <img src="@eq.ImageUrl" alt="@eq.Name" class="rounded-3 shadow-sm border" style="width: 60px; height: 50px; object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1516549655169-df83a0774514?w=600&auto=format&fit=crop&q=80'" />
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">@eq.Name</div>
+                                <small class="text-muted font-monospace">Mã: EQ-@eq.Id.ToString("D4")</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-primary border">@(eq.Specialty?.Name ?? "Dùng chung")</span>
+                            </td>
+                            <td>
+                                <span class="text-secondary small"><i class="fa-solid fa-earth-americas me-1"></i>@eq.Origin</span>
+                            </td>
+                            <td>
+                                <div class="text-muted small text-truncate" style="max-width: 250px;" title="@eq.Description">
+                                    @eq.Description
+                                </div>
+                            </td>
+                            <td>
+                                @if (eq.Status == "Đang vận hành tốt")
+                                {
+                                    <span class="badge bg-success-subtle text-success py-2 px-3 rounded-pill fw-semibold">
+                                        <i class="fa-solid fa-circle-check me-1"></i>Vận hành tốt
+                                    </span>
+                                }
+                                else if (eq.Status == "Đang bảo trì")
+                                {
+                                    <span class="badge bg-warning-subtle text-dark py-2 px-3 rounded-pill fw-semibold">
+                                        <i class="fa-solid fa-wrench me-1"></i>Đang bảo trì
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary py-2 px-3 rounded-pill fw-semibold">
+                                        @eq.Status
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <!-- Nút đổi nhanh trạng thái -->
+                                    <form asp-action="ToggleEquipmentStatus" asp-route-id="@eq.Id" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill px-2" title="Chuyển trạng thái Vận hành / Bảo trì">
+                                            <i class="fa-solid fa-arrows-rotate"></i>
+                                        </button>
+                                    </form>
+
+                                    <!-- Nút Sửa -->
+                                    <a asp-action="EditEquipment" asp-route-id="@eq.Id" class="btn btn-sm btn-outline-primary rounded-pill px-2" title="Chỉnh sửa">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+
+                                    <!-- Nút Xóa -->
+                                    <form asp-action="DeleteEquipment" asp-route-id="@eq.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa thiết bị này không?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2" title="Xóa">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,97 @@
+@model List<Appointment>
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Hồ Sơ Bệnh Án & Đơn Thuốc Đã Khám";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-folder-medical text-primary me-2"></i>Quản Lý Hồ Sơ Bệnh Án & Đơn Thuốc</h2>
+        <p class="text-muted mb-0">Danh sách các ca khám bệnh đã hoàn tất chẩn đoán và kê đơn thuốc.</p>
+    </div>
+    <a asp-action="Queue" class="btn btn-primary rounded-pill px-4">
+        <i class="fa-solid fa-list-ol me-1"></i>Hàng Đợi Khám Hôm Nay
+    </a>
+</div>
+
+<!-- Bộ lọc tìm kiếm -->
+<div class="card card-doctor p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-9">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" name="searchKeyword" value="@ViewBag.SearchKeyword" class="form-control border-start-0" 
+                       placeholder="Tìm kiếm theo Tên bệnh nhân, Mã lịch hẹn (APT-...), hoặc Chẩn đoán bệnh..." />
+            </div>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary rounded-pill flex-grow-1">Tìm Kiếm</button>
+            <a asp-action="MedicalRecords" class="btn btn-outline-secondary rounded-pill">Đặt lại</a>
+        </div>
+    </form>
+</div>
+
+<!-- Danh sách hồ sơ -->
+<div class="card card-doctor p-4">
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="fa-solid fa-folder-open text-muted fs-1 mb-3"></i>
+            <h5 class="text-secondary">Chưa có hồ sơ bệnh án nào hoàn tất phù hợp.</h5>
+            <p class="text-muted small">Các ca khám hoàn tất chẩn đoán lâm sàng và kê đơn thuốc sẽ tự động hiển thị tại đây.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã Ca Khám</th>
+                        <th>Bệnh Nhân</th>
+                        <th>Ngày Khám & Khung Giờ</th>
+                        <th>Chẩn Đoán Lâm Sàng</th>
+                        <th>Đơn Thuốc</th>
+                        <th class="text-end">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="badge bg-light text-primary border fw-bold font-monospace">@item.AppointmentCode</span>
+                            </td>
+                            <td>
+                                <div class="fw-bold">@item.Patient?.FullName</div>
+                                <small class="text-muted">@item.Patient?.PhoneNumber</small>
+                            </td>
+                            <td>
+                                <div><i class="fa-regular fa-calendar text-muted me-1"></i>@item.AppointmentDate.ToString("dd/MM/yyyy")</div>
+                                <small class="text-muted"><i class="fa-regular fa-clock text-muted me-1"></i>@item.TimeSlot</small>
+                            </td>
+                            <td>
+                                <div class="text-dark fw-semibold text-truncate" style="max-width: 250px;" title="@item.Diagnosis">
+                                    @(string.IsNullOrWhiteSpace(item.Diagnosis) ? "Chưa ghi nhận" : item.Diagnosis)
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-muted small text-truncate" style="max-width: 200px;" title="@item.Prescription">
+                                    @(string.IsNullOrWhiteSpace(item.Prescription) ? "Không kê thuốc" : item.Prescription)
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <a asp-action="MedicalRecord" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-1">
+                                    <i class="fa-solid fa-eye me-1"></i>Chi Tiết & In
+                                </a>
+                                <a asp-action="Examination" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-2" title="Cập nhật">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

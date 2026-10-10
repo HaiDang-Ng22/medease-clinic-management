@@ -1,34 +1,85 @@
 @model List<Notification>
 @{
     ViewData["Title"] = "Thông Báo & Nhắc Lịch";
+    int unreadCount = ViewBag.UnreadCount ?? Model.Count(n => !n.IsRead);
 }
 
 <div class="bg-primary text-white py-5">
     <div class="container">
-        <h1 class="fw-bold mb-1">Thông Báo & Nhắc Lịch Khám</h1>
-        <p class="lead text-white-50 mb-0">Hệ thống thông báo nhắc lịch tự động giúp bạn không bỏ lỡ buổi khám</p>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h1 class="fw-bold mb-1"><i class="fa-solid fa-bell me-2"></i>Thông Báo & Nhắc Lịch Khám (US10)</h1>
+                <p class="lead text-white-50 mb-0">Hệ thống tự động thông báo nhắc lịch hẹn, kết quả khám và cảnh báo khẩn cấp từ bác sĩ.</p>
+            </div>
+            @if (unreadCount > 0)
+            {
+                <form asp-action="MarkAllAsRead" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm">
+                        <i class="fa-solid fa-check-double me-1"></i>Đánh Dấu Đã Đọc Tất Cả (@unreadCount)
+                    </button>
+                </form>
+            }
+        </div>
     </div>
 </div>
 
 <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-9">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show rounded-4 mb-4" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
             @if (Model.Any())
             {
                 <div class="d-flex flex-column gap-3">
                     @foreach (var n in Model)
                     {
-                        <div class="card card-custom p-3 @(n.IsRead ? "bg-white" : "bg-light border-primary")">
+                        var borderClass = !n.IsRead ? (n.Type == "EmergencyAlert" ? "border-danger border-2 shadow-sm" : "border-primary border-2 shadow-sm") : "border-light";
+                        var bgClass = !n.IsRead ? (n.Type == "EmergencyAlert" ? "bg-danger-subtle" : "bg-primary-subtle") : "bg-white";
+
+                        <div class="card card-custom p-4 @bgClass @borderClass">
                             <div class="d-flex gap-3 align-items-start">
-                                <div class="p-2 rounded-circle @(n.Type == "Reminder" ? "bg-warning-subtle text-dark" : "bg-primary-subtle text-primary")">
-                                    <i class="fa-solid @(n.Type == "Reminder" ? "fa-bell" : "fa-info-circle") fs-5"></i>
+                                <div class="p-3 rounded-circle 
+                                    @(n.Type == "EmergencyAlert" ? "bg-danger text-white" : 
+                                      n.Type == "Reminder" ? "bg-warning text-dark" : 
+                                      "bg-primary text-white")">
+                                    <i class="fa-solid 
+                                        @(n.Type == "EmergencyAlert" ? "fa-triangle-exclamation" : 
+                                          n.Type == "Reminder" ? "fa-clock" : 
+                                          "fa-circle-info") fs-4"></i>
                                 </div>
                                 <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <h6 class="fw-bold mb-0 @(n.IsRead ? "text-dark" : "text-primary")">@n.Title</h6>
-                                        <small class="text-muted">@n.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
+                                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <h5 class="fw-bold mb-0 @(n.Type == "EmergencyAlert" ? "text-danger" : "text-dark")">@n.Title</h5>
+                                            @if (!n.IsRead)
+                                            {
+                                                <span class="badge bg-danger rounded-pill">Mới</span>
+                                            }
+                                        </div>
+                                        <small class="text-muted"><i class="fa-regular fa-clock me-1"></i>@n.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
                                     </div>
-                                    <p class="text-muted mb-0 small">@n.Message</p>
+                                    <p class="text-dark mb-2 mt-1">@n.Message</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge @(n.Type == "EmergencyAlert" ? "bg-danger" : n.Type == "Reminder" ? "bg-warning text-dark" : "bg-info text-dark")">
+                                            @(n.Type == "EmergencyAlert" ? "Cảnh báo khẩn cấp (Bác sĩ)" : n.Type == "Reminder" ? "Nhắc nhở lịch hẹn" : "Cập nhật hệ thống")
+                                        </span>
+                                        @if (!n.IsRead)
+                                        {
+                                            <form asp-action="MarkAsRead" asp-route-id="@n.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-link text-decoration-none text-muted p-0">
+                                                    <small><i class="fa-solid fa-check me-1"></i>Đánh dấu đã xem</small>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -37,9 +88,15 @@
             }
             else
             {
-                <div class="text-center py-5">
+                <div class="text-center py-5 card card-custom p-5 bg-white">
                     <i class="fa-regular fa-bell-slash text-muted display-4 mb-3"></i>
-                    <h5 class="text-muted">Bạn chưa có thông báo nào</h5>
+                    <h4 class="text-muted">Bạn chưa có thông báo nào</h4>
+                    <p class="text-muted small">Các thông báo nhắc lịch hẹn, kết quả khám và tin nhắn khẩn cấp từ bác sĩ sẽ được hiển thị tại đây.</p>
+                    <div>
+                        <a asp-action="MyAppointments" class="btn btn-outline-primary rounded-pill px-4">
+                            <i class="fa-solid fa-calendar-check me-1"></i>Xem Lịch Hẹn Của Tôi
+                        </a>
+                    </div>
                 </div>
             }
         </div>

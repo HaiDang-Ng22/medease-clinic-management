@@ -117,12 +117,16 @@ namespace Healthy_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CompleteExamination(int appointmentId, string diagnosis, string prescription, string? labRequest)
+        public IActionResult CompleteExamination(int appointmentId, string diagnosis, string prescription, string? labRequest, string? doctorNotes)
         {
             var appt = _context.Appointments.Include(a => a.Patient).FirstOrDefault(a => a.Id == appointmentId);
             if (appt == null) return NotFound();
 
             appt.Status = "Completed";
+            appt.Diagnosis = diagnosis?.Trim();
+            appt.Prescription = prescription?.Trim();
+            appt.LabRequest = labRequest?.Trim();
+            appt.DoctorNotes = doctorNotes?.Trim();
             appt.UpdatedAt = DateTime.UtcNow;
 
             // Log notification to patient
@@ -130,7 +134,7 @@ namespace Healthy_System.Controllers
             {
                 UserId = appt.PatientId,
                 Title = "Hoàn thành ca khám bệnh",
-                Message = $"Bác sĩ đã hoàn tất kết luận khám cho lịch hẹn {appt.AppointmentCode}. Chẩn đoán: {diagnosis}. Đơn thuốc điện tử đã được ghi nhận.",
+                Message = $"Bác sĩ đã hoàn tất kết luận khám cho lịch hẹn {appt.AppointmentCode}. Chẩn đoán: {diagnosis}. Bạn có thể vào mục Hồ sơ khám bệnh & Đơn thuốc để xem chi tiết.",
                 Type = "StatusUpdate",
                 IsRead = false,
                 CreatedAt = DateTime.UtcNow
@@ -139,7 +143,137 @@ namespace Healthy_System.Controllers
             _context.SaveChanges();
 
             TempData["SuccessMessage"] = $"Đã hoàn thành ca khám bệnh cho bệnh nhân {appt.Patient?.FullName}!";
+            return RedirectToAction(nameof(MedicalRecord), new { id = appt.Id });
+        }
+
+        // US27: Bác sĩ thay đổi hoặc hủy ca khám khẩn cấp
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CancelEmergency(int appointmentId, string emergencyReason)
+        {
+            var doctor = GetCurrentDoctor() ?? _context.Doctors.FirstOrDefault();
+            var appt = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .FirstOrDefault(a => a.Id == appointmentId);
+
+            if (appt == null) return NotFound();
+
+            if (string.IsNullOrWhiteSpace(emergencyReason))
+            {
+                TempData["ErrorMessage"] = "Vui lòng nhập lý do hủy ca khám khẩn cấp.";
+                return RedirectToAction(nameof(Queue));
+            }
+
+            appt.Status = "Cancelled";
+            appt.CancellationReason = $"[Bác sĩ hủy khẩn cấp] {emergencyReason.Trim()}";
+            appt.CancelledAt = DateTime.UtcNow;
+            appt.UpdatedAt = DateTime.UtcNow;
+
+            // Gửi thông báo khẩn cấp cho bệnh nhân
+            _context.Notifications.Add(new Notification
+            {
+                UserId = appt.PatientId,
+                Title = "⚠️ [KHẨN CẤP] Bác sĩ thông báo hủy ca khám",
+                Message = $"Ca khám mã {appt.AppointmentCode} vào ngày {appt.AppointmentDate:dd/MM/yyyy} ({appt.TimeSlot}) đã bị Bác sĩ hủy khẩn cấp. Lý do: {emergencyReason}. Phòng khám chân thành cáo lỗi và sẽ ưu tiên xếp lại lịch mới cho quý khách.",
+                Type = "EmergencyAlert",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã hủy khẩn cấp ca khám {appt.AppointmentCode} của bệnh nhân {appt.Patient?.FullName}. Hệ thống đã gửi thông báo đến bệnh nhân.";
             return RedirectToAction(nameof(Queue));
+        }
+
+        // US27: Bác sĩ dời ca khám khẩn cấp sang ngày/giờ khác
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RescheduleEmergency(int appointmentId, DateTime newDate, string newTimeSlot, string emergencyReason)
+        {
+            var doctor = GetCurrentDoctor() ?? _context.Doctors.FirstOrDefault();
+            var appt = _context.Appointments
+                .Include(a => a.Patient)
+                .FirstOrDefault(a => a.Id == appointmentId);
+
+            if (appt == null) return NotFound();
+
+            if (newDate.Date < DateTime.Today)
+            {
+                TempData["ErrorMessage"] = "Ngày dời lịch mới không thể ở trong quá khứ.";
+                return RedirectToAction(nameof(Queue));
+            }
+
+            var oldDateStr = appt.AppointmentDate.ToString("dd/MM/yyyy");
+            var oldTimeSlot = appt.TimeSlot;
+
+            appt.AppointmentDate = DateTime.SpecifyKind(newDate.Date, DateTimeKind.Utc);
+            appt.TimeSlot = newTimeSlot;
+            appt.UpdatedAt = DateTime.UtcNow;
+
+            // Thông báo khẩn cấp cho bệnh nhân
+            _context.Notifications.Add(new Notification
+            {
+                UserId = appt.PatientId,
+                Title = "⚠️ [KHẨN CẤP] Bác sĩ điều chỉnh lịch hẹn",
+                Message = $"Lịch khám mã {appt.AppointmentCode} đã được Bác sĩ dời từ {oldDateStr} ({oldTimeSlot}) sang ngày {newDate:dd/MM/yyyy} ({newTimeSlot}). Lý do khẩn cấp: {emergencyReason}.",
+                Type = "EmergencyAlert",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã cập nhật dời ca khám {appt.AppointmentCode} sang {newDate:dd/MM/yyyy} ({newTimeSlot}). Hệ thống đã gửi thông báo khẩn đến bệnh nhân.";
+            return RedirectToAction(nameof(Queue));
+        }
+
+        // US06: Xem danh sách hồ sơ khám bệnh, đơn thuốc đã khám
+        public IActionResult MedicalRecords(string? searchKeyword)
+        {
+            var doctor = GetCurrentDoctor() ?? _context.Doctors.FirstOrDefault();
+            if (doctor == null) return NotFound();
+
+            var query = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Specialty)
+                .Where(a => a.DoctorId == doctor.Id && a.Status == "Completed");
+
+            if (!string.IsNullOrWhiteSpace(searchKeyword))
+            {
+                searchKeyword = searchKeyword.Trim().ToLower();
+                query = query.Where(a => 
+                    (a.Patient != null && a.Patient.FullName.ToLower().Contains(searchKeyword)) ||
+                    a.AppointmentCode.ToLower().Contains(searchKeyword) ||
+                    (a.Diagnosis != null && a.Diagnosis.ToLower().Contains(searchKeyword)));
+            }
+
+            var list = query
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenByDescending(a => a.UpdatedAt)
+                .ToList();
+
+            ViewBag.Doctor = doctor;
+            ViewBag.SearchKeyword = searchKeyword;
+            return View(list);
+        }
+
+        // US06: Xem chi tiết hồ sơ khám bệnh & đơn thuốc
+        public IActionResult MedicalRecord(int id)
+        {
+            var doctor = GetCurrentDoctor() ?? _context.Doctors.FirstOrDefault();
+            var appt = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .Include(a => a.Doctor).ThenInclude(d => d!.Specialty)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (appt == null) return NotFound();
+
+            ViewBag.Doctor = doctor;
+            return View(appt);
         }
 
         // US-35: Doctor Work Schedule

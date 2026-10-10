@@ -1,0 +1,104 @@
+[
+  {
+    "id": 1,
+    "testCaseId": "TC_APPT_001",
+    "type": "Valid",
+    "description": "Đặt lịch hẹn hợp lệ với đầy đủ thông tin chuẩn vào ngày trong tương lai",
+    "data": {
+      "AppointmentCode": "APT-20261010-001",
+      "PatientId": 3,
+      "DoctorId": 1,
+      "SpecialtyId": 1,
+      "AppointmentDate": "2026-10-15T00:00:00Z",
+      "TimeSlot": "08:30 - 09:30",
+      "ReasonForVisit": "Tái khám định kỳ tăng huyết áp và theo dõi chỉ số tim mạch",
+      "Status": "Pending"
+    },
+    "expectedResult": "Tạo lịch hẹn thành công (Status: Pending, mã hẹn APT-20261010-001 được sinh ra, chuyển hướng đến trang danh sách lịch hẹn)"
+  },
+  {
+    "id": 2,
+    "testCaseId": "TC_APPT_002",
+    "type": "Valid",
+    "description": "Đặt lịch hẹn hợp lệ vào khung giờ chiều cuối tuần",
+    "data": {
+      "AppointmentCode": "APT-20261010-002",
+      "PatientId": 4,
+      "DoctorId": 2,
+      "SpecialtyId": 2,
+      "AppointmentDate": "2026-10-17T00:00:00Z",
+      "TimeSlot": "14:00 - 15:00",
+      "ReasonForVisit": "Đau nửa đầu kèm chóng mặt kéo dài 3 ngày gần đây",
+      "Status": "Pending"
+    },
+    "expectedResult": "Tạo lịch hẹn thành công, hiển thị trong hàng chờ của bác sĩ và thông báo cho lễ tân"
+  },
+  {
+    "id": 3,
+    "testCaseId": "TC_APPT_003",
+    "type": "Valid",
+    "description": "Đặt lịch hẹn hợp lệ với độ dài triệu chứng ở mức trung bình (50 ký tự)",
+    "data": {
+      "AppointmentCode": "APT-20261010-003",
+      "PatientId": 5,
+      "DoctorId": 3,
+      "SpecialtyId": 3,
+      "AppointmentDate": "2026-10-20T00:00:00Z",
+      "TimeSlot": "09:30 - 10:30",
+      "ReasonForVisit": "Khám sức khỏe tổng quát định kỳ và xét nghiệm máu",
+      "Status": "Pending"
+    },
+    "expectedResult": "Tạo lịch hẹn thành công, hệ thống lưu trữ thông tin chính xác"
+  },
+  {
+    "id": 4,
+    "testCaseId": "TC_APPT_004",
+    "type": "Invalid/Boundary",
+    "description": "Không nhập lý do khám bệnh (bỏ trống trường bắt buộc ReasonForVisit)",
+    "data": {
+      "AppointmentCode": "",
+      "PatientId": 3,
+      "DoctorId": 1,
+      "SpecialtyId": 1,
+      "AppointmentDate": "2026-10-15T00:00:00Z",
+      "TimeSlot": "08:30 - 09:30",
+      "ReasonForVisit": "",
+      "Status": "Pending"
+    },
+    "expectedResult": "Hệ thống báo lỗi validation ModelState: 'Vui lòng nhập lý do khám hoặc triệu chứng', không cho phép gửi form"
+  },
+  {
+    "id": 5,
+    "testCaseId": "TC_APPT_005",
+    "type": "Invalid/Boundary",
+    "description": "Chọn ngày hẹn trong quá khứ (vi phạm ràng buộc logic ngày hẹn)",
+    "data": {
+      "AppointmentCode": "",
+      "PatientId": 3,
+      "DoctorId": 1,
+      "SpecialtyId": 1,
+      "AppointmentDate": "2026-01-01T00:00:00Z",
+      "TimeSlot": "08:30 - 09:30",
+      "ReasonForVisit": "Khám đau răng",
+      "Status": "Pending"
+    },
+    "expectedResult": "Hệ thống từ chối tạo lịch, hiển thị cảnh báo: 'Ngày khám không thể ở trong quá khứ'"
+  },
+  {
+    "id": 6,
+    "testCaseId": "TC_APPT_006",
+    "type": "Invalid/Boundary",
+    "description": "Dữ liệu biên: Lý do khám bệnh vượt quá độ dài tối đa cho phép (> 500 ký tự)",
+    "data": {
+      "AppointmentCode": "",
+      "PatientId": 3,
+      "DoctorId": 1,
+      "SpecialtyId": 1,
+      "AppointmentDate": "2026-10-16T00:00:00Z",
+      "TimeSlot": "10:00 - 11:00",
+      "ReasonForVisit": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Thêm chuỗi ký tự cố tình làm vượt 500 ký tự để kiểm tra giới hạn biên của trường dữ liệu database StringLength(500)...",
+      "Status": "Pending"
+    },
+    "expectedResult": "Hệ thống báo lỗi vượt độ dài cho phép (StringLength constraint vi phạm), từ chối lưu vào Database"
+  }
+]

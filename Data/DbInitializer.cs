@@ -40,6 +40,27 @@ namespace Healthy_System.Data
         public static void EnsureDatabaseSchemaCreated(AppDbContext context)
         {
             context.Database.EnsureCreated();
+
+            // Thêm các cột mới vào bảng Appointments nếu chưa có (SQLite không hỗ trợ IF NOT EXISTS nên dùng try-catch)
+            var newColumns = new[]
+            {
+                ("Diagnosis",    "TEXT"),
+                ("Prescription", "TEXT"),
+                ("DoctorNotes",  "TEXT"),
+                ("LabRequest",   "TEXT"),
+            };
+
+            foreach (var (colName, colType) in newColumns)
+            {
+                try
+                {
+                    context.Database.ExecuteSqlRaw($"ALTER TABLE \"Appointments\" ADD COLUMN \"{colName}\" {colType}");
+                }
+                catch
+                {
+                    // Cột đã tồn tại → bỏ qua lỗi
+                }
+            }
         }
 
         public static void SeedData(AppDbContext context)

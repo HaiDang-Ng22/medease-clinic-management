@@ -5,7 +5,8 @@
 
 ---
 
-
+Nguyễn Phước Sang- Thành Viên
+Nguyễn Hữu Danh - Thành Viên
 ## 📋 Giới Thiệu
 
 **MedEase (Healthy System)** là ứng dụng web quản lý phòng khám tư nhân, hỗ trợ đầy đủ quy trình từ đặt lịch hẹn, khám bệnh, đến quản lý hệ thống với 4 vai trò người dùng rõ ràng.
@@ -128,13 +129,14 @@ dotnet run
 - Xuất báo cáo PDF
 - Tối ưu hiệu năng & bảo mật
 
-## 👨‍💻 Nhóm Phát Triển
-- Nguyễn Hải Đăng Dev/Team Lead
-- Nguyễn Phước Sang Dev
-- Lâm Gia Bảo Dev/Product Owner
-- Nguyễn Hữu Danh Dev/ScrumMaster
+## 👨‍💻 Nhóm Phát Triển (Team Development Structure)
 
-
+| STT | Họ và Tên | GitHub Account | Vai trò (Role) | Ngày tham gia |
+|---|---|---|---|---|
+| 1 | **Nguyễn Hải Đăng** | [@HaiDang-Ng22](https://github.com/HaiDang-Ng22) | Dev / Team Lead | 16/09/2026 |
+| 2 | **Lâm Gia Bảo** | [@vodanh1a2b-rgb](https://github.com/vodanh1a2b-rgb) | Dev / Product Owner | 16/09/2026 |
+| 3 | **Nguyễn Hữu Danh** | [@nhdanh0412](https://github.com/nhdanh0412) | Dev / ScrumMaster | 16/09/2026 |
+| 4 | **Nguyễn Phước Sang** | [@PSang275](https://github.com/PSang275) | Dev / QA & Tester | 23/09/2026 |
 
 ---
 

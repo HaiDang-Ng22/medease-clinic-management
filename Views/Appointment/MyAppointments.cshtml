@@ -120,6 +120,13 @@
                                 <i class="fa-solid fa-ticket me-1"></i>Phiếu hẹn
                             </a>
 
+                            @if (appt.Status == "Completed")
+                            {
+                                <a asp-action="Prescription" asp-route-id="@appt.Id" class="btn btn-success rounded-pill btn-sm px-3 fw-bold">
+                                    <i class="fa-solid fa-file-prescription me-1"></i>Đơn thuốc & Kết quả (US06)
+                                </a>
+                            }
+
                             @if (appt.Status != "Cancelled" && appt.Status != "Completed")
                             {
                                 <div class="d-flex gap-2">

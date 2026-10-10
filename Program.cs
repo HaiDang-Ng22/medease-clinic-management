@@ -11,23 +11,31 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 // Connection Strings
-var postgresConnectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Host=aws-0-ap-northeast-2.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.recelqensesdpwzdvslp;Password=[YOUR-PASSWORD];Pooling=true;SSL Mode=Require;Trust Server Certificate=true";
+var postgresConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "";
 
-var sqliteConnectionString = builder.Configuration.GetConnectionString("SqliteConnection") 
+var sqliteConnectionString = builder.Configuration.GetConnectionString("SqliteConnection")
     ?? "Data Source=HealthySystem.db";
 
-// Database Configuration:
-// If [YOUR-PASSWORD] is still placeholder, gracefully fallback to SQLite for immediate testing
+// Quyết định dùng SQLite nếu:
+// 1. DefaultConnection chứa [YOUR-PASSWORD] (chưa cấu hình)
+// 2. DefaultConnection chứa "Data Source=" (đã override bởi appsettings.Development.json sang SQLite)
+// 3. DefaultConnection rỗng
+bool useSqlite = string.IsNullOrWhiteSpace(postgresConnectionString)
+    || postgresConnectionString.Contains("[D@ng0799192226]")
+    || postgresConnectionString.Contains("Data Source=HealthySystem.db");
+
+string activeConnectionString = useSqlite ? sqliteConnectionString : postgresConnectionString;
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    if (postgresConnectionString.Contains("[YOUR-PASSWORD]") || postgresConnectionString.Contains("YOUR-PASSWORD"))
+    if (useSqlite)
     {
-        options.UseSqlite(sqliteConnectionString);
+        options.UseSqlite(activeConnectionString);
     }
     else
     {
-        options.UseNpgsql(postgresConnectionString);
+        options.UseNpgsql(activeConnectionString);
     }
 });
 
@@ -49,19 +57,24 @@ var app = builder.Build();
 // Database auto migration & seed
 try
 {
-    DbInitializer.Initialize(app.Services);
+    if (useSqlite)
+    {
+        // Đối với SQLite: dùng EnsureCreated để tạo schema mới nhất nếu chưa có
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        DbInitializer.EnsureDatabaseSchemaCreated(context);
+        DbInitializer.SeedData(context);
+    }
+    else
+    {
+        // Đối với Postgres: chạy migration
+        DbInitializer.Initialize(app.Services);
+    }
 }
 catch (Exception ex)
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogWarning($"Khởi tạo DB ban đầu gặp thông báo ({ex.Message}). Đang sử dụng cơ sở dữ liệu dự phòng SQLite...");
-
-    using var scope = app.Services.CreateScope();
-    var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-    optionsBuilder.UseSqlite(sqliteConnectionString);
-    using var sqliteContext = new AppDbContext(optionsBuilder.Options);
-    DbInitializer.EnsureDatabaseSchemaCreated(sqliteContext);
-    DbInitializer.SeedData(sqliteContext);
+    logger.LogError(ex, "[DB] Lỗi khi khởi tạo database: {Message}", ex.Message);
 }
 
 // Configure the HTTP request pipeline.

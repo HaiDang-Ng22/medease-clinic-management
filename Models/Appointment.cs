@@ -51,6 +51,19 @@ namespace Healthy_System.Models
 
         public DateTime? CancelledAt { get; set; }
 
+        // US06 & US27: Clinical Examination & e-Prescription results
+        [StringLength(500)]
+        public string? Diagnosis { get; set; }
+
+        [StringLength(2000)]
+        public string? Prescription { get; set; }
+
+        [StringLength(1000)]
+        public string? DoctorNotes { get; set; }
+
+        [StringLength(1000)]
+        public string? LabRequest { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }

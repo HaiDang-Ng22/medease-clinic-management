@@ -205,7 +205,8 @@ namespace Healthy_System.Controllers
                 query = query.Where(a => a.Status == status);
             }
 
-            ViewBag.SelectedStatus = status;
+            // US10: Auto-check and generate upcoming appointment reminders
+            CheckAndGenerateReminders(patientId);
 
             var appointments = query
                 .OrderByDescending(a => a.AppointmentDate)
@@ -213,6 +214,28 @@ namespace Healthy_System.Controllers
                 .ToList();
 
             return View(appointments);
+        }
+
+        // US06: Patient views e-Prescription & Examination summary
+        [HttpGet]
+        public IActionResult Prescription(int id)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int patientId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var appointment = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .Include(a => a.Doctor).ThenInclude(d => d!.Specialty)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == id && a.PatientId == patientId);
+
+            if (appointment == null) return NotFound();
+
+            return View(appointment);
         }
 
         // Appointment Details Voucher
@@ -461,7 +484,7 @@ namespace Healthy_System.Controllers
             return RedirectToAction(nameof(MyAppointments));
         }
 
-        // Notifications
+        // US10: Notifications & Reminders
         [HttpGet]
         public IActionResult Notifications()
         {
@@ -471,19 +494,111 @@ namespace Healthy_System.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // Auto-check upcoming appointments to create reminder notifications if not yet created
+            CheckAndGenerateReminders(userId);
+
             var list = _context.Notifications
                 .Where(n => n.UserId == userId)
                 .OrderByDescending(n => n.CreatedAt)
                 .ToList();
 
-            // Mark all as read
-            foreach (var item in list.Where(n => !n.IsRead))
+            ViewBag.UnreadCount = list.Count(n => !n.IsRead);
+
+            return View(list);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MarkAllAsRead()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var unreadList = _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ToList();
+
+            foreach (var item in unreadList)
             {
                 item.IsRead = true;
             }
             _context.SaveChanges();
 
-            return View(list);
+            TempData["SuccessMessage"] = "Đã đánh dấu đọc tất cả thông báo!";
+            return RedirectToAction(nameof(Notifications));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MarkAsRead(int id)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var notif = _context.Notifications.FirstOrDefault(n => n.Id == id && n.UserId == userId);
+            if (notif != null)
+            {
+                notif.IsRead = true;
+                _context.SaveChanges();
+            }
+
+            return RedirectToAction(nameof(Notifications));
+        }
+
+        // US10 Helper: Auto-generate reminder notifications for upcoming appointments within 48h
+        private void CheckAndGenerateReminders(int patientId)
+        {
+            var today = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
+            var nextTwoDays = today.AddDays(2);
+
+            var upcomingAppointments = _context.Appointments
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .Include(a => a.Specialty)
+                .Where(a => a.PatientId == patientId && 
+                            a.AppointmentDate >= today && 
+                            a.AppointmentDate <= nextTwoDays && 
+                            a.Status != "Cancelled" && 
+                            a.Status != "Completed")
+                .ToList();
+
+            bool hasNewNotification = false;
+            foreach (var appt in upcomingAppointments)
+            {
+                // Check if already notified for this appointment
+                bool alreadyNotified = _context.Notifications.Any(n => 
+                    n.UserId == patientId && 
+                    n.Type == "Reminder" && 
+                    n.Message.Contains(appt.AppointmentCode));
+
+                if (!alreadyNotified)
+                {
+                    var docName = appt.Doctor?.User?.FullName ?? "Bác sĩ phụ trách";
+                    var isToday = appt.AppointmentDate.Date == today;
+                    var timeStr = isToday ? "HÔM NAY" : $"ngày mai ({appt.AppointmentDate:dd/MM/yyyy})";
+
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = patientId,
+                        Title = $"🔔 [NHẮC LỊCH HẸN] Khám bệnh {timeStr}",
+                        Message = $"Bạn có lịch hẹn {appt.AppointmentCode} vào lúc {appt.TimeSlot} {timeStr} với BS. {docName} ({appt.Specialty?.Name}). Quý khách vui lòng đến trước 15 phút tại phòng khám MedEase để làm thủ tục.",
+                        Type = "Reminder",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    hasNewNotification = true;
+                }
+            }
+
+            if (hasNewNotification)
+            {
+                _context.SaveChanges();
+            }
         }
 
         // AJAX API: Get Doctors by Specialty

@@ -1,0 +1,138 @@
+@model Appointment
+@{
+    ViewData["Title"] = "Đơn Thuốc & Kết Quả Khám - " + Model.AppointmentCode;
+}
+
+<style>
+    @@media print {
+        body { background: white !important; font-size: 13pt; }
+        nav, footer, .no-print, .btn-print-hide { display: none !important; }
+        .card-custom { border: none !important; box-shadow: none !important; padding: 0 !important; }
+    }
+    .prescription-box {
+        background-color: #f8fafc;
+        border-left: 4px solid #0284c7;
+        font-family: 'Courier New', Courier, monospace;
+        white-space: pre-wrap;
+    }
+</style>
+
+<div class="bg-primary text-white py-4 no-print">
+    <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <h2 class="fw-bold mb-1"><i class="fa-solid fa-file-prescription me-2"></i>Đơn Thuốc & Kết Quả Khám (US06)</h2>
+                <p class="text-white-50 mb-0">Mã ca khám: <strong>@Model.AppointmentCode</strong> | Ngày khám: @Model.AppointmentDate.ToString("dd/MM/yyyy")</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button onclick="window.print()" class="btn btn-warning rounded-pill px-4 fw-bold">
+                    <i class="fa-solid fa-print me-2"></i>In Đơn Thuốc
+                </button>
+                <a asp-action="MyAppointments" class="btn btn-outline-light rounded-pill px-4">
+                    <i class="fa-solid fa-arrow-left me-1"></i>Lịch Hẹn Của Tôi
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card card-custom p-4 p-md-5 bg-white shadow-sm border">
+                <!-- Header phòng khám -->
+                <div class="row align-items-center pb-4 mb-4 border-bottom">
+                    <div class="col-sm-7">
+                        <h4 class="fw-bold text-primary mb-1"><i class="fa-solid fa-hospital-user me-2"></i>PHÒNG KHÁM MEDEASE</h4>
+                        <div class="text-muted small">Hệ thống Y tế & Chăm sóc Sức khỏe Toàn diện</div>
+                        <div class="text-muted small">Địa chỉ: 123 Nguyễn Văn Cừ, Quận 5, TP.HCM | Hotline: 1900-6868</div>
+                    </div>
+                    <div class="col-sm-5 text-sm-end mt-3 mt-sm-0">
+                        <h5 class="fw-bold text-dark mb-1">ĐƠN THUỐC ĐIỆN TỬ</h5>
+                        <div class="text-muted small">Mã: <strong>@Model.AppointmentCode</strong></div>
+                        <div class="text-muted small">Khám lúc: @Model.TimeSlot (@Model.AppointmentDate.ToString("dd/MM/yyyy"))</div>
+                    </div>
+                </div>
+
+                <!-- Thông tin bệnh nhân -->
+                <div class="mb-4">
+                    <h6 class="fw-bold text-secondary text-uppercase tracking-wide mb-3"><i class="fa-solid fa-user me-2"></i>1. Thông Tin Bệnh Nhân</h6>
+                    <div class="row g-3 p-3 bg-light rounded-3">
+                        <div class="col-md-6">
+                            <strong>Họ và tên:</strong> <span class="fs-6 text-dark fw-bold">@Model.Patient?.FullName</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Giới tính:</strong> @Model.Patient?.Gender
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Ngày sinh:</strong> @(Model.Patient?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "N/A")
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Số điện thoại:</strong> @(Model.Patient?.PhoneNumber ?? "Chưa cung cấp")
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Địa chỉ:</strong> @(Model.Patient?.Address ?? "TP. Hồ Chí Minh")
+                        </div>
+                        <div class="col-12">
+                            <strong>Triệu chứng ban đầu:</strong> <span class="text-danger fw-semibold">@Model.ReasonForVisit</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chẩn đoán -->
+                <div class="mb-4">
+                    <h6 class="fw-bold text-secondary text-uppercase tracking-wide mb-3"><i class="fa-solid fa-stethoscope me-2"></i>2. Chẩn Đoán Của Bác Sĩ</h6>
+                    <div class="p-3 bg-light rounded-3 border">
+                        <p class="fs-6 fw-bold text-primary mb-1">@(string.IsNullOrWhiteSpace(Model.Diagnosis) ? "Chưa có chẩn đoán chi tiết" : Model.Diagnosis)</p>
+                        @if (!string.IsNullOrWhiteSpace(Model.LabRequest))
+                        {
+                            <div class="mt-2 pt-2 border-top small text-muted">
+                                <strong>Yêu cầu xét nghiệm / Chụp chiếu:</strong> @Model.LabRequest
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Đơn thuốc -->
+                <div class="mb-4">
+                    <h6 class="fw-bold text-secondary text-uppercase tracking-wide mb-3"><i class="fa-solid fa-pills me-2"></i>3. Danh Mục Thuốc Điều Trị</h6>
+                    @if (!string.IsNullOrWhiteSpace(Model.Prescription))
+                    {
+                        <div class="prescription-box p-4 rounded-3 border">
+@Model.Prescription
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-secondary mb-0">Ca khám không có kê đơn thuốc hoặc sử dụng thuốc điều trị ngoại trú.</div>
+                    }
+                </div>
+
+                <!-- Lời dặn -->
+                @if (!string.IsNullOrWhiteSpace(Model.DoctorNotes))
+                {
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-secondary text-uppercase tracking-wide mb-2"><i class="fa-solid fa-clipboard-list me-2"></i>4. Lời Dặn Của Bác Sĩ</h6>
+                        <div class="p-3 bg-light rounded-3 text-dark">
+                            @Model.DoctorNotes
+                        </div>
+                    </div>
+                }
+
+                <!-- Chữ ký -->
+                <div class="row pt-5 mt-4">
+                    <div class="col-6 text-center">
+                        <small class="text-muted">Bệnh nhân</small><br>
+                        <small class="text-muted fst-italic">(Ký và xác nhận)</small>
+                    </div>
+                    <div class="col-6 text-center">
+                        <div class="text-muted small">Ngày @DateTime.Now.Day tháng @DateTime.Now.Month năm @DateTime.Now.Year</div>
+                        <strong>Bác sĩ kê đơn</strong><br>
+                        <div class="mt-4 pt-4 fw-bold text-primary">@Model.Doctor?.Title @Model.Doctor?.User?.FullName</div>
+                        <small class="text-muted">Chuyên khoa: @Model.Specialty?.Name</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

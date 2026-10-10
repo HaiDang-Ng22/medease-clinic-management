@@ -69,9 +69,108 @@
                                 }
                             </td>
                             <td class="text-center pe-3">
-                                <a asp-action="Examination" asp-route-id="@appt.Id" class="btn btn-primary rounded-pill btn-sm px-4 fw-bold">
-                                    <i class="fa-solid fa-stethoscope me-1"></i>@(appt.Status == "Completed" ? "Xem bệnh án" : "Vào Khám")
-                                </a>
+                                <div class="btn-group">
+                                    <a asp-action="Examination" asp-route-id="@appt.Id" class="btn btn-primary rounded-pill btn-sm px-3 fw-bold me-1">
+                                        <i class="fa-solid fa-stethoscope me-1"></i>@(appt.Status == "Completed" ? "Bệnh án" : "Vào Khám")
+                                    </a>
+                                    @if (appt.Status != "Completed" && appt.Status != "Cancelled")
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Xử lý khẩn cấp">
+                                            <i class="fa-solid fa-triangle-exclamation"></i> Khẩn
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                                            <li><h6 class="dropdown-header text-danger"><i class="fa-solid fa-bolt me-1"></i>Thao Tác Khẩn Cấp (US27)</h6></li>
+                                            <li>
+                                                <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#cancelModal_@appt.Id">
+                                                    <i class="fa-solid fa-ban me-2"></i>Hủy ca khám khẩn cấp
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button type="button" class="dropdown-item text-warning-emphasis" data-bs-toggle="modal" data-bs-target="#rescheduleModal_@appt.Id">
+                                                    <i class="fa-solid fa-calendar-xmark me-2"></i>Dời lịch khám khẩn cấp
+                                                </button>
+                                            </li>
+                                        </ul>
+
+                                        <!-- Modal Hủy Khẩn Cấp -->
+                                        <div class="modal fade text-start" id="cancelModal_@appt.Id" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form asp-action="CancelEmergency" method="post">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="appointmentId" value="@appt.Id" />
+                                                        <div class="modal-header bg-danger text-white">
+                                                            <h5 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>Hủy Ca Khám Khẩn Cấp</h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="alert alert-warning small mb-3">
+                                                                Hệ thống sẽ chuyển ca khám sang trạng thái <strong>Cancelled</strong> và tự động gửi <strong>Thông báo khẩn cấp</strong> đến tài khoản của bệnh nhân <strong>@appt.Patient?.FullName</strong>.
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Mã lịch hẹn:</label>
+                                                                <input type="text" class="form-control" value="@appt.AppointmentCode" readonly />
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Lý do bác sĩ hủy khẩn cấp <span class="text-danger">*</span>:</label>
+                                                                <textarea name="emergencyReason" class="form-control" rows="3" required placeholder="Ví dụ: Bác sĩ có ca phẫu thuật cấp cứu đột xuất; Bác sĩ sốt cao đột ngột..."></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                                                            <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Xác Nhận Hủy Khẩn Cấp</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Modal Dời Lịch Khẩn Cấp -->
+                                        <div class="modal fade text-start" id="rescheduleModal_@appt.Id" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <form asp-action="RescheduleEmergency" method="post">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="appointmentId" value="@appt.Id" />
+                                                        <div class="modal-header bg-warning text-dark">
+                                                            <h5 class="modal-title fw-bold"><i class="fa-solid fa-calendar-days me-2"></i>Dời Lịch Khám Khẩn Cấp</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Bệnh nhân:</label>
+                                                                <div>@appt.Patient?.FullName (@appt.AppointmentCode)</div>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Chọn Ngày Mới <span class="text-danger">*</span>:</label>
+                                                                <input type="date" name="newDate" class="form-control" required min="@DateTime.Today.ToString("yyyy-MM-dd")" value="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Chọn Khung Giờ Mới <span class="text-danger">*</span>:</label>
+                                                                <select name="newTimeSlot" class="form-select" required>
+                                                                    <option value="08:00 - 09:00">08:00 - 09:00</option>
+                                                                    <option value="09:00 - 10:00">09:00 - 10:00</option>
+                                                                    <option value="10:00 - 11:00">10:00 - 11:00</option>
+                                                                    <option value="13:30 - 14:30">13:30 - 14:30</option>
+                                                                    <option value="14:30 - 15:30">14:30 - 15:30</option>
+                                                                    <option value="15:30 - 16:30">15:30 - 16:30</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label class="form-label fw-bold">Lý do dời lịch khẩn cấp <span class="text-danger">*</span>:</label>
+                                                                <textarea name="emergencyReason" class="form-control" rows="2" required placeholder="Lý do điều chỉnh lịch khám..."></textarea>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                                                            <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold">Xác Nhận Dời Lịch</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }

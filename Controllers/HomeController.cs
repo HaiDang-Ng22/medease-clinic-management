@@ -39,7 +39,7 @@ namespace Healthy_System.Controllers
 
         // US-01: View Homepage
         public IActionResult Index()
-        {
+        { 
 
             ViewBag.Specialties = _context.Specialties.Where(s => s.IsActive).Take(6).ToList();
             ViewBag.Doctors = _context.Doctors
@@ -146,7 +146,7 @@ namespace Healthy_System.Controllers
             ViewBag.SelectedCategory = category;
             ViewBag.Categories = _context.Services.Select(s => s.Category).Distinct().ToList();
 
-            var services = query.OrderBy(s => s.Category).ThenBy(s => s.Price).ToList();
+            var services = query.OrderBy(s => s.Category).AsEnumerable().ThenBy(s => s.Price).ToList();
             return View(services);
         }
 
