@@ -95,6 +95,14 @@ namespace Healthy_System.Controllers
             {
                 ModelState.AddModelError("AppointmentDate", "Ngày khám không được chọn trong quá khứ.");
             }
+            else if (model.AppointmentDate.Date == DateTime.Today && !string.IsNullOrWhiteSpace(model.TimeSlot))
+            {
+                // Không được đặt khung giờ đã trôi qua trong ngày hôm nay
+                if (IsSlotInPast(model.TimeSlot))
+                {
+                    ModelState.AddModelError("TimeSlot", "Khung giờ này đã trôi qua trong ngày hôm nay. Vui lòng chọn khung giờ hiện tại hoặc sắp tới.");
+                }
+            }
 
             if (!ModelState.IsValid)
             {
@@ -656,7 +664,27 @@ namespace Healthy_System.Controllers
 
             var available = defaultSlots.Where(s => !bookedSlots.Contains(s)).ToList();
 
+            // Nếu người dùng chọn ngày hôm nay, loại bỏ những khung giờ đã trôi qua
+            if (parsedDate.Date == DateTime.Today)
+            {
+                available = available.Where(s => !IsSlotInPast(s)).ToList();
+            }
+
             return Json(available);
+        }
+
+        private static bool IsSlotInPast(string timeSlot)
+        {
+            if (string.IsNullOrWhiteSpace(timeSlot)) return false;
+
+            // Ví dụ khung giờ: "08:00 - 08:30" -> Giờ bắt đầu là 08:00
+            var parts = timeSlot.Split('-');
+            if (parts.Length > 0 && TimeSpan.TryParse(parts[0].Trim(), out var startTime))
+            {
+                // Cho phép đặt nếu giờ bắt đầu lớn hơn hoặc bằng giờ hiện tại (hoặc có thể buffer 5-10 phút)
+                return DateTime.Now.TimeOfDay > startTime;
+            }
+            return false;
         }
 
         private bool CanModifyAppointment(DateTime apptDate, string timeSlot, string status)
