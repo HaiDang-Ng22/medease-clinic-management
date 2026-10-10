@@ -1,0 +1,149 @@
+@{
+    ViewData["Title"] = "Tìm Kiếm";
+    var query = ViewBag.Query as string;
+    var doctors = ViewBag.Doctors as List<Healthy_System.Models.Doctor> ?? new();
+    var specialties = ViewBag.Specialties as List<Healthy_System.Models.Specialty> ?? new();
+    bool hasQuery = !string.IsNullOrWhiteSpace(query);
+    int totalResults = doctors.Count + specialties.Count;
+}
+
+<div style="background: linear-gradient(135deg,#0284c7 0%,#0d9488 100%); padding: 48px 0 36px; color:#fff;">
+    <div class="container">
+        <div class="text-center mb-4">
+            <h1 class="fw-800 fs-2 mb-2">
+                <i class="fa-solid fa-magnifying-glass me-2"></i>Tìm kiếm
+            </h1>
+            <p class="text-white-50 mb-0">Tìm bác sĩ chuyên khoa, dịch vụ khám và thông tin y tế</p>
+        </div>
+        <form asp-controller="Home" asp-action="Search" method="get" class="d-flex justify-content-center">
+            <div class="input-group shadow" style="max-width:680px; border-radius:14px; overflow:hidden;">
+                <input type="text" name="q" class="form-control form-control-lg border-0"
+                       placeholder="Nhập tên bác sĩ, chuyên khoa, dịch vụ..."
+                       value="@query" autofocus style="font-size:1rem;" />
+                <button class="btn btn-warning fw-bold px-4" type="submit">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i>Tìm
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="container py-5">
+    @if (hasQuery)
+    {
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <h5 class="mb-0 fw-bold">
+                Kết quả tìm kiếm cho: <span class="text-primary">"@query"</span>
+            </h5>
+            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">@totalResults kết quả</span>
+        </div>
+
+        @* ====== CHUYÊN KHOA ====== *@
+        @if (specialties.Any())
+        {
+            <div class="mb-5">
+                <h6 class="fw-bold text-uppercase text-muted mb-3">
+                    <i class="fa-solid fa-stethoscope me-2 text-primary"></i>Chuyên khoa (@specialties.Count)
+                </h6>
+                <div class="row g-3">
+                    @foreach (var sp in specialties)
+                    {
+                        <div class="col-sm-6 col-lg-3">
+                            <a asp-controller="Home" asp-action="Specialties"
+                               class="card card-custom text-decoration-none h-100 p-3 d-flex flex-row align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                     style="width:52px;height:52px;background:#e0f2fe;">
+                                    <i class="fa-solid @(sp.Icon ?? "fa-stethoscope") text-primary fs-5"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">@sp.Name</div>
+                                    <small class="text-muted line-clamp-2">@(sp.Description?.Length > 60 ? sp.Description[..60] + "..." : sp.Description)</small>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @* ====== BÁC SĨ ====== *@
+        @if (doctors.Any())
+        {
+            <div class="mb-4">
+                <h6 class="fw-bold text-uppercase text-muted mb-3">
+                    <i class="fa-solid fa-user-doctor me-2 text-primary"></i>Bác sĩ (@doctors.Count)
+                </h6>
+                <div class="row g-4">
+                    @foreach (var doc in doctors)
+                    {
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="card card-custom h-100 text-center p-3">
+                                <div class="d-flex justify-content-center mb-3">
+                                    @if (!string.IsNullOrEmpty(doc.User?.AvatarUrl))
+                                    {
+                                        <img src="@doc.User.AvatarUrl" alt="@doc.User?.FullName"
+                                             class="rounded-circle object-fit-cover border border-3 border-primary-subtle"
+                                             style="width:80px;height:80px;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="rounded-circle bg-primary-subtle d-flex align-items-center justify-content-center"
+                                             style="width:80px;height:80px;">
+                                            <i class="fa-solid fa-user-doctor text-primary fs-3"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <h6 class="fw-bold mb-1">@doc.User?.FullName</h6>
+                                <p class="text-muted small mb-2">@doc.Title</p>
+                                @if (doc.Specialty != null)
+                                {
+                                    <span class="badge bg-info-subtle text-info rounded-pill mb-2">@doc.Specialty.Name</span>
+                                }
+                                <div class="d-flex justify-content-center gap-1 mb-3">
+                                    @for (int s = 1; s <= 5; s++)
+                                    {
+                                        <i class="fa-solid fa-star @(s <= (int)doc.Rating ? "text-warning" : "text-muted")" style="font-size:0.75rem;"></i>
+                                    }
+                                    <small class="text-muted ms-1">(@doc.ReviewCount)</small>
+                                </div>
+                                <a asp-controller="Home" asp-action="DoctorDetail" asp-route-id="@doc.Id"
+                                   class="btn btn-sm btn-outline-primary rounded-pill mt-auto">
+                                    Xem hồ sơ
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (!doctors.Any() && !specialties.Any())
+        {
+            <div class="text-center py-5">
+                <div class="mb-4" style="font-size:4rem;">🔍</div>
+                <h4 class="fw-bold text-dark mb-2">Không tìm thấy kết quả</h4>
+                <p class="text-muted mb-4">Không có bác sĩ hoặc chuyên khoa phù hợp với từ khóa <strong>"@query"</strong></p>
+                <div class="d-flex flex-wrap justify-content-center gap-2">
+                    <a asp-controller="Home" asp-action="Doctors" class="btn btn-outline-primary rounded-pill px-4">
+                        <i class="fa-solid fa-users me-1"></i>Xem tất cả bác sĩ
+                    </a>
+                    <a asp-controller="Home" asp-action="Specialties" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="fa-solid fa-stethoscope me-1"></i>Xem chuyên khoa
+                    </a>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="text-center py-4">
+            <p class="text-muted mb-4">Nhập từ khóa vào ô tìm kiếm phía trên để bắt đầu</p>
+            <div class="row g-3 justify-content-center">
+                <div class="col-auto"><a asp-controller="Home" asp-action="Doctors" class="btn btn-light border rounded-pill px-4"><i class="fa-solid fa-user-doctor me-1 text-primary"></i>Bác sĩ</a></div>
+                <div class="col-auto"><a asp-controller="Home" asp-action="Specialties" class="btn btn-light border rounded-pill px-4"><i class="fa-solid fa-stethoscope me-1 text-primary"></i>Chuyên khoa</a></div>
+                <div class="col-auto"><a asp-controller="Home" asp-action="Services" class="btn btn-light border rounded-pill px-4"><i class="fa-solid fa-list-check me-1 text-primary"></i>Dịch vụ</a></div>
+                <div class="col-auto"><a asp-controller="Appointment" asp-action="Book" class="btn btn-primary rounded-pill px-4"><i class="fa-solid fa-calendar-check me-1"></i>Đặt lịch khám</a></div>
+            </div>
+        </div>
+    }
+</div>

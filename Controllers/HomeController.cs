@@ -146,7 +146,7 @@ namespace Healthy_System.Controllers
             ViewBag.SelectedCategory = category;
             ViewBag.Categories = _context.Services.Select(s => s.Category).Distinct().ToList();
 
-            var services = query.OrderBy(s => s.Category).AsEnumerable().ThenBy(s => s.Price).ToList();
+            var services = query.AsEnumerable().OrderBy(s => s.Category).ThenBy(s => s.Price).ToList();
             return View(services);
         }
 
@@ -180,6 +180,43 @@ namespace Healthy_System.Controllers
             }
 
             return View("Contact", model);
+        }
+
+        // US-Search: Tìm kiếm bác sĩ / chuyên khoa
+        public IActionResult Search(string? q)
+        {
+            q = q?.Trim();
+            ViewBag.Query = q;
+
+            if (string.IsNullOrWhiteSpace(q))
+            {
+                ViewBag.Doctors = new List<Healthy_System.Models.Doctor>();
+                ViewBag.Specialties = new List<Healthy_System.Models.Specialty>();
+                return View();
+            }
+
+            var lq = q.ToLower();
+
+            var doctors = _context.Doctors
+                .Include(d => d.User)
+                .Include(d => d.Specialty)
+                .Where(d => d.User!.FullName.ToLower().Contains(lq)
+                         || d.Specialty!.Name.ToLower().Contains(lq)
+                         || d.Title!.ToLower().Contains(lq)
+                         || d.Bio!.ToLower().Contains(lq))
+                .OrderByDescending(d => d.Rating)
+                .Take(20)
+                .ToList();
+
+            var specialties = _context.Specialties
+                .Where(s => s.IsActive &&
+                            (s.Name.ToLower().Contains(lq) || s.Description!.ToLower().Contains(lq)))
+                .Take(8)
+                .ToList();
+
+            ViewBag.Doctors = doctors;
+            ViewBag.Specialties = specialties;
+            return View();
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
