@@ -1,11 +1,12 @@
-using System;
-using System.Linq;
-using System.Security.Claims;
 using Healthy_System.Data;
 using Healthy_System.Models;
+using Healthy_System.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Security.Claims;
 
 namespace Healthy_System.Controllers
 {
@@ -277,6 +278,7 @@ namespace Healthy_System.Controllers
         }
 
         // US-35: Doctor Work Schedule
+        // US-35: Doctor Work Schedule
         public IActionResult Schedule()
         {
             var doctor = GetCurrentDoctor() ?? _context.Doctors.FirstOrDefault();
@@ -294,40 +296,66 @@ namespace Healthy_System.Controllers
         }
 
         // US26: Doctor Profile — đầy đủ fields
+        [HttpGet]
         public IActionResult Profile()
         {
             var doctor = GetCurrentDoctor();
             if (doctor == null) return NotFound();
 
-            ViewBag.Specialties = _context.Specialties.OrderBy(s => s.Name).ToList();
-            return View(doctor);
+            var model = new DoctorProfileViewModel
+            {
+                Id = doctor.Id,
+                FullName = doctor.User?.FullName ?? string.Empty,
+                Email = doctor.User?.Email ?? string.Empty,
+                PhoneNumber = doctor.User?.PhoneNumber,
+                AvatarUrl = doctor.User?.AvatarUrl,
+                Title = doctor.Title,
+                SpecialtyId = doctor.SpecialtyId,
+                ExperienceYears = doctor.ExperienceYears,
+                RoomNumber = doctor.RoomNumber,
+                ConsultationFee = doctor.ConsultationFee,
+                Bio = doctor.Bio,
+                Specialties = _context.Specialties.Where(s => s.IsActive).OrderBy(s => s.Name).ToList()
+            };
+
+            return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Profile(int id, string fullName, string phone, string title,
-            int specialtyId, int experienceYears, string roomNumber, decimal consultationFee, string bio)
+        public IActionResult Profile(DoctorProfileViewModel model)
         {
-            var doctor = _context.Doctors.Include(d => d.User).FirstOrDefault(d => d.Id == id);
-            if (doctor == null) return NotFound();
-
-            // Cập nhật User
-            if (doctor.User != null)
+            if (!ModelState.IsValid)
             {
-                doctor.User.FullName = fullName?.Trim() ?? doctor.User.FullName;
-                doctor.User.PhoneNumber = phone?.Trim() ?? doctor.User.PhoneNumber;
+                model.Specialties = _context.Specialties.Where(s => s.IsActive).OrderBy(s => s.Name).ToList();
+                return View(model);
             }
 
-            // Cập nhật Doctor
-            doctor.Title = title?.Trim() ?? doctor.Title;
-            doctor.SpecialtyId = specialtyId;
-            doctor.ExperienceYears = experienceYears;
-            doctor.RoomNumber = roomNumber?.Trim() ?? doctor.RoomNumber;
-            doctor.ConsultationFee = consultationFee;
-            doctor.Bio = bio?.Trim() ?? string.Empty;
+            var doctor = _context.Doctors.Include(d => d.User).FirstOrDefault(d => d.Id == model.Id);
+            if (doctor == null) return NotFound();
+
+            // Cập nhật thông tin tài khoản User
+            if (doctor.User != null)
+            {
+                doctor.User.FullName = model.FullName.Trim();
+                doctor.User.PhoneNumber = model.PhoneNumber?.Trim();
+                if (!string.IsNullOrWhiteSpace(model.AvatarUrl))
+                {
+                    doctor.User.AvatarUrl = model.AvatarUrl.Trim();
+                }
+            }
+
+            // Cập nhật thông tin Chuyên môn Doctor
+            doctor.Title = model.Title.Trim();
+            doctor.SpecialtyId = model.SpecialtyId;
+            doctor.ExperienceYears = model.ExperienceYears;
+            doctor.RoomNumber = model.RoomNumber.Trim();
+            doctor.ConsultationFee = model.ConsultationFee;
+            doctor.Bio = model.Bio?.Trim() ?? string.Empty;
 
             _context.SaveChanges();
-            TempData["SuccessMessage"] = "Cập nhật hồ sơ chuyên môn thành công!";
+
+            TempData["SuccessMessage"] = "Cập nhật hồ sơ cá nhân & chuyên môn thành công!";
             return RedirectToAction(nameof(Profile));
         }
     }
