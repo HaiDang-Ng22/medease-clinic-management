@@ -358,5 +358,75 @@ namespace Healthy_System.Controllers
             TempData["SuccessMessage"] = "Cập nhật hồ sơ cá nhân & chuyên môn thành công!";
             return RedirectToAction(nameof(Profile));
         }
+
+        // POST: Doctor/AddSchedule - Thêm ca làm việc mới
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AddSchedule(DateTime workDate, string timeSlot, int maxPatients = 1, string? notes = null)
+        {
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return NotFound();
+
+            if (workDate.Date < DateTime.Today)
+            {
+                TempData["ErrorMessage"] = "Không thể đăng ký lịch trực cho ngày trong quá khứ.";
+                return RedirectToAction(nameof(Schedule));
+            }
+
+            // Kiểm tra trùng lịch
+            bool exists = _context.DoctorSchedules.Any(s =>
+                s.DoctorId == doctor.Id &&
+                s.WorkDate.Date == workDate.Date &&
+                s.TimeSlot == timeSlot);
+
+            if (exists)
+            {
+                TempData["ErrorMessage"] = $"Khung giờ {timeSlot} ngày {workDate:dd/MM/yyyy} đã tồn tại trong lịch trình.";
+                return RedirectToAction(nameof(Schedule));
+            }
+
+            var schedule = new DoctorSchedule
+            {
+                DoctorId = doctor.Id,
+                WorkDate = workDate.Date,
+                TimeSlot = timeSlot,
+                MaxPatients = maxPatients,
+                BookedPatients = 0,
+                IsAvailable = true,
+                Notes = notes?.Trim()
+            };
+
+            _context.DoctorSchedules.Add(schedule);
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Thêm ca trực {timeSlot} ngày {workDate:dd/MM/yyyy} thành công!";
+            return RedirectToAction(nameof(Schedule));
+        }
+
+        // POST: Doctor/ToggleScheduleStatus - Bật/Tắt (Hủy) ca trực
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ToggleScheduleStatus(int id)
+        {
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return NotFound();
+
+            var schedule = _context.DoctorSchedules.FirstOrDefault(s => s.Id == id && s.DoctorId == doctor.Id);
+            if (schedule == null) return NotFound();
+
+            // Nếu đã có bệnh nhân đặt, không cho phép tắt trực tiếp
+            if (schedule.BookedPatients > 0 && schedule.IsAvailable)
+            {
+                TempData["ErrorMessage"] = "Ca trực này đã có bệnh nhân đặt lịch, không thể hủy ngang. Vui lòng xử lý ở Hàng đợi!";
+                return RedirectToAction(nameof(Schedule));
+            }
+
+            schedule.IsAvailable = !schedule.IsAvailable;
+            _context.SaveChanges();
+
+            string statusStr = schedule.IsAvailable ? "Mở nhận bệnh" : "Tắt / Tạm dừng";
+            TempData["SuccessMessage"] = $"Đã cập nhật ca trực {schedule.TimeSlot} sang trạng thái: {statusStr}";
+            return RedirectToAction(nameof(Schedule));
+        }
     }
 }

@@ -1,8 +1,15 @@
 @model List<DoctorSchedule>
 @{
     Layout = "_DoctorLayout";
-    ViewData["Title"] = "Lịch Trực Ca Khám";
+    ViewData["Title"] = "Lịch Trực Ca Khám Bác Sĩ";
     var doctor = ViewBag.Doctor as Doctor;
+
+    // Danh sách khung giờ gợi ý mặc định
+    var defaultSlots = new List<string> {
+        "08:00 - 08:30", "08:30 - 09:00", "09:00 - 09:30", "09:30 - 10:00",
+        "10:00 - 10:30", "10:30 - 11:00", "13:30 - 14:00", "14:00 - 14:30",
+        "14:30 - 15:00", "15:00 - 15:30", "15:30 - 16:00", "16:00 - 16:30"
+    };
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -10,8 +17,29 @@
         <h2 class="fw-bold mb-1"><i class="fa-solid fa-calendar-week text-primary me-2"></i>Lịch Trực & Ca Khám Của Bác Sĩ</h2>
         <p class="text-muted mb-0">Bác sĩ: <strong>@doctor?.Title @doctor?.User?.FullName</strong> | Phòng: <strong>@doctor?.RoomNumber</strong></p>
     </div>
-    <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-4">Về Tổng Quan</a>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+            <i class="fa-solid fa-plus me-2"></i>Thêm Lịch Trực Mới
+        </button>
+        <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-4">Về Tổng Quan</a>
+    </div>
 </div>
+
+<!-- Thông báo thành công / thất bại -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
 <div class="card card-doctor p-4">
     @if (Model.Any())
@@ -21,17 +49,31 @@
             @foreach (var g in grouped)
             {
                 <div class="col-md-6 col-lg-4">
-                    <div class="border rounded-4 p-3 h-100 bg-light">
+                    <div class="border rounded-4 p-3 h-100 bg-light shadow-sm">
                         <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                             <strong class="text-primary fs-6"><i class="fa-regular fa-calendar me-1"></i>@g.Key.ToString("dd/MM/yyyy")</strong>
                             <span class="badge bg-secondary">@g.Key.ToString("dddd")</span>
                         </div>
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="d-flex flex-column gap-2">
                             @foreach (var slot in g)
                             {
-                                <span class="badge @(slot.IsAvailable ? "bg-success-subtle text-success border border-success" : "bg-danger-subtle text-danger border border-danger") py-2 px-3 rounded-pill">
-                                    @slot.TimeSlot @(slot.IsAvailable ? "(Trống)" : "(Đã đặt)")
-                                </span>
+                                <div class="d-flex justify-content-between align-items-center p-2 bg-white rounded-3 border">
+                                    <div>
+                                        <span class="fw-bold @(slot.IsAvailable ? "text-success" : "text-danger")">@slot.TimeSlot</span>
+                                        <small class="text-muted d-block" style="font-size: 0.75rem;">
+                                            Đã đặt: @slot.BookedPatients/@slot.MaxPatients bệnh nhân
+                                        </small>
+                                    </div>
+                                    <!-- Form Tắt / Bật ca trực -->
+                                    <form asp-action="ToggleScheduleStatus" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@slot.Id" />
+                                        <button type="submit" class="btn btn-sm @(slot.IsAvailable ? "btn-outline-danger" : "btn-outline-success") rounded-pill px-2"
+                                                title="@(slot.IsAvailable ? "Tắt nhận lịch" : "Mở nhận lịch")">
+                                            <i class="fa-solid @(slot.IsAvailable ? "fa-power-off" : "fa-check")"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             }
                         </div>
                     </div>
@@ -41,6 +83,52 @@
     }
     else
     {
-        <div class="text-center py-5 text-muted">Chưa có lịch trực được phân bổ.</div>
+        <div class="text-center py-5 text-muted">
+            <i class="fa-regular fa-calendar-xmark display-4 mb-3 d-block text-secondary"></i>
+            <h5>Chưa có lịch trực nào được đăng ký</h5>
+            <p class="small">Bấm nút "Thêm Lịch Trực Mới" phía trên để mở ca khám cho bệnh nhân.</p>
+        </div>
     }
+</div>
+
+<!-- Modal Thêm Lịch Trực -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="AddSchedule" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-calendar-plus me-2"></i>Thêm Khung Giờ Trực Mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Chọn Ngày Làm Việc <span class="text-danger">*</span></label>
+                        <input type="date" name="workDate" class="form-control" required min="@DateTime.Today.ToString("yyyy-MM-dd")" value="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Chọn Khung Giờ Khám <span class="text-danger">*</span></label>
+                        <select name="timeSlot" class="form-select" required>
+                            @foreach (var slot in defaultSlots)
+                            {
+                                <option value="@slot">@slot</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Số Lượng Bệnh Nhân Tối Đa</label>
+                        <input type="number" name="maxPatients" class="form-control" value="1" min="1" max="10" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ghi Chú Ca Trực</label>
+                        <input type="text" name="notes" class="form-control" placeholder="Ví dụ: Khám ngoài giờ, ca sáng..." />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Xác Nhận Thêm Ca</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
