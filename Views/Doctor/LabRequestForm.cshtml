@@ -1,0 +1,173 @@
+﻿@model Appointment
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Phiếu Yêu Cầu Xét Nghiệm - " + Model.Patient?.FullName;
+    var doctor = ViewBag.Doctor as Doctor;
+    var existingLab = Model.LabRequest ?? "";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-flask text-info me-2"></i>Phiếu Yêu Cầu Xét Nghiệm / Chụp Chiếu</h2>
+        <p class="text-muted mb-0">Mã ca khám: <strong>@Model.AppointmentCode</strong> | Bệnh nhân: <strong>@Model.Patient?.FullName</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Examination" asp-route-id="@Model.Id" class="btn btn-outline-primary rounded-pill px-4">
+            <i class="fa-solid fa-stethoscope me-1"></i>Bàn Khám
+        </a>
+        <a asp-action="Queue" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="fa-solid fa-arrow-left me-1"></i>Hàng Đợi
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Form phiếu xét nghiệm -->
+    <div class="col-lg-8">
+        <div class="card card-doctor p-4 p-md-5">
+            <!-- Header phiếu -->
+            <div class="text-center mb-4 pb-3 border-bottom">
+                <h4 class="fw-bold text-primary mb-1">
+                    <i class="fa-solid fa-hospital me-2"></i>PHÒNG KHÁM HEALTHY SYSTEM
+                </h4>
+                <div class="text-muted small">PHIẾU YÊU CẦU XÉT NGHIỆM / CHẨN ĐOÁN HÌNH ẢNH</div>
+                <div class="badge bg-info-subtle text-info mt-1">Mã: @Model.AppointmentCode</div>
+            </div>
+
+            <!-- Thông tin bệnh nhân & bác sĩ -->
+            <div class="row g-3 mb-4 p-3 bg-light rounded-3">
+                <div class="col-md-6">
+                    <div class="small text-muted mb-1">Họ tên bệnh nhân:</div>
+                    <div class="fw-bold">@Model.Patient?.FullName</div>
+                    <div class="small text-muted">NS: @(Model.Patient?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa rõ") | @Model.Patient?.Gender</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="small text-muted mb-1">Bác sĩ chỉ định:</div>
+                    <div class="fw-bold">@doctor?.Title @doctor?.User?.FullName</div>
+                    <div class="small text-muted">Chuyên khoa: @doctor?.Specialty?.Name | Phòng: @doctor?.RoomNumber</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="small text-muted mb-1">Ngày chỉ định:</div>
+                    <div class="fw-bold">@DateTime.Today.ToString("dd/MM/yyyy")</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="small text-muted mb-1">Chẩn đoán sơ bộ / Lý do:</div>
+                    <div class="fw-semibold text-danger">@Model.ReasonForVisit</div>
+                </div>
+            </div>
+
+            <form asp-action="SaveLabRequest" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="appointmentId" value="@Model.Id" />
+
+                <!-- Xét nghiệm máu -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3 text-primary"><i class="fa-solid fa-droplet me-2"></i>1. XÉT NGHIỆM MÁU</h6>
+                    <div class="row g-2 ps-3">
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="blood_cbc" value="Công thức máu 24 thông số (CBC)"><label class="form-check-label" for="blood_cbc">Công thức máu 24 thông số (CBC)</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="blood_glucose" value="Đường huyết lúc đói (Glucose)"><label class="form-check-label" for="blood_glucose">Đường huyết lúc đói (Glucose)</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="blood_lipid" value="Mỡ máu toàn bộ (Lipid profile)"><label class="form-check-label" for="blood_lipid">Mỡ máu toàn bộ (Lipid profile)</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="blood_liver" value="Chức năng gan (AST, ALT, GGT)"><label class="form-check-label" for="blood_liver">Chức năng gan (AST, ALT, GGT)</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="blood_kidney" value="Chức năng thận (Urea, Creatinine)"><label class="form-check-label" for="blood_kidney">Chức năng thận (Urea, Creatinine)</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="blood_thyroid" value="Hormone tuyến giáp (TSH, FT3, FT4)"><label class="form-check-label" for="blood_thyroid">Hormone tuyến giáp (TSH, FT3, FT4)</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="blood_hba1c" value="HbA1c (Đái tháo đường dài hạn)"><label class="form-check-label" for="blood_hba1c">HbA1c (Đái tháo đường dài hạn)</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="blood_coag" value="Đông máu cơ bản (PT, APTT)"><label class="form-check-label" for="blood_coag">Đông máu cơ bản (PT, APTT)</label></div></div>
+                    </div>
+                </div>
+
+                <!-- Xét nghiệm nước tiểu -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3 text-warning"><i class="fa-solid fa-vial me-2"></i>2. XÉT NGHIỆM NƯỚC TIỂU</h6>
+                    <div class="row g-2 ps-3">
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="urine_routine" value="Tổng phân tích nước tiểu (10 thông số)"><label class="form-check-label" for="urine_routine">Tổng phân tích nước tiểu (10 thông số)</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="urine_culture" value="Cấy nước tiểu tìm vi khuẩn"><label class="form-check-label" for="urine_culture">Cấy nước tiểu tìm vi khuẩn</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="urine_protein" value="Định lượng protein niệu 24 giờ"><label class="form-check-label" for="urine_protein">Định lượng protein niệu 24 giờ</label></div></div>
+                    </div>
+                </div>
+
+                <!-- Chẩn đoán hình ảnh -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3 text-success"><i class="fa-solid fa-x-ray me-2"></i>3. CHẨN ĐOÁN HÌNH ẢNH</h6>
+                    <div class="row g-2 ps-3">
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_xray_chest" value="X-quang ngực thẳng"><label class="form-check-label" for="img_xray_chest">X-quang ngực thẳng</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_xray_bone" value="X-quang xương khớp (ghi rõ vị trí)"><label class="form-check-label" for="img_xray_bone">X-quang xương khớp</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_ultrasound_abdomen" value="Siêu âm bụng tổng quát"><label class="form-check-label" for="img_ultrasound_abdomen">Siêu âm bụng tổng quát</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_ultrasound_heart" value="Siêu âm tim Doppler màu"><label class="form-check-label" for="img_ultrasound_heart">Siêu âm tim Doppler màu</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_ct_brain" value="CT sọ não không tiêm thuốc"><label class="form-check-label" for="img_ct_brain">CT sọ não không tiêm thuốc</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_mri" value="MRI não (ghi rõ vùng)"><label class="form-check-label" for="img_mri">MRI não</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_ecg" value="Điện tim 12 chuyển đạo (ECG)"><label class="form-check-label" for="img_ecg">Điện tim 12 chuyển đạo (ECG)</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_endoscopy" value="Nội soi dạ dày - thực quản"><label class="form-check-label" for="img_endoscopy">Nội soi dạ dày - thực quản</label></div></div>
+                    </div>
+                </div>
+
+                <!-- Ghi chú thêm -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">4. Ghi Chú Thêm / Xét Nghiệm Khác</label>
+                    <textarea id="labRequest" name="labRequest" rows="4" class="form-control rounded-3 font-monospace"
+                              placeholder="Nhập các xét nghiệm khác hoặc ghi chú đặc biệt cho bộ phận xét nghiệm...">@existingLab</textarea>
+                    <div class="form-text">Các mục đã tích ở trên sẽ tự động được thêm vào ô này khi bạn nhấn nút lưu.</div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(existingLab))
+                {
+                    <div class="alert alert-success-subtle border border-success rounded-3 mb-4 small">
+                        <i class="fa-solid fa-circle-check text-success me-2"></i>
+                        <strong>Phiếu xét nghiệm đã được lưu trước đó.</strong> Bạn có thể chỉnh sửa và lưu lại.
+                    </div>
+                }
+
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                    <a asp-action="Examination" asp-route-id="@Model.Id" class="btn btn-outline-secondary rounded-pill px-4">Quay lại</a>
+                    <div class="d-flex gap-2">
+                        <button type="button" onclick="window.print()" class="btn btn-outline-info rounded-pill px-4">
+                            <i class="fa-solid fa-print me-2"></i>In Phiếu
+                        </button>
+                        <button type="submit" class="btn btn-info btn-lg rounded-pill px-5 fw-bold shadow text-white">
+                            <i class="fa-solid fa-floppy-disk me-2"></i>LƯU PHIẾU XÉT NGHIỆM
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar hướng dẫn -->
+    <div class="col-lg-4">
+        <div class="card card-doctor p-4 mb-4">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-circle-question text-muted me-2"></i>Hướng Dẫn</h6>
+            <ul class="list-unstyled small text-muted mb-0">
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Tích chọn các xét nghiệm cần thiết ở bảng bên trái.</li>
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Các mục đã tích sẽ tự thêm vào ô ghi chú.</li>
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Bạn có thể gõ thêm vào ô ghi chú nếu cần.</li>
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Nhấn <strong>Lưu</strong> để ghi lại và thông báo bệnh nhân.</li>
+                <li class="mb-2"><i class="fa-solid fa-print text-info me-2"></i>Nhấn <strong>In Phiếu</strong> để in ra giấy.</li>
+            </ul>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(existingLab))
+        {
+            <div class="card card-doctor p-4">
+                <h6 class="fw-bold mb-3"><i class="fa-solid fa-clipboard-list text-info me-2"></i>Phiếu XN Đã Lưu</h6>
+                <div class="small text-muted font-monospace" style="white-space:pre-wrap;">@existingLab</div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Khi bấm submit, gộp các checkbox đã chọn vào textarea
+    document.querySelector('form').addEventListener('submit', function(e) {
+        var checked = [];
+        document.querySelectorAll('.lab-check:checked').forEach(function(cb) {
+            checked.push('- ' + cb.value);
+        });
+        var textarea = document.getElementById('labRequest');
+        if (checked.length > 0) {
+            var existing = textarea.value.trim();
+            var prefix = checked.join('\n');
+            textarea.value = existing ? prefix + '\n' + existing : prefix;
+        }
+    });
+</script>
+}

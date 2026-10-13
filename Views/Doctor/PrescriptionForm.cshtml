@@ -1,0 +1,267 @@
+﻿@model Appointment
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Kê Đơn Thuốc - " + Model.Patient?.FullName;
+    var doctor = ViewBag.Doctor as Doctor;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-pills text-success me-2"></i>Kê Đơn Thuốc Điện Tử</h2>
+        <p class="text-muted mb-0">Mã ca khám: <strong>@Model.AppointmentCode</strong> | Bệnh nhân: <strong>@Model.Patient?.FullName</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Examination" asp-route-id="@Model.Id" class="btn btn-outline-primary rounded-pill px-4">
+            <i class="fa-solid fa-stethoscope me-1"></i>Bàn Khám
+        </a>
+        <a asp-action="Queue" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="fa-solid fa-arrow-left me-1"></i>Hàng Đợi
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Form kê đơn -->
+    <div class="col-lg-8">
+        <div class="card card-doctor p-4 p-md-5">
+
+            <!-- Header đơn thuốc kiểu phiếu bác sĩ -->
+            <div class="text-center mb-4 pb-4 border-bottom">
+                <div class="text-muted small text-uppercase fw-semibold mb-1">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                <h4 class="fw-bold text-success mb-1">
+                    <i class="fa-solid fa-file-prescription me-2"></i>ĐƠN THUỐC ĐIỆN TỬ
+                </h4>
+                <div class="text-muted small">Phòng khám Healthy System &nbsp;|&nbsp; Ngày kê đơn: @DateTime.Today.ToString("dd/MM/yyyy")</div>
+            </div>
+
+            <!-- Thông tin bệnh nhân & bác sĩ -->
+            <div class="row g-0 mb-4">
+                <div class="col-md-6 pe-md-3 pb-3 pb-md-0 border-end-md">
+                    <div class="small text-muted text-uppercase fw-bold mb-2" style="font-size:0.7rem;letter-spacing:0.08em;">Thông Tin Bệnh Nhân</div>
+                    <div class="mb-1"><span class="text-muted small">Họ tên:</span> <strong>@Model.Patient?.FullName</strong></div>
+                    <div class="mb-1"><span class="text-muted small">Ngày sinh:</span> <strong>@(Model.Patient?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa rõ")</strong> | <strong>@Model.Patient?.Gender</strong></div>
+                    <div class="mb-1"><span class="text-muted small">SĐT:</span> <strong>@Model.Patient?.PhoneNumber</strong></div>
+                    <div class="mb-1"><span class="text-muted small">Địa chỉ:</span> <strong>@(Model.Patient?.Address ?? "Chưa cung cấp")</strong></div>
+                </div>
+                <div class="col-md-6 ps-md-3">
+                    <div class="small text-muted text-uppercase fw-bold mb-2" style="font-size:0.7rem;letter-spacing:0.08em;">Bác Sĩ Kê Đơn</div>
+                    <div class="mb-1"><span class="text-muted small">Họ tên:</span> <strong>@doctor?.Title @doctor?.User?.FullName</strong></div>
+                    <div class="mb-1"><span class="text-muted small">Chuyên khoa:</span> <strong>@doctor?.Specialty?.Name</strong></div>
+                    <div class="mb-1"><span class="text-muted small">Phòng khám:</span> <strong>@doctor?.RoomNumber</strong></div>
+                    <div class="mb-1"><span class="text-muted small">Mã lịch hẹn:</span> <span class="badge bg-light text-dark border">@Model.AppointmentCode</span></div>
+                </div>
+            </div>
+
+            <form asp-action="SavePrescription" method="post" id="prescriptionForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="appointmentId" value="@Model.Id" />
+
+                <!-- Chẩn đoán -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold fs-6">
+                        <span class="badge bg-primary rounded-pill me-2">1</span>Chẩn Đoán
+                    </label>
+                    <input type="text" name="diagnosis" class="form-control rounded-3" value="@(Model.Diagnosis ?? "")"
+                           placeholder="Ví dụ: Viêm họng cấp tính / Tăng huyết áp độ 1 / Đái tháo đường type 2..." />
+                </div>
+
+                <!-- Bảng thuốc -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <label class="form-label fw-bold fs-6 mb-0">
+                            <span class="badge bg-success rounded-pill me-2">2</span>Danh Sách Thuốc <span class="text-danger">*</span>
+                        </label>
+                        <button type="button" id="addDrugRow" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                            <i class="fa-solid fa-plus me-1"></i>Thêm thuốc
+                        </button>
+                    </div>
+
+                    <!-- Thuốc mẫu nhanh -->
+                    <div class="mb-3">
+                        <div class="small text-muted mb-1">Thuốc thường dùng (click để thêm nhanh):</div>
+                        <div class="d-flex flex-wrap gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill quick-drug"
+                                    data-name="Paracetamol 500mg" data-dose="1 viên" data-freq="2 lần/ngày" data-days="5">Paracetamol 500mg</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill quick-drug"
+                                    data-name="Amoxicillin 500mg" data-dose="1 viên" data-freq="3 lần/ngày" data-days="7">Amoxicillin 500mg</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill quick-drug"
+                                    data-name="Vitamin C 500mg" data-dose="1 viên" data-freq="1 lần/ngày" data-days="10">Vitamin C 500mg</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill quick-drug"
+                                    data-name="Omeprazole 20mg" data-dose="1 viên" data-freq="1 lần/ngày (trước ăn sáng)" data-days="14">Omeprazole 20mg</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill quick-drug"
+                                    data-name="Loratadine 10mg" data-dose="1 viên" data-freq="1 lần/ngày" data-days="7">Loratadine 10mg</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill quick-drug"
+                                    data-name="Ibuprofen 400mg" data-dose="1 viên" data-freq="2-3 lần/ngày (sau ăn)" data-days="5">Ibuprofen 400mg</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-bordered align-middle mb-0" id="drugTable">
+                            <thead class="table-success">
+                                <tr>
+                                    <th style="width:30px" class="text-center ps-2">STT</th>
+                                    <th>Tên thuốc &amp; Hàm lượng</th>
+                                    <th style="width:80px">Số lượng</th>
+                                    <th style="width:150px">Liều dùng / lần</th>
+                                    <th style="width:170px">Tần suất</th>
+                                    <th style="width:70px">Số ngày</th>
+                                    <th style="width:40px"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="drugBody">
+                                <tr class="drug-row">
+                                    <td class="text-center fw-bold drug-stt">1</td>
+                                    <td><input type="text" class="form-control form-control-sm border-0 drug-name" placeholder="VD: Amoxicillin 500mg" /></td>
+                                    <td><input type="number" class="form-control form-control-sm border-0 drug-qty" min="1" placeholder="20" /></td>
+                                    <td><input type="text" class="form-control form-control-sm border-0 drug-dose" placeholder="1 viên" /></td>
+                                    <td><input type="text" class="form-control form-control-sm border-0 drug-freq" placeholder="2 lần/ngày sau ăn" /></td>
+                                    <td><input type="number" class="form-control form-control-sm border-0 drug-days" min="1" placeholder="7" /></td>
+                                    <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger border-0 remove-row"><i class="fa-solid fa-trash"></i></button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Hidden textarea để gộp dữ liệu trước submit -->
+                    <textarea name="prescription" id="prescriptionData" class="d-none">@(Model.Prescription ?? "")</textarea>
+                </div>
+
+                <!-- Lời dặn bác sĩ -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold fs-6">
+                        <span class="badge bg-warning text-dark rounded-pill me-2">3</span>Lời Dặn Của Bác Sĩ
+                    </label>
+                    <textarea name="doctorNotes" rows="3" class="form-control rounded-3"
+                              placeholder="Ví dụ: Uống nhiều nước, nghỉ ngơi đầy đủ, kiêng đồ cay nóng dầu mỡ. Tái khám sau 7 ngày nếu không đỡ hoặc có biến chứng bất thường.">@(Model.DoctorNotes ?? "")</textarea>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.Prescription))
+                {
+                    <div class="alert alert-success-subtle border border-success rounded-3 mb-4 small">
+                        <i class="fa-solid fa-circle-check text-success me-2"></i>
+                        <strong>Đơn thuốc đã được kê trước đó.</strong> Bạn có thể xem/chỉnh sửa và lưu lại đơn mới.
+                    </div>
+                }
+
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                    <a asp-action="Examination" asp-route-id="@Model.Id" class="btn btn-outline-secondary rounded-pill px-4">Quay lại</a>
+                    <div class="d-flex gap-2">
+                        <button type="button" onclick="window.print()" class="btn btn-outline-info rounded-pill px-4">
+                            <i class="fa-solid fa-print me-2"></i>In Đơn
+                        </button>
+                        <button type="submit" class="btn btn-success btn-lg rounded-pill px-5 fw-bold shadow">
+                            <i class="fa-solid fa-floppy-disk me-2"></i>LƯU ĐƠN THUỐC
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar: Đơn thuốc cũ nếu có -->
+    <div class="col-lg-4">
+        <div class="card card-doctor p-4 mb-4">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-circle-question text-muted me-2"></i>Hướng Dẫn</h6>
+            <ul class="list-unstyled small text-muted mb-0">
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Click thuốc mẫu để thêm nhanh vào bảng.</li>
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Điền đầy đủ Tên thuốc, liều dùng, tần suất và số ngày.</li>
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Nhấn <strong>"+ Thêm thuốc"</strong> để thêm dòng mới.</li>
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Nhấn <strong>Lưu</strong> để ghi lại và gửi thông báo cho bệnh nhân.</li>
+                <li class="mb-2"><i class="fa-solid fa-print text-info me-2"></i>Nhấn <strong>In Đơn</strong> để in ra giấy.</li>
+            </ul>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Prescription))
+        {
+            <div class="card card-doctor p-4">
+                <h6 class="fw-bold mb-3 text-success"><i class="fa-solid fa-file-prescription me-2"></i>Đơn Thuốc Đã Lưu</h6>
+                <div class="small font-monospace" style="white-space:pre-wrap;background:#f8f9fa;border-radius:8px;padding:12px;">@Model.Prescription</div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    var rowCount = 1;
+
+    // Thêm dòng thuốc mới
+    document.getElementById('addDrugRow').addEventListener('click', function() {
+        rowCount++;
+        var row = '<tr class="drug-row">' +
+            '<td class="text-center fw-bold drug-stt">' + rowCount + '</td>' +
+            '<td><input type="text" class="form-control form-control-sm border-0 drug-name" placeholder="Tên thuốc & hàm lượng" /></td>' +
+            '<td><input type="number" class="form-control form-control-sm border-0 drug-qty" min="1" placeholder="20" /></td>' +
+            '<td><input type="text" class="form-control form-control-sm border-0 drug-dose" placeholder="1 viên" /></td>' +
+            '<td><input type="text" class="form-control form-control-sm border-0 drug-freq" placeholder="2 lần/ngày sau ăn" /></td>' +
+            '<td><input type="number" class="form-control form-control-sm border-0 drug-days" min="1" placeholder="7" /></td>' +
+            '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger border-0 remove-row"><i class="fa-solid fa-trash"></i></button></td>' +
+            '</tr>';
+        document.getElementById('drugBody').insertAdjacentHTML('beforeend', row);
+        bindRemove();
+        updateSTT();
+    });
+
+    function bindRemove() {
+        document.querySelectorAll('.remove-row').forEach(function(btn) {
+            btn.onclick = function() {
+                if (document.querySelectorAll('.drug-row').length > 1) {
+                    this.closest('tr').remove();
+                    updateSTT();
+                }
+            };
+        });
+    }
+
+    function updateSTT() {
+        document.querySelectorAll('.drug-stt').forEach(function(td, i) {
+            td.textContent = i + 1;
+        });
+        rowCount = document.querySelectorAll('.drug-row').length;
+    }
+
+    // Thuốc mẫu nhanh
+    document.querySelectorAll('.quick-drug').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var lastRow = document.querySelectorAll('.drug-row');
+            var row = lastRow[lastRow.length - 1];
+            var nameInput = row.querySelector('.drug-name');
+            if (nameInput.value.trim() !== '') {
+                document.getElementById('addDrugRow').click();
+                row = document.querySelectorAll('.drug-row');
+                row = row[row.length - 1];
+            }
+            row.querySelector('.drug-name').value = this.dataset.name;
+            row.querySelector('.drug-dose').value = this.dataset.dose;
+            row.querySelector('.drug-freq').value = this.dataset.freq;
+            row.querySelector('.drug-days').value = this.dataset.days;
+        });
+    });
+
+    // Gộp dữ liệu bảng thuốc vào textarea trước khi submit
+    document.getElementById('prescriptionForm').addEventListener('submit', function(e) {
+        var lines = [];
+        document.querySelectorAll('.drug-row').forEach(function(row, i) {
+            var name = row.querySelector('.drug-name').value.trim();
+            if (!name) return;
+            var qty = row.querySelector('.drug-qty').value.trim();
+            var dose = row.querySelector('.drug-dose').value.trim();
+            var freq = row.querySelector('.drug-freq').value.trim();
+            var days = row.querySelector('.drug-days').value.trim();
+            var line = (i+1) + '. ' + name;
+            if (qty) line += ' - ' + qty + ' viên';
+            if (dose || freq) line += ' (Uống ' + (dose || '') + (freq ? ' x ' + freq : '') + ')';
+            if (days) line += ' - ' + days + ' ngày';
+            lines.push(line);
+        });
+        if (lines.length === 0) {
+            e.preventDefault();
+            alert('Vui lòng nhập ít nhất 1 loại thuốc!');
+            return;
+        }
+        document.getElementById('prescriptionData').value = lines.join('\n');
+    });
+
+    bindRemove();
+</script>
+}

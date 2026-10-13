@@ -1,0 +1,205 @@
+@model List<Appointment>
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Danh Sach Benh Nhan Can Kham";
+    var doctor = ViewBag.Doctor as Doctor;
+    string curStatus = ViewBag.Status as string ?? "";
+    string curDate = ViewBag.DateFilter as string ?? "";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-users text-primary me-2"></i>Danh Sach Benh Nhan Can Kham</h2>
+        <p class="text-muted mb-0">Bac si: <strong>@doctor?.Title @doctor?.User?.FullName</strong> | Chuyen khoa: <strong>@doctor?.Specialty?.Name</strong></p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-4">
+        <i class="fa-solid fa-arrow-left me-1"></i>Ve Tong Quan
+    </a>
+</div>
+
+<!-- Thong ke nhanh -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="card card-doctor p-3 border-start border-primary border-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Tong Benh Nhan</div>
+                    <div class="display-6 fw-bold text-dark">@ViewBag.TotalCount</div>
+                </div>
+                <div class="p-3 bg-primary-subtle text-primary rounded-circle">
+                    <i class="fa-solid fa-users fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card card-doctor p-3 border-start border-warning border-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Cho / Da Xac Nhan</div>
+                    <div class="display-6 fw-bold text-warning">@ViewBag.PendingCount</div>
+                </div>
+                <div class="p-3 bg-warning-subtle text-warning rounded-circle">
+                    <i class="fa-solid fa-user-clock fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card card-doctor p-3 border-start border-success border-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Da Hoan Thanh</div>
+                    <div class="display-6 fw-bold text-success">@ViewBag.CompletedCount</div>
+                </div>
+                <div class="p-3 bg-success-subtle text-success rounded-circle">
+                    <i class="fa-solid fa-circle-check fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bo loc & Tim kiem -->
+<div class="card card-doctor p-4 mb-4">
+    <form method="get" asp-action="PatientList" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label fw-semibold small text-muted">Tim kiem benh nhan</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" name="search" value="@ViewBag.Search" class="form-control border-start-0 ps-0" placeholder="Ten, ma lich, SDT..." />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold small text-muted">Trang thai</label>
+            <select name="status" class="form-select">
+                <option value="">Tat ca trang thai</option>
+                @if (curStatus == "Pending") { <option value="Pending" selected>Cho tiep nhan</option> } else { <option value="Pending">Cho tiep nhan</option> }
+                @if (curStatus == "Confirmed") { <option value="Confirmed" selected>Da xac nhan</option> } else { <option value="Confirmed">Da xac nhan</option> }
+                @if (curStatus == "Completed") { <option value="Completed" selected>Da hoan thanh</option> } else { <option value="Completed">Da hoan thanh</option> }
+                @if (curStatus == "Cancelled") { <option value="Cancelled" selected>Da huy</option> } else { <option value="Cancelled">Da huy</option> }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold small text-muted">Loc theo thoi gian</label>
+            <select name="dateFilter" class="form-select">
+                <option value="">Tat ca ngay</option>
+                @if (curDate == "today") { <option value="today" selected>Hom nay</option> } else { <option value="today">Hom nay</option> }
+                @if (curDate == "upcoming") { <option value="upcoming" selected>Sap toi (chua kham)</option> } else { <option value="upcoming">Sap toi (chua kham)</option> }
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary rounded-pill px-3 w-100 fw-bold">
+                <i class="fa-solid fa-filter me-1"></i>Loc
+            </button>
+            <a asp-action="PatientList" class="btn btn-outline-secondary rounded-pill px-3">
+                <i class="fa-solid fa-rotate-right"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Danh sach benh nhan -->
+<div class="card card-doctor p-4">
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Benh nhan</th>
+                        <th>Thong tin lien he</th>
+                        <th>Lich hen</th>
+                        <th>Chuyen khoa</th>
+                        <th>Ly do kham</th>
+                        <th>Trang thai</th>
+                        <th class="text-center pe-3">Thao tac</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var appt in Model)
+                    {
+                        <tr>
+                            <td class="ps-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width:38px;height:38px;font-size:0.9rem;">
+                                        @(appt.Patient?.FullName?.Length > 0 ? appt.Patient.FullName[0].ToString().ToUpper() : "?")
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">@appt.Patient?.FullName</div>
+                                        <small class="text-muted">@(appt.Patient?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chua ro") | @appt.Patient?.Gender</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div><i class="fa-solid fa-phone text-muted me-1 small"></i>@appt.Patient?.PhoneNumber</div>
+                                <small class="text-muted">@appt.Patient?.Email</small>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-primary">@appt.AppointmentDate.ToString("dd/MM/yyyy")</div>
+                                <small class="text-muted">@appt.TimeSlot</small>
+                                <div><span class="badge bg-light text-dark border" style="font-size:0.7rem;">@appt.AppointmentCode</span></div>
+                            </td>
+                            <td><small class="text-muted">@appt.Specialty?.Name</small></td>
+                            <td><small class="text-muted text-truncate d-inline-block" style="max-width:160px;">@appt.ReasonForVisit</small></td>
+                            <td>
+                                @if (appt.Status == "Completed")
+                                {
+                                    <span class="badge bg-success-subtle text-success py-2 px-3 rounded-pill fw-bold">
+                                        <i class="fa-solid fa-check me-1"></i>Da hoan thanh
+                                    </span>
+                                }
+                                else if (appt.Status == "Confirmed")
+                                {
+                                    <span class="badge bg-primary-subtle text-primary py-2 px-3 rounded-pill fw-bold">
+                                        <i class="fa-solid fa-user-check me-1"></i>Da xac nhan
+                                    </span>
+                                }
+                                else if (appt.Status == "Cancelled")
+                                {
+                                    <span class="badge bg-danger-subtle text-danger py-2 px-3 rounded-pill fw-bold">
+                                        <i class="fa-solid fa-ban me-1"></i>Da huy
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning-subtle text-dark py-2 px-3 rounded-pill fw-bold">
+                                        <i class="fa-solid fa-clock me-1"></i>Cho tiep nhan
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-center pe-3">
+                                <div class="d-flex gap-1 justify-content-center">
+                                    <a asp-action="PatientProfile" asp-route-appointmentId="@appt.Id"
+                                       class="btn btn-sm btn-outline-info rounded-pill px-2" title="Xem ho so">
+                                        <i class="fa-solid fa-id-card me-1"></i>Ho so
+                                    </a>
+                                    @if (appt.Status != "Cancelled")
+                                    {
+                                        <a asp-action="Examination" asp-route-id="@appt.Id"
+                                           class="btn btn-sm btn-primary rounded-pill px-2" title="Vao kham">
+                                            <i class="fa-solid fa-stethoscope me-1"></i>Kham
+                                        </a>
+                                        <a asp-action="SendNotification" asp-route-appointmentId="@appt.Id"
+                                           class="btn btn-sm btn-outline-warning rounded-pill px-2" title="Gui thong bao">
+                                            <i class="fa-solid fa-bell"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fa-regular fa-folder-open text-muted display-4 mb-3"></i>
+            <h4 class="text-muted">Khong tim thay benh nhan nao</h4>
+            <p class="text-muted small">Thu thay doi bo loc hoac tu khoa tim kiem.</p>
+            <a asp-action="PatientList" class="btn btn-outline-primary rounded-pill px-4">Xem tat ca</a>
+        </div>
+    }
+</div>

@@ -1,6 +1,6 @@
-@model List<Appointment>
+﻿@model List<Appointment>
 @{
-    ViewData["Title"] = "Lịch Hẹn Của Tôi";
+    ViewData["Title"] = "Lich Hen Cua Toi";
     string? selectedStatus = ViewBag.SelectedStatus;
 }
 
@@ -8,11 +8,11 @@
     <div class="container">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-                <h1 class="fw-bold mb-1">Lịch Hẹn Của Tôi</h1>
-                <p class="lead text-white-50 mb-0">Theo dõi, thay đổi hoặc hủy lịch khám bệnh dễ dàng</p>
+                <h1 class="fw-bold mb-1">Lich Hen Cua Toi</h1>
+                <p class="lead text-white-50 mb-0">Theo doi, thay doi hoac huy lich kham benh de dang</p>
             </div>
             <a asp-action="Book" class="btn btn-warning rounded-pill px-4 py-2 fw-bold text-dark shadow">
-                <i class="fa-solid fa-plus me-1"></i>Đặt Lịch Mới
+                <i class="fa-solid fa-plus me-1"></i>Dat Lich Moi
             </a>
         </div>
     </div>
@@ -22,19 +22,19 @@
     <!-- Status Filter Tabs -->
     <div class="d-flex flex-wrap gap-2 mb-4">
         <a asp-action="MyAppointments" class="btn rounded-pill px-3 @(string.IsNullOrEmpty(selectedStatus) ? "btn-primary" : "btn-outline-secondary")">
-            Tất cả (@Model.Count)
+            Tat ca (@Model.Count)
         </a>
         <a asp-action="MyAppointments" asp-route-status="Pending" class="btn rounded-pill px-3 @(selectedStatus == "Pending" ? "btn-primary" : "btn-outline-secondary")">
-            Chờ xác nhận
+            Cho xac nhan
         </a>
         <a asp-action="MyAppointments" asp-route-status="Confirmed" class="btn rounded-pill px-3 @(selectedStatus == "Confirmed" ? "btn-primary" : "btn-outline-secondary")">
-            Đã xác nhận
+            Da xac nhan
         </a>
         <a asp-action="MyAppointments" asp-route-status="Completed" class="btn rounded-pill px-3 @(selectedStatus == "Completed" ? "btn-primary" : "btn-outline-secondary")">
-            Đã khám xong
+            Da kham xong
         </a>
         <a asp-action="MyAppointments" asp-route-status="Cancelled" class="btn rounded-pill px-3 @(selectedStatus == "Cancelled" ? "btn-primary" : "btn-outline-secondary")">
-            Đã hủy
+            Da huy
         </a>
     </div>
 
@@ -48,30 +48,30 @@
                         <div>
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <span class="badge bg-light text-primary border fw-bold fs-6">Mã: @appt.AppointmentCode</span>
-                                    <div class="text-muted small mt-1">Tạo lúc: @appt.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                    <span class="badge bg-light text-primary border fw-bold fs-6">Ma: @appt.AppointmentCode</span>
+                                    <div class="text-muted small mt-1">Tao luc: @appt.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
                                 </div>
                                 <div>
                                     @switch (appt.Status)
                                     {
                                         case "Confirmed":
                                             <span class="badge bg-success-subtle text-success py-2 px-3 rounded-pill fw-bold">
-                                                <i class="fa-solid fa-circle-check me-1"></i>Đã xác nhận
+                                                <i class="fa-solid fa-circle-check me-1"></i>Da xac nhan
                                             </span>
                                             break;
                                         case "Pending":
                                             <span class="badge bg-warning-subtle text-dark py-2 px-3 rounded-pill fw-bold">
-                                                <i class="fa-solid fa-clock me-1"></i>Chờ xác nhận
+                                                <i class="fa-solid fa-clock me-1"></i>Cho xac nhan
                                             </span>
                                             break;
                                         case "Completed":
                                             <span class="badge bg-primary-subtle text-primary py-2 px-3 rounded-pill fw-bold">
-                                                <i class="fa-solid fa-square-check me-1"></i>Đã hoàn thành
+                                                <i class="fa-solid fa-square-check me-1"></i>Da hoan thanh
                                             </span>
                                             break;
                                         case "Cancelled":
                                             <span class="badge bg-danger-subtle text-danger py-2 px-3 rounded-pill fw-bold">
-                                                <i class="fa-solid fa-ban me-1"></i>Đã hủy
+                                                <i class="fa-solid fa-ban me-1"></i>Da huy
                                             </span>
                                             break;
                                     }
@@ -81,11 +81,11 @@
                             <div class="bg-light p-3 rounded-3 mb-3">
                                 <div class="row g-2">
                                     <div class="col-sm-6">
-                                        <small class="text-muted d-block">Bác sĩ phụ trách:</small>
+                                        <small class="text-muted d-block">Bac si phu trach:</small>
                                         <strong class="text-dark">@appt.Doctor?.Title @appt.Doctor?.User?.FullName</strong>
                                     </div>
                                     <div class="col-sm-6">
-                                        <small class="text-muted d-block">Chuyên khoa & Phòng:</small>
+                                        <small class="text-muted d-block">Chuyen khoa & Phong:</small>
                                         <span>@appt.Specialty?.Name (@appt.Doctor?.RoomNumber)</span>
                                     </div>
                                     <div class="col-12 mt-2 pt-2 border-top">
@@ -104,26 +104,36 @@
                             </div>
 
                             <p class="text-muted small mb-3">
-                                <strong>Lý do khám:</strong> @appt.ReasonForVisit
+                                <strong>Ly do kham:</strong> @appt.ReasonForVisit
                             </p>
 
                             @if (appt.Status == "Cancelled" && !string.IsNullOrEmpty(appt.CancellationReason))
                             {
                                 <div class="alert alert-danger py-2 px-3 small mb-3">
-                                    <strong>Lý do hủy:</strong> @appt.CancellationReason
+                                    <strong>Ly do huy:</strong> @appt.CancellationReason
                                 </div>
                             }
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center pt-3 border-top gap-2">
+                        <!-- Nut hanh dong -->
+                        <div class="d-flex flex-wrap justify-content-between align-items-center pt-3 border-top gap-2">
                             <a asp-action="Details" asp-route-id="@appt.Id" class="btn btn-outline-primary rounded-pill btn-sm px-3">
-                                <i class="fa-solid fa-ticket me-1"></i>Phiếu hẹn
+                                <i class="fa-solid fa-ticket me-1"></i>Phieu hen
                             </a>
 
-                            @if (appt.Status == "Completed")
+                            @* Hien nut xem don thuoc neu bac si da ke *@
+                            @if (!string.IsNullOrWhiteSpace(appt.Prescription) || !string.IsNullOrWhiteSpace(appt.Diagnosis))
                             {
                                 <a asp-action="Prescription" asp-route-id="@appt.Id" class="btn btn-success rounded-pill btn-sm px-3 fw-bold">
-                                    <i class="fa-solid fa-file-prescription me-1"></i>Đơn thuốc & Kết quả (US06)
+                                    <i class="fa-solid fa-pills me-1"></i>Xem Don Thuoc
+                                </a>
+                            }
+
+                            @* Hien nut xem phieu XN neu bac si da lap *@
+                            @if (!string.IsNullOrWhiteSpace(appt.LabRequest))
+                            {
+                                <a asp-action="Prescription" asp-route-id="@appt.Id" class="btn btn-info rounded-pill btn-sm px-3 fw-bold text-white">
+                                    <i class="fa-solid fa-flask me-1"></i>Xem Phieu Xet Nghiem
                                 </a>
                             }
 
@@ -131,23 +141,24 @@
                             {
                                 <div class="d-flex gap-2">
                                     <a asp-action="Reschedule" asp-route-id="@appt.Id" class="btn btn-outline-secondary rounded-pill btn-sm px-3">
-                                        <i class="fa-solid fa-arrows-rotate me-1"></i>Đổi lịch
+                                        <i class="fa-solid fa-arrows-rotate me-1"></i>Doi lich
                                     </a>
                                     <a asp-action="Cancel" asp-route-id="@appt.Id" class="btn btn-outline-danger rounded-pill btn-sm px-3">
-                                        <i class="fa-solid fa-xmark me-1"></i>Hủy lịch
+                                        <i class="fa-solid fa-xmark me-1"></i>Huy lich
                                     </a>
                                 </div>
                             }
+
                             @if (appt.Status == "Completed" && appt.Rating == null)
                             {
                                 <a asp-action="Review" asp-route-id="@appt.Id" class="btn btn-sm btn-outline-warning rounded-pill mt-2">
-                                    <i class="fa-solid fa-star"></i> Đánh giá bác sĩ
+                                    <i class="fa-solid fa-star"></i> Danh gia bac si
                                 </a>
                             }
                             else if (appt.Status == "Completed" && appt.Rating != null)
                             {
                                 <span class="badge bg-warning text-dark mt-2">
-                                    <i class="fa-solid fa-star"></i> Đã đánh giá @appt.Rating sao
+                                    <i class="fa-solid fa-star"></i> Da danh gia @appt.Rating sao
                                 </span>
                             }
                         </div>
@@ -160,10 +171,10 @@
     {
         <div class="text-center py-5">
             <i class="fa-regular fa-calendar-xmark text-muted display-4 mb-3"></i>
-            <h4 class="text-muted">Bạn chưa có lịch hẹn khám nào</h4>
-            <p class="text-muted small">Hãy đặt lịch khám trực tuyến để được phục vụ chu đáo nhất</p>
+            <h4 class="text-muted">Ban chua co lich hen kham nao</h4>
+            <p class="text-muted small">Hay dat lich kham truc tuyen de duoc phuc vu chu dao nhat</p>
             <a asp-action="Book" class="btn btn-primary rounded-pill px-4 mt-2">
-                <i class="fa-solid fa-calendar-check me-2"></i>Đặt lịch ngay
+                <i class="fa-solid fa-calendar-check me-2"></i>Dat lich ngay
             </a>
         </div>
     }

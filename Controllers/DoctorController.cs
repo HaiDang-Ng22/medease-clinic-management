@@ -428,5 +428,265 @@ namespace Healthy_System.Controllers
             TempData["SuccessMessage"] = $"Đã cập nhật ca trực {schedule.TimeSlot} sang trạng thái: {statusStr}";
             return RedirectToAction(nameof(Schedule));
         }
+        // =====================================================================
+        // US20: Gửi thông báo / liên hệ bệnh nhân khi cần
+        // =====================================================================
+
+        [HttpGet]
+        public IActionResult SendNotification(int appointmentId)
+        {
+            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).FirstOrDefault();
+            if (doctor == null) return NotFound();
+
+            var appointment = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == appointmentId);
+
+            if (appointment == null) return NotFound();
+
+            ViewBag.Doctor = doctor;
+            ViewBag.Appointment = appointment;
+            return View(appointment);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SendNotification(int appointmentId, string notificationType, string notificationTitle, string notificationMessage)
+        {
+            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).FirstOrDefault();
+            var appointment = _context.Appointments
+                .Include(a => a.Patient)
+                .FirstOrDefault(a => a.Id == appointmentId);
+
+            if (appointment == null) return NotFound();
+
+            if (string.IsNullOrWhiteSpace(notificationMessage))
+            {
+                TempData["ErrorMessage"] = "Vui lòng nhập nội dung thông báo.";
+                return RedirectToAction(nameof(SendNotification), new { appointmentId });
+            }
+
+            var doctorName = doctor?.User?.FullName ?? "Bác sĩ phụ trách";
+
+            _context.Notifications.Add(new Notification
+            {
+                UserId = appointment.PatientId,
+                Title = string.IsNullOrWhiteSpace(notificationTitle)
+                    ? $"📢 Thông báo từ BS. {doctorName}"
+                    : notificationTitle.Trim(),
+                Message = $"[BS. {doctorName}]: {notificationMessage.Trim()}",
+                Type = notificationType ?? "General",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã gửi thông báo thành công đến bệnh nhân {appointment.Patient?.FullName}!";
+            return RedirectToAction(nameof(PatientList));
+        }
+
+        // =====================================================================
+        // US21: Xem danh sách và hồ sơ bệnh nhân cần khám
+        // =====================================================================
+
+        [HttpGet]
+        public IActionResult PatientList(string? search, string? status, string? dateFilter)
+        {
+            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).FirstOrDefault();
+            if (doctor == null) return NotFound();
+
+            var query = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Specialty)
+                .Where(a => a.DoctorId == doctor.Id)
+                .AsQueryable();
+
+            // Lọc theo từ khóa tìm kiếm
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var kw = search.Trim().ToLower();
+                query = query.Where(a =>
+                    (a.Patient != null && a.Patient.FullName.ToLower().Contains(kw)) ||
+                    a.AppointmentCode.ToLower().Contains(kw) ||
+                    (a.Patient != null && a.Patient.PhoneNumber != null && a.Patient.PhoneNumber.Contains(kw)));
+            }
+
+            // Lọc theo trạng thái
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(a => a.Status == status);
+            }
+
+            // Lọc theo ngày
+            if (dateFilter == "today")
+            {
+                var today = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
+                query = query.Where(a => a.AppointmentDate.Date == today);
+            }
+            else if (dateFilter == "upcoming")
+            {
+                var today = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
+                query = query.Where(a => a.AppointmentDate.Date >= today && a.Status != "Cancelled" && a.Status != "Completed");
+            }
+
+            var list = query
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenBy(a => a.TimeSlot)
+                .ToList();
+
+            ViewBag.Doctor = doctor;
+            ViewBag.Search = search;
+            ViewBag.Status = status;
+            ViewBag.DateFilter = dateFilter;
+            ViewBag.TotalCount = list.Count;
+            ViewBag.PendingCount = list.Count(a => a.Status == "Pending" || a.Status == "Confirmed");
+            ViewBag.CompletedCount = list.Count(a => a.Status == "Completed");
+
+            return View(list);
+        }
+
+        [HttpGet]
+        public IActionResult PatientProfile(int appointmentId)
+        {
+            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).FirstOrDefault();
+            if (doctor == null) return NotFound();
+
+            var appointment = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Specialty)
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .FirstOrDefault(a => a.Id == appointmentId && a.DoctorId == doctor.Id);
+
+            if (appointment == null) return NotFound();
+
+            // Lịch sử khám trước đây của bệnh nhân này
+            var history = _context.Appointments
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .Include(a => a.Specialty)
+                .Where(a => a.PatientId == appointment.PatientId && a.Id != appointmentId)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ToList();
+
+            ViewBag.Doctor = doctor;
+            ViewBag.History = history;
+            return View(appointment);
+        }
+
+        // =====================================================================
+        // US22: Lập phiếu yêu cầu xét nghiệm / chụp chiếu
+        // =====================================================================
+
+        [HttpGet]
+        public IActionResult LabRequestForm(int id)
+        {
+            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).Include(d => d.Specialty).FirstOrDefault();
+            if (doctor == null) return NotFound();
+
+            var appointment = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (appointment == null) return NotFound();
+
+            ViewBag.Doctor = doctor;
+            return View(appointment);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SaveLabRequest(int appointmentId, string labRequest)
+        {
+            var appt = _context.Appointments
+                .Include(a => a.Patient)
+                .FirstOrDefault(a => a.Id == appointmentId);
+
+            if (appt == null) return NotFound();
+
+            appt.LabRequest = labRequest?.Trim();
+            appt.UpdatedAt = DateTime.UtcNow;
+
+            // Gửi thông báo cho bệnh nhân
+            if (!string.IsNullOrWhiteSpace(labRequest))
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = appt.PatientId,
+                    Title = "🔬 Phiếu Yêu Cầu Xét Nghiệm / Chụp Chiếu",
+                    Message = $"Bác sĩ đã lập phiếu yêu cầu xét nghiệm cho lịch hẹn {appt.AppointmentCode}. Bạn có thể xem chi tiết bằng cách vào mục \"Lịch hẹn của tôi\" → tìm lịch hẹn {appt.AppointmentCode} → nhấn nút \"Xem Phiếu Xét Nghiệm\" (màu xanh dương).",
+                    Type = "General",
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã lưu phiếu yêu cầu xét nghiệm cho bệnh nhân {appt.Patient?.FullName}!";
+            return RedirectToAction(nameof(LabRequestForm), new { id = appointmentId });
+        }
+
+        // =====================================================================
+        // US24: Kê đơn thuốc điện tử cho bệnh nhân
+        // =====================================================================
+
+        [HttpGet]
+        public IActionResult PrescriptionForm(int id)
+        {
+            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).Include(d => d.Specialty).FirstOrDefault();
+            if (doctor == null) return NotFound();
+
+            var appointment = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (appointment == null) return NotFound();
+
+            ViewBag.Doctor = doctor;
+            return View(appointment);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SavePrescription(int appointmentId, string prescription, string? diagnosis, string? doctorNotes)
+        {
+            var appt = _context.Appointments
+                .Include(a => a.Patient)
+                .FirstOrDefault(a => a.Id == appointmentId);
+
+            if (appt == null) return NotFound();
+
+            if (string.IsNullOrWhiteSpace(prescription))
+            {
+                TempData["ErrorMessage"] = "Vui lòng nhập ít nhất 1 loại thuốc vào đơn.";
+                return RedirectToAction(nameof(PrescriptionForm), new { id = appointmentId });
+            }
+
+            appt.Prescription = prescription.Trim();
+            if (!string.IsNullOrWhiteSpace(diagnosis))
+                appt.Diagnosis = diagnosis.Trim();
+            if (!string.IsNullOrWhiteSpace(doctorNotes))
+                appt.DoctorNotes = doctorNotes.Trim();
+            appt.UpdatedAt = DateTime.UtcNow;
+
+            // Gửi thông báo đơn thuốc cho bệnh nhân
+            _context.Notifications.Add(new Notification
+            {
+                UserId = appt.PatientId,
+                Title = "💊 Đơn Thuốc Điện Tử Từ Bác Sĩ",
+                Message = $"Bác sĩ đã kê đơn thuốc điện tử cho lịch hẹn {appt.AppointmentCode}. Bạn có thể xem bằng cách vào mục \"Lịch hẹn của tôi\" → tìm lịch hẹn {appt.AppointmentCode} → nhấn nút \"Xem Đơn Thuốc\" (màu xanh lá).",
+                Type = "StatusUpdate",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã kê đơn thuốc điện tử thành công cho bệnh nhân {appt.Patient?.FullName}!";
+            return RedirectToAction(nameof(PrescriptionForm), new { id = appointmentId });
+        }
     }
 }

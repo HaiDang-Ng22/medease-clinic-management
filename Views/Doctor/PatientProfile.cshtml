@@ -1,0 +1,178 @@
+﻿@model Appointment
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Hồ Sơ Bệnh Nhân - " + Model.Patient?.FullName;
+    var doctor = ViewBag.Doctor as Doctor;
+    var history = ViewBag.History as List<Appointment> ?? new List<Appointment>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-id-card text-primary me-2"></i>Hồ Sơ Bệnh Nhân</h2>
+        <p class="text-muted mb-0">Lịch hẹn: <strong>@Model.AppointmentCode</strong> | Ngày: <strong>@Model.AppointmentDate.ToString("dd/MM/yyyy") (@Model.TimeSlot)</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="SendNotification" asp-route-appointmentId="@Model.Id" class="btn btn-outline-warning rounded-pill px-4">
+            <i class="fa-solid fa-bell me-1"></i>Gửi Thông Báo
+        </a>
+        <a asp-action="PatientList" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="fa-solid fa-arrow-left me-1"></i>Danh Sách
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Thông tin bệnh nhân -->
+    <div class="col-lg-5">
+        <div class="card card-doctor p-4 mb-4">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold fs-3"
+                     style="width:64px;height:64px;flex-shrink:0;">
+                    @(Model.Patient?.FullName?.Length > 0 ? Model.Patient.FullName[0].ToString().ToUpper() : "?")
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-0">@Model.Patient?.FullName</h4>
+                    <small class="text-muted">@Model.Patient?.Gender | @(Model.Patient?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa cung cấp")</small>
+                </div>
+            </div>
+
+            <h6 class="fw-bold text-muted mb-3 text-uppercase" style="font-size:0.75rem;letter-spacing:0.08em;">
+                <i class="fa-solid fa-circle-info me-1"></i>Thông Tin Cá Nhân
+            </h6>
+
+            <div class="row g-2">
+                <div class="col-12">
+                    <div class="p-2 bg-light rounded-3 d-flex gap-2 align-items-center">
+                        <i class="fa-solid fa-phone text-primary" style="width:18px;"></i>
+                        <div>
+                            <div class="small text-muted">Số điện thoại</div>
+                            <div class="fw-semibold">@(Model.Patient?.PhoneNumber ?? "Chưa cung cấp")</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="p-2 bg-light rounded-3 d-flex gap-2 align-items-center">
+                        <i class="fa-solid fa-envelope text-primary" style="width:18px;"></i>
+                        <div>
+                            <div class="small text-muted">Email</div>
+                            <div class="fw-semibold">@(Model.Patient?.Email ?? "Chưa cung cấp")</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="p-2 bg-light rounded-3 d-flex gap-2 align-items-center">
+                        <i class="fa-solid fa-location-dot text-primary" style="width:18px;"></i>
+                        <div>
+                            <div class="small text-muted">Địa chỉ</div>
+                            <div class="fw-semibold">@(Model.Patient?.Address ?? "Chưa cung cấp")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin lịch hẹn hiện tại -->
+        <div class="card card-doctor p-4">
+            <h6 class="fw-bold text-muted mb-3 text-uppercase" style="font-size:0.75rem;letter-spacing:0.08em;">
+                <i class="fa-solid fa-calendar-check me-1"></i>Lịch Hẹn Hiện Tại
+            </h6>
+            <div class="mb-2"><strong>Mã lịch hẹn:</strong> <span class="badge bg-light text-dark border">@Model.AppointmentCode</span></div>
+            <div class="mb-2"><strong>Ngày khám:</strong> @Model.AppointmentDate.ToString("dd/MM/yyyy")</div>
+            <div class="mb-2"><strong>Khung giờ:</strong> @Model.TimeSlot</div>
+            <div class="mb-2"><strong>Chuyên khoa:</strong> @Model.Specialty?.Name</div>
+            <div class="mb-2"><strong>Trạng thái:</strong>
+                @if (Model.Status == "Completed")
+                {
+                    <span class="badge bg-success-subtle text-success">Đã hoàn thành</span>
+                }
+                else if (Model.Status == "Confirmed")
+                {
+                    <span class="badge bg-primary-subtle text-primary">Đã xác nhận</span>
+                }
+                else if (Model.Status == "Cancelled")
+                {
+                    <span class="badge bg-danger-subtle text-danger">Đã hủy</span>
+                }
+                else
+                {
+                    <span class="badge bg-warning-subtle text-dark">Chờ tiếp nhận</span>
+                }
+            </div>
+            <div class="p-3 bg-danger-subtle rounded-3 mt-3">
+                <div class="small fw-bold text-danger mb-1"><i class="fa-solid fa-triangle-exclamation me-1"></i>Triệu chứng ban đầu:</div>
+                <div class="fw-semibold">@Model.ReasonForVisit</div>
+            </div>
+
+            @if (Model.Status != "Cancelled" && Model.Status != "Completed")
+            {
+                <div class="d-flex gap-2 mt-3">
+                    <a asp-action="Examination" asp-route-id="@Model.Id" class="btn btn-primary rounded-pill px-4 fw-bold flex-grow-1">
+                        <i class="fa-solid fa-stethoscope me-1"></i>Vào Khám
+                    </a>
+                    <a asp-action="LabRequestForm" asp-route-id="@Model.Id" class="btn btn-outline-info rounded-pill px-3" title="Lập phiếu XN">
+                        <i class="fa-solid fa-flask"></i>
+                    </a>
+                    <a asp-action="PrescriptionForm" asp-route-id="@Model.Id" class="btn btn-outline-success rounded-pill px-3" title="Kê đơn thuốc">
+                        <i class="fa-solid fa-pills"></i>
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Lịch sử khám -->
+    <div class="col-lg-7">
+        <div class="card card-doctor p-4">
+            <h5 class="fw-bold mb-4">
+                <i class="fa-solid fa-clock-rotate-left text-secondary me-2"></i>Lịch Sử Khám Bệnh
+                <span class="badge bg-secondary ms-2">@history.Count lần</span>
+            </h5>
+
+            @if (history.Any())
+            {
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var h in history)
+                    {
+                        <div class="p-3 rounded-3 border @(h.Status == "Completed" ? "border-success-subtle bg-success-subtle" : h.Status == "Cancelled" ? "border-danger-subtle bg-danger-subtle" : "bg-light")">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="badge bg-secondary me-2">@h.AppointmentDate.ToString("dd/MM/yyyy")</span>
+                                    <span class="small text-muted">@h.TimeSlot</span>
+                                </div>
+                                @if (h.Status == "Completed")
+                                {
+                                    <span class="badge bg-success">Hoàn thành</span>
+                                }
+                                else if (h.Status == "Cancelled")
+                                {
+                                    <span class="badge bg-danger">Đã hủy</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Chờ khám</span>
+                                }
+                            </div>
+                            <div class="small mb-1"><i class="fa-solid fa-stethoscope text-muted me-1"></i><strong>BS:</strong> @h.Doctor?.Title @h.Doctor?.User?.FullName</div>
+                            <div class="small mb-1"><i class="fa-solid fa-hospital text-muted me-1"></i><strong>Chuyên khoa:</strong> @h.Specialty?.Name</div>
+                            <div class="small text-muted"><i class="fa-solid fa-comment-medical text-muted me-1"></i><em>@h.ReasonForVisit</em></div>
+                            @if (!string.IsNullOrWhiteSpace(h.Diagnosis))
+                            {
+                                <div class="small mt-1 text-success fw-semibold">
+                                    <i class="fa-solid fa-file-medical me-1"></i>Chẩn đoán: @h.Diagnosis
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fa-regular fa-clipboard text-muted display-4 mb-3"></i>
+                    <h5 class="text-muted">Đây là lần đầu bệnh nhân đến khám</h5>
+                    <p class="text-muted small">Chưa có lịch sử khám bệnh trước đây.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

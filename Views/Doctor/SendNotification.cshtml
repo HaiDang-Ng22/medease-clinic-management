@@ -1,0 +1,157 @@
+﻿@model Appointment
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Gửi Thông Báo Bệnh Nhân";
+    var doctor = ViewBag.Doctor as Doctor;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-bell text-warning me-2"></i>Gửi Thông Báo Đến Bệnh Nhân</h2>
+        <p class="text-muted mb-0">Lịch hẹn: <strong>@Model.AppointmentCode</strong> | Bệnh nhân: <strong>@Model.Patient?.FullName</strong></p>
+    </div>
+    <a asp-action="PatientList" class="btn btn-outline-secondary rounded-pill px-4">
+        <i class="fa-solid fa-arrow-left me-1"></i>Danh Sách BN
+    </a>
+</div>
+
+<div class="row g-4 justify-content-center">
+    <div class="col-lg-8">
+        <!-- Thông tin bệnh nhân nhận -->
+        <div class="card card-doctor p-4 mb-4">
+            <h6 class="fw-bold text-muted mb-3 text-uppercase" style="font-size:0.75rem;letter-spacing:0.08em;">
+                <i class="fa-solid fa-user me-1"></i>Thông Tin Người Nhận
+            </h6>
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-info-subtle text-info d-flex align-items-center justify-content-center fw-bold fs-4"
+                     style="width:56px;height:56px;flex-shrink:0;">
+                    @(Model.Patient?.FullName?.Length > 0 ? Model.Patient.FullName[0].ToString().ToUpper() : "?")
+                </div>
+                <div class="flex-grow-1">
+                    <h5 class="fw-bold mb-1">@Model.Patient?.FullName</h5>
+                    <div class="small text-muted"><i class="fa-solid fa-phone me-1"></i>@Model.Patient?.PhoneNumber &nbsp;&nbsp;
+                        <i class="fa-solid fa-envelope me-1"></i>@Model.Patient?.Email</div>
+                </div>
+                <span class="badge bg-primary">Lịch hẹn: @Model.AppointmentDate.ToString("dd/MM/yyyy")</span>
+            </div>
+        </div>
+
+        <!-- Form gửi thông báo -->
+        <div class="card card-doctor p-4 p-md-5">
+            <h4 class="fw-bold mb-4">
+                <i class="fa-solid fa-paper-plane text-primary me-2"></i>Soạn Thông Báo
+            </h4>
+
+            <form asp-action="SendNotification" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="appointmentId" value="@Model.Id" />
+
+                <!-- Loại thông báo -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold fs-6">1. Loại Thông Báo <span class="text-danger">*</span></label>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <input type="radio" class="btn-check" name="notificationType" id="type_general" value="General" checked />
+                            <label class="btn btn-outline-secondary w-100 rounded-3 py-3" for="type_general">
+                                <i class="fa-solid fa-bullhorn d-block fs-4 mb-1"></i>
+                                <div class="fw-bold">Thông báo chung</div>
+                                <small class="text-muted">Nhắc nhở thông thường</small>
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="radio" class="btn-check" name="notificationType" id="type_reminder" value="Reminder" />
+                            <label class="btn btn-outline-primary w-100 rounded-3 py-3" for="type_reminder">
+                                <i class="fa-solid fa-clock d-block fs-4 mb-1"></i>
+                                <div class="fw-bold">Nhắc lịch hẹn</div>
+                                <small class="text-muted">Nhắc nhở lịch khám</small>
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="radio" class="btn-check" name="notificationType" id="type_alert" value="EmergencyAlert" />
+                            <label class="btn btn-outline-danger w-100 rounded-3 py-3" for="type_alert">
+                                <i class="fa-solid fa-triangle-exclamation d-block fs-4 mb-1"></i>
+                                <div class="fw-bold">Khẩn cấp</div>
+                                <small class="text-muted">Thay đổi quan trọng</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tiêu đề thông báo -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold fs-6">2. Tiêu Đề Thông Báo</label>
+                    <input type="text" name="notificationTitle" class="form-control rounded-3"
+                           placeholder="Để trống sẽ tự động điền: 'Thông báo từ BS. [Tên bác sĩ]'" maxlength="150" />
+                    <div class="form-text">Tối đa 150 ký tự. Để trống để dùng tiêu đề mặc định.</div>
+                </div>
+
+                <!-- Nội dung thông báo -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold fs-6">3. Nội Dung Thông Báo <span class="text-danger">*</span></label>
+
+                    <!-- Mẫu thông báo nhanh -->
+                    <div class="mb-2">
+                        <div class="small text-muted mb-1">Mẫu thông báo nhanh:</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill quick-msg"
+                                    data-msg="Bệnh nhân vui lòng đến đúng giờ hẹn @Model.TimeSlot ngày @Model.AppointmentDate.ToString("dd/MM/yyyy"). Vui lòng mang theo CCCD và sổ khám bệnh.">
+                                Nhắc đến đúng giờ
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill quick-msg"
+                                    data-msg="Kết quả xét nghiệm của bệnh nhân đã có. Vui lòng đến phòng khám để nhận và nghe tư vấn từ bác sĩ.">
+                                Kết quả XN có rồi
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill quick-msg"
+                                    data-msg="Bệnh nhân vui lòng uống thuốc đúng giờ và đủ liều theo đơn. Nếu có bất kỳ phản ứng bất thường nào, hãy liên hệ ngay với phòng khám.">
+                                Nhắc uống thuốc đúng giờ
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill quick-msg"
+                                    data-msg="Bệnh nhân cần tái khám theo lịch đã hẹn. Vui lòng liên hệ phòng khám để đặt lịch tái khám sớm nhất.">
+                                Nhắc tái khám
+                            </button>
+                        </div>
+                    </div>
+
+                    <textarea name="notificationMessage" id="notificationMessage" rows="5" class="form-control rounded-3" required
+                              placeholder="Nhập nội dung thông báo bạn muốn gửi đến bệnh nhân..."></textarea>
+                    <div class="d-flex justify-content-between mt-1">
+                        <div class="form-text">Tối đa 500 ký tự.</div>
+                        <div class="form-text"><span id="charCount">0</span>/500</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info rounded-4 small mb-4">
+                    <i class="fa-solid fa-circle-info me-2"></i>
+                    Thông báo sẽ được gửi ngay đến tài khoản của bệnh nhân <strong>@Model.Patient?.FullName</strong>
+                    và hiển thị trong mục <strong>Thông Báo</strong> của họ.
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                    <a asp-action="PatientList" class="btn btn-outline-secondary rounded-pill px-4">Hủy bỏ</a>
+                    <button type="submit" id="sendBtn" class="btn btn-warning btn-lg rounded-pill px-5 fw-bold shadow text-dark">
+                        <i class="fa-solid fa-paper-plane me-2"></i>GỬI THÔNG BÁO
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Quick message buttons
+    document.querySelectorAll('.quick-msg').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.getElementById('notificationMessage').value = this.getAttribute('data-msg');
+            updateCharCount();
+        });
+    });
+
+    // Character counter
+    var msgArea = document.getElementById('notificationMessage');
+    function updateCharCount() {
+        document.getElementById('charCount').textContent = msgArea.value.length;
+    }
+    msgArea.addEventListener('input', updateCharCount);
+</script>
+}

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -114,6 +114,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="doctor-nav-link" asp-controller="Doctor" asp-action="PatientList">
+                            <i class="fa-solid fa-users me-1"></i>Danh S&#225;ch B&#7879;nh Nh&#226;n
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="doctor-nav-link" asp-controller="Doctor" asp-action="Profile">
                             <i class="fa-solid fa-hospital-user me-1"></i>Hồ Sơ Chuyên Môn
                         </a>
@@ -173,3 +178,4 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
