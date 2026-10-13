@@ -1,0 +1,156 @@
+@using Healthy_System.Models
+@{
+    Layout = "_ReceptionistLayout";
+    ViewData["Title"] = "Tìm Kiếm Thông Tin Bệnh Nhân";
+    var patients = ViewBag.Patients as List<User>;
+    var apptByPatient = ViewBag.AppointmentsByPatient as Dictionary<int, List<Appointment>>
+                        ?? new Dictionary<int, List<Appointment>>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0">
+        <i class="fa-solid fa-magnifying-glass-plus text-success me-2"></i>Tìm Kiếm Thông Tin Bệnh Nhân
+    </h2>
+</div>
+
+<div class="card card-reception p-4 mb-4">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-9">
+            <label class="form-label fw-bold">Tìm theo tên, số điện thoại hoặc email</label>
+            <input type="text" name="query" class="form-control form-control-lg"
+                   placeholder="Nhập tên bệnh nhân, SĐT..." value="@ViewBag.Query" autofocus />
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 fw-bold">
+                <i class="fa-solid fa-search me-1"></i>Tìm Kiếm
+            </button>
+        </div>
+    </form>
+</div>
+
+@if (patients == null)
+{
+    <div class="text-center py-5 text-muted">
+        <i class="fa-solid fa-user-magnifying-glass fa-3x mb-3 d-block text-secondary"></i>
+        Nhập thông tin để tìm kiếm bệnh nhân.
+    </div>
+}
+else if (!patients.Any())
+{
+    <div class="alert alert-warning">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+        Không tìm thấy bệnh nhân với từ khóa "<strong>@ViewBag.Query</strong>".
+    </div>
+}
+else
+{
+    <p class="text-muted mb-3">Tìm thấy <strong>@patients.Count</strong> bệnh nhân.</p>
+
+    @foreach (var patient in patients)
+    {
+        var patientAppts = apptByPatient.ContainsKey(patient.Id)
+            ? apptByPatient[patient.Id]
+            : new List<Appointment>();
+
+        <div class="card card-reception mb-4">
+            <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center py-3 px-4">
+                <div>
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fa-solid fa-user-circle me-2 text-success"></i>@patient.FullName
+                    </h5>
+                    <div class="text-muted small mt-1">
+                        <i class="fa-solid fa-phone me-1"></i>@(patient.PhoneNumber ?? "Chưa cập nhật")
+                        &nbsp;&bull;&nbsp;
+                        <i class="fa-solid fa-envelope me-1"></i>@patient.Email
+                        @if (patient.DateOfBirth.HasValue)
+                        {
+                            <span>&nbsp;&bull;&nbsp;<i class="fa-solid fa-cake-candles me-1"></i>@patient.DateOfBirth.Value.ToString("dd/MM/yyyy")</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(patient.Gender))
+                        {
+                            <span>&nbsp;&bull;&nbsp;@patient.Gender</span>
+                        }
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-secondary rounded-pill">@patientAppts.Count lịch hẹn</span>
+                    <a asp-controller="Receptionist" asp-action="CreateAppointment"
+                       class="btn btn-sm btn-success rounded-pill px-3">
+                        <i class="fa-solid fa-plus me-1"></i>Đặt lịch mới
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                @if (!patientAppts.Any())
+                {
+                    <div class="text-center py-3 text-muted small">Bệnh nhân chưa có lịch hẹn nào.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mã hẹn</th>
+                                    <th>Ngày khám</th>
+                                    <th>Giờ khám</th>
+                                    <th>Chuyên khoa</th>
+                                    <th>Bác sĩ</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var a in patientAppts)
+                                {
+                                    <tr>
+                                        <td><span class="badge bg-light text-dark border">@a.AppointmentCode</span></td>
+                                        <td>@a.AppointmentDate.ToString("dd/MM/yyyy")</td>
+                                        <td class="fw-semibold text-success">@a.TimeSlot</td>
+                                        <td>@a.Specialty?.Name</td>
+                                        <td>@a.Doctor?.Title @a.Doctor?.User?.FullName</td>
+                                        <td>
+                                            @switch (a.Status)
+                                            {
+                                                case "Pending":
+                                                    <span class="badge bg-warning-subtle text-dark">Chờ xác nhận</span>
+                                                    break;
+                                                case "Confirmed":
+                                                    <span class="badge bg-success-subtle text-success">Đã xác nhận</span>
+                                                    break;
+                                                case "Completed":
+                                                    <span class="badge bg-info-subtle text-info">Đã hoàn thành</span>
+                                                    break;
+                                                case "Cancelled":
+                                                    <span class="badge bg-danger-subtle text-danger">Đã hủy</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-secondary">@a.Status</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (a.Status == "Pending" || a.Status == "Confirmed")
+                                            {
+                                                <a asp-controller="Receptionist" asp-action="CancelAppointment"
+                                                   asp-route-id="@a.Id"
+                                                   class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                                    <i class="fa-solid fa-ban me-1"></i>Hủy
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
