@@ -138,6 +138,18 @@
                                     </a>
                                 </div>
                             }
+                            @if (appt.Status == "Completed" && appt.Rating == null)
+                            {
+                                <a asp-action="Review" asp-route-id="@appt.Id" class="btn btn-sm btn-outline-warning rounded-pill mt-2">
+                                    <i class="fa-solid fa-star"></i> Đánh giá bác sĩ
+                                </a>
+                            }
+                            else if (appt.Status == "Completed" && appt.Rating != null)
+                            {
+                                <span class="badge bg-warning text-dark mt-2">
+                                    <i class="fa-solid fa-star"></i> Đã đánh giá @appt.Rating sao
+                                </span>
+                            }
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,92 @@
+﻿@model Healthy_System.Models.ViewModels.ReviewViewModel
+@{
+    ViewData["Title"] = "Đánh giá chất lượng khám bệnh";
+}
+
+<style>
+    /* CSS cho thanh Đánh giá 5 sao */
+    .star-rating {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+        .star-rating input {
+            display: none;
+        }
+
+        .star-rating label {
+            font-size: 2.5rem;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+            .star-rating input:checked ~ label,
+            .star-rating label:hover,
+            .star-rating label:hover ~ label {
+                color: #ffc107; /* Màu vàng sao */
+            }
+</style>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-center py-4 rounded-top-4">
+                    <h4 class="mb-0 fw-bold"><i class="fa-solid fa-star-half-stroke me-2"></i>Đánh Giá Chất Lượng Khám</h4>
+                </div>
+                <div class="card-body p-4 p-md-5">
+
+                    <div class="text-center mb-4 pb-3 border-bottom">
+                        <div class="mb-2 text-muted small">Bác sĩ phụ trách:</div>
+                        <h5 class="fw-bold text-dark mb-1">@Model.DoctorName</h5>
+                        <div class="text-muted">@Model.SpecialtyName | Ngày khám: @Model.AppointmentDate</div>
+                    </div>
+
+                    <form asp-action="Review" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="AppointmentId" />
+
+                        <div class="mb-4 text-center">
+                            <label class="form-label fw-bold d-block mb-3 fs-5">Bạn cảm thấy hài lòng với dịch vụ chứ?</label>
+
+                            <!-- Đánh giá sao -->
+                            <div class="star-rating mb-2">
+                                <input type="radio" id="star5" asp-for="Rating" value="5" checked />
+                                <label for="star5" title="5 sao - Rất tuyệt vời"><i class="fa-solid fa-star"></i></label>
+
+                                <input type="radio" id="star4" asp-for="Rating" value="4" />
+                                <label for="star4" title="4 sao - Khá tốt"><i class="fa-solid fa-star"></i></label>
+
+                                <input type="radio" id="star3" asp-for="Rating" value="3" />
+                                <label for="star3" title="3 sao - Bình thường"><i class="fa-solid fa-star"></i></label>
+
+                                <input type="radio" id="star2" asp-for="Rating" value="2" />
+                                <label for="star2" title="2 sao - Tệ"><i class="fa-solid fa-star"></i></label>
+
+                                <input type="radio" id="star1" asp-for="Rating" value="1" />
+                                <label for="star1" title="1 sao - Rất tệ"><i class="fa-solid fa-star"></i></label>
+                            </div>
+                            <span asp-validation-for="Rating" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Comment" class="form-label fw-bold"></label>
+                            <textarea asp-for="Comment" class="form-control rounded-3" rows="4" placeholder="Chia sẻ trải nghiệm của bạn (thái độ bác sĩ, thời gian chờ đợi, chất lượng khám...)..."></textarea>
+                            <span asp-validation-for="Comment" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg rounded-pill fw-bold text-dark">
+                                <i class="fa-solid fa-paper-plane me-2"></i>Gửi Đánh Giá
+                            </button>
+                            <a asp-action="MyAppointments" class="btn btn-light rounded-pill text-muted mt-2">Bỏ qua</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

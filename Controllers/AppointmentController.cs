@@ -712,5 +712,85 @@ namespace Healthy_System.Controllers
             // Rule: Must be >= 2 hours prior to appointment
             return (appointmentDateTime - now).TotalHours >= 2;
         }
+
+        // US09: Đánh giá bác sĩ sau khám
+        [HttpGet]
+        public IActionResult Review(int id)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int patientId)) return RedirectToAction("Login", "Account");
+
+            var appt = _context.Appointments
+                .Include(a => a.Doctor).ThenInclude(d => d.User)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == id && a.PatientId == patientId);
+
+            if (appt == null) return NotFound();
+
+            if (appt.Status != "Completed")
+            {
+                TempData["ErrorMessage"] = "Bạn chỉ có thể đánh giá sau khi ca khám đã hoàn tất!";
+                return RedirectToAction(nameof(MyAppointments));
+            }
+
+            if (appt.Rating.HasValue)
+            {
+                TempData["ErrorMessage"] = "Bạn đã đánh giá ca khám này rồi. Cảm ơn bạn!";
+                return RedirectToAction(nameof(MyAppointments));
+            }
+
+            var model = new ReviewViewModel
+            {
+                AppointmentId = appt.Id,
+                DoctorName = $"{appt.Doctor?.Title} {appt.Doctor?.User?.FullName}",
+                SpecialtyName = appt.Specialty?.Name ?? "",
+                AppointmentDate = appt.AppointmentDate.ToString("dd/MM/yyyy")
+            };
+
+            return View(model);
+        }
+
+        // POST: Lưu đánh giá & cập nhật điểm số bác sĩ
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Review(ReviewViewModel model)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int patientId)) return RedirectToAction("Login", "Account");
+
+            var appt = _context.Appointments
+                .Include(a => a.Doctor)
+                .FirstOrDefault(a => a.Id == model.AppointmentId && a.PatientId == patientId);
+
+            if (appt == null || appt.Status != "Completed" || appt.Rating.HasValue)
+                return BadRequest("Yêu cầu không hợp lệ.");
+
+            if (ModelState.IsValid)
+            {
+                // 1. Lưu thông tin đánh giá vào Appointment
+                appt.Rating = model.Rating;
+                appt.ReviewComment = model.Comment?.Trim();
+                appt.ReviewedAt = DateTime.UtcNow;
+
+                // 2. Tính toán và cập nhật lại điểm trung bình cho Bác sĩ
+                var doctor = appt.Doctor;
+                if (doctor != null)
+                {
+                    // Công thức tính trung bình mới: (Tổng điểm cũ + Điểm mới) / Tổng số lượt mới
+                    double currentTotalScore = doctor.Rating * doctor.ReviewCount;
+                    double newTotalScore = currentTotalScore + model.Rating;
+
+                    doctor.ReviewCount += 1;
+                    doctor.Rating = Math.Round(newTotalScore / doctor.ReviewCount, 1); // Làm tròn 1 chữ số thập phân
+                }
+
+                _context.SaveChanges();
+
+                TempData["SuccessMessage"] = "Cảm ơn bạn đã gửi đánh giá! Ý kiến của bạn giúp Healthy System nâng cao chất lượng dịch vụ.";
+                return RedirectToAction(nameof(MyAppointments));
+            }
+
+            return View(model);
+        }
     }
 }

@@ -67,5 +67,14 @@ namespace Healthy_System.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? UpdatedAt { get; set; }
+
+        // US09: Patient Review & Rating
+        [Range(1, 5)]
+        public int? Rating { get; set; }
+
+        [StringLength(1000)]
+        public string? ReviewComment { get; set; }
+
+        public DateTime? ReviewedAt { get; set; }
     }
 }
