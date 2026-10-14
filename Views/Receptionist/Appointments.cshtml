@@ -5,14 +5,40 @@
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold mb-0"><i class="fa-solid fa-calendar-check text-success me-2"></i>Quản Lý Toàn Bộ Lịch Hẹn</h2>
-    <a asp-action="CreateAppointment" class="btn btn-success rounded-pill px-4">Đặt Lịch Tại Quầy</a>
+    <h2 class="fw-bold mb-0">
+        <i class="fa-solid fa-calendar-check text-success me-2"></i>Quản Lý Toàn Bộ Lịch Hẹn
+    </h2>
+    <div class="d-flex gap-2">
+        <a asp-action="SearchPatient" class="btn btn-outline-primary rounded-pill px-4">
+            <i class="fa-solid fa-magnifying-glass me-1"></i>Tìm Bệnh Nhân
+        </a>
+        <a asp-action="CreateAppointment" class="btn btn-success rounded-pill px-4">
+            <i class="fa-solid fa-plus me-1"></i>Đặt Lịch Tại Quầy
+        </a>
+    </div>
 </div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
 <div class="card card-reception p-4 mb-4">
     <form method="get" class="row g-3">
         <div class="col-md-6">
-            <input type="text" name="search" class="form-control" placeholder="Tìm theo tên bệnh nhân, SĐT hoặc mã lịch hẹn..." value="@ViewBag.SearchTerm" />
+            <input type="text" name="search" class="form-control"
+                   placeholder="Tìm theo tên bệnh nhân, SĐT hoặc mã lịch hẹn..."
+                   value="@ViewBag.SearchTerm" />
         </div>
         <div class="col-md-4">
             <select name="status" class="form-select">
@@ -55,17 +81,54 @@
                             <small class="text-muted d-block">@a.Patient?.PhoneNumber</small>
                         </td>
                         <td>@a.Doctor?.Title @a.Doctor?.User?.FullName</td>
-                        <td><span class="badge bg-secondary">@a.Status</span></td>
-                        <td class="text-center">
-                            @if (a.Status == "Pending")
+                        <td>
+                            @switch (a.Status)
                             {
-                                <form asp-action="Confirm" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@a.Id" />
-                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">Xác nhận</button>
-                                </form>
+                                case "Pending":
+                                    <span class="badge bg-warning-subtle text-dark">Chờ xác nhận</span>
+                                    break;
+                                case "Confirmed":
+                                    <span class="badge bg-success-subtle text-success">Đã xác nhận</span>
+                                    break;
+                                case "Completed":
+                                    <span class="badge bg-info-subtle text-info">Đã hoàn thành</span>
+                                    break;
+                                case "Cancelled":
+                                    <span class="badge bg-danger-subtle text-danger">Đã hủy</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary">@a.Status</span>
+                                    break;
                             }
                         </td>
+                        <td class="text-center">
+                            <div class="d-flex gap-1 justify-content-center">
+                                @if (a.Status == "Pending")
+                                {
+                                    <form asp-action="Confirm" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@a.Id" />
+                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                                            <i class="fa-solid fa-check me-1"></i>Xác nhận
+                                        </button>
+                                    </form>
+                                }
+                                @if (a.Status == "Pending" || a.Status == "Confirmed")
+                                {
+                                    @* US-17: Cancel button *@
+                                    <a asp-action="CancelAppointment" asp-route-id="@a.Id"
+                                       class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                        <i class="fa-solid fa-ban me-1"></i>Hủy
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">Không có lịch hẹn nào.</td>
                     </tr>
                 }
             </tbody>
