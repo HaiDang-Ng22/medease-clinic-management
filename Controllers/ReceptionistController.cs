@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Healthy_System.Data;
 using Healthy_System.Models;
@@ -100,7 +101,8 @@ namespace Healthy_System.Controllers
             return RedirectToAction(nameof(Dashboard));
         }
 
-        // US-23: Create Walk-in Appointment at Reception
+        // US-15: Create Walk-in OR Phone Appointment at Reception
+        [HttpGet]
         public IActionResult CreateAppointment()
         {
             ViewBag.Specialties = _context.Specialties.Where(s => s.IsActive).ToList();
@@ -110,9 +112,10 @@ namespace Healthy_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CreateAppointment(string patientName, string phone, int specialtyId, int doctorId, DateTime appointmentDate, string timeSlot, string reason)
+        public IActionResult CreateAppointment(string patientName, string phone, int specialtyId, int doctorId,
+            DateTime appointmentDate, string timeSlot, string reason, string bookingType)
         {
-            // Find or create patient
+            // Find patient by phone, or create new guest patient account
             var patient = _context.Users.FirstOrDefault(u => u.PhoneNumber == phone.Trim());
             if (patient == null)
             {
@@ -128,9 +131,20 @@ namespace Healthy_System.Controllers
                 _context.Users.Add(patient);
                 _context.SaveChanges();
             }
+            else if (!string.IsNullOrWhiteSpace(patientName))
+            {
+                // Update display name in case receptionist corrected it
+                patient.FullName = patientName.Trim();
+                _context.SaveChanges();
+            }
 
-            var randomCode = new Random().Next(1000, 9999);
-            var apptCode = $"HS-REC-{randomCode}";
+            // US-15: use different code prefix to distinguish walk-in vs phone booking
+            var prefix = bookingType == "Phone" ? "HS-TEL" : "HS-REC";
+            var apptCode = $"{prefix}-{new Random().Next(1000, 9999)}";
+
+            var defaultReason = bookingType == "Phone"
+                ? "Đặt lịch qua điện thoại tại Lễ tân"
+                : "Tiếp nhận trực tiếp tại quầy Lễ tân";
 
             var appt = new Appointment
             {
@@ -140,7 +154,7 @@ namespace Healthy_System.Controllers
                 SpecialtyId = specialtyId,
                 AppointmentDate = DateTime.SpecifyKind(appointmentDate.Date, DateTimeKind.Utc),
                 TimeSlot = timeSlot,
-                ReasonForVisit = string.IsNullOrWhiteSpace(reason) ? "Tiếp nhận trực tiếp tại quầy Lễ tân" : reason.Trim(),
+                ReasonForVisit = string.IsNullOrWhiteSpace(reason) ? defaultReason : reason.Trim(),
                 Status = "Confirmed",
                 CreatedAt = DateTime.UtcNow
             };
@@ -148,8 +162,110 @@ namespace Healthy_System.Controllers
             _context.Appointments.Add(appt);
             _context.SaveChanges();
 
-            TempData["SuccessMessage"] = $"Tiếp nhận bệnh nhân thành công! Mã cuộc hẹn: {apptCode}";
+            var typeLabel = bookingType == "Phone" ? "qua điện thoại" : "tại quầy";
+            TempData["SuccessMessage"] = $"Tiếp nhận bệnh nhân thành công ({typeLabel})! Mã cuộc hẹn: {apptCode}";
             return RedirectToAction(nameof(Dashboard));
+        }
+
+        // US-16: Search & Look Up Patient Information
+        [HttpGet]
+        public IActionResult SearchPatient(string? query)
+        {
+            ViewBag.Query = query;
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                ViewBag.Patients = null;
+                ViewBag.AppointmentsByPatient = new Dictionary<int, List<Appointment>>();
+                return View();
+            }
+
+            var term = query.Trim().ToLower();
+
+            var patients = _context.Users
+                .Where(u => u.Role == "Patient" &&
+                    (u.FullName.ToLower().Contains(term) ||
+                     (u.PhoneNumber != null && u.PhoneNumber.Contains(term)) ||
+                     (u.Email != null && u.Email.ToLower().Contains(term))))
+                .OrderBy(u => u.FullName)
+                .ToList();
+
+            var patientIds = patients.Select(p => p.Id).ToList();
+
+            var appointments = _context.Appointments
+                .Include(a => a.Doctor).ThenInclude(d => d.User)
+                .Include(a => a.Specialty)
+                .Where(a => patientIds.Contains(a.PatientId))
+                .OrderByDescending(a => a.AppointmentDate)
+                .ToList();
+
+            ViewBag.Patients = patients;
+            ViewBag.AppointmentsByPatient = appointments
+                .GroupBy(a => a.PatientId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            return View();
+        }
+
+        // US-17: Cancel Appointment at Reception Counter (GET - show confirmation form)
+        [HttpGet]
+        public IActionResult CancelAppointment(int id)
+        {
+            var appt = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor).ThenInclude(d => d.User)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (appt == null) return NotFound();
+
+            if (appt.Status == "Completed" || appt.Status == "Cancelled")
+            {
+                TempData["ErrorMessage"] = "Lịch hẹn này không thể hủy (đã hoàn thành hoặc đã hủy trước đó).";
+                return RedirectToAction(nameof(Appointments));
+            }
+
+            return View(appt);
+        }
+
+        // US-17: Cancel Appointment at Reception Counter (POST - perform cancellation)
+        [HttpPost, ActionName("CancelAppointment")]
+        [ValidateAntiForgeryToken]
+        public IActionResult CancelAppointmentConfirmed(int id, string cancellationReason)
+        {
+            var appt = _context.Appointments
+                .Include(a => a.Patient)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (appt == null) return NotFound();
+
+            if (appt.Status == "Completed" || appt.Status == "Cancelled")
+            {
+                TempData["ErrorMessage"] = "Lịch hẹn này không thể hủy.";
+                return RedirectToAction(nameof(Appointments));
+            }
+
+            appt.Status = "Cancelled";
+            appt.CancellationReason = string.IsNullOrWhiteSpace(cancellationReason)
+                ? "Hủy theo yêu cầu tại quầy lễ tân"
+                : cancellationReason.Trim();
+            appt.CancelledAt = DateTime.UtcNow;
+            appt.UpdatedAt = DateTime.UtcNow;
+
+            // Notify patient
+            _context.Notifications.Add(new Notification
+            {
+                UserId = appt.PatientId,
+                Title = "Lịch hẹn đã bị hủy",
+                Message = $"Lịch hẹn {appt.AppointmentCode} ngày {appt.AppointmentDate:dd/MM/yyyy} đã được hủy tại quầy lễ tân. Lý do: {appt.CancellationReason}. Liên hệ phòng khám nếu cần hỗ trợ.",
+                Type = "StatusUpdate",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            _context.SaveChanges();
+            TempData["SuccessMessage"] = $"Đã hủy lịch hẹn {appt.AppointmentCode} thành công!";
+            return RedirectToAction(nameof(Appointments));
         }
 
         // US-29: View All Doctors Schedule
