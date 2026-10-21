@@ -138,6 +138,22 @@ namespace Healthy_System.Controllers
                 _context.SaveChanges();
             }
 
+            // BUG04 Fix: Kiểm tra trùng khung giờ khám trước khi tạo lịch hẹn
+            var utcDate = DateTime.SpecifyKind(appointmentDate.Date, DateTimeKind.Utc);
+            bool slotConflict = _context.Appointments.Any(a =>
+                a.DoctorId == doctorId &&
+                a.AppointmentDate.Date == utcDate.Date &&
+                a.TimeSlot == timeSlot &&
+                a.Status != "Cancelled");
+
+            if (slotConflict)
+            {
+                TempData["ErrorMessage"] = $"Khung giờ {timeSlot} ngày {appointmentDate:dd/MM/yyyy} của bác sĩ này đã có bệnh nhân đặt trước. Vui lòng chọn khung giờ khác.";
+                ViewBag.Specialties = _context.Specialties.Where(s => s.IsActive).ToList();
+                ViewBag.Doctors = _context.Doctors.Include(d => d.User).ToList();
+                return View();
+            }
+
             // US-15: use different code prefix to distinguish walk-in vs phone booking
             var prefix = bookingType == "Phone" ? "HS-TEL" : "HS-REC";
             var apptCode = $"{prefix}-{new Random().Next(1000, 9999)}";
@@ -152,7 +168,7 @@ namespace Healthy_System.Controllers
                 PatientId = patient.Id,
                 DoctorId = doctorId,
                 SpecialtyId = specialtyId,
-                AppointmentDate = DateTime.SpecifyKind(appointmentDate.Date, DateTimeKind.Utc),
+                AppointmentDate = utcDate,
                 TimeSlot = timeSlot,
                 ReasonForVisit = string.IsNullOrWhiteSpace(reason) ? defaultReason : reason.Trim(),
                 Status = "Confirmed",
@@ -181,12 +197,15 @@ namespace Healthy_System.Controllers
             }
 
             var term = query.Trim().ToLower();
+            var normalizedTerm = RemoveDiacritics(term);
 
-            var patients = _context.Users
-                .Where(u => u.Role == "Patient" &&
-                    (u.FullName.ToLower().Contains(term) ||
-                     (u.PhoneNumber != null && u.PhoneNumber.Contains(term)) ||
-                     (u.Email != null && u.Email.ToLower().Contains(term))))
+            // BUG05 Fix: Tìm kiếm bệnh nhân hỗ trợ cả có dấu và không dấu
+            var allPatients = _context.Users.Where(u => u.Role == "Patient").ToList();
+            var patients = allPatients
+                .Where(u =>
+                    (!string.IsNullOrWhiteSpace(u.FullName) && (u.FullName.ToLower().Contains(term) || RemoveDiacritics(u.FullName).Contains(normalizedTerm))) ||
+                    (!string.IsNullOrWhiteSpace(u.PhoneNumber) && u.PhoneNumber.Contains(term)) ||
+                    (!string.IsNullOrWhiteSpace(u.Email) && u.Email.ToLower().Contains(term)))
                 .OrderBy(u => u.FullName)
                 .ToList();
 
@@ -278,6 +297,25 @@ namespace Healthy_System.Controllers
                 .ToList();
 
             return View(doctors);
+        }
+
+        // Helper method: Loại bỏ dấu tiếng Việt để phục vụ tìm kiếm không phân biệt dấu
+        private static string RemoveDiacritics(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+            var normalizedString = text.Normalize(System.Text.NormalizationForm.FormD);
+            var stringBuilder = new System.Text.StringBuilder();
+
+            foreach (var c in normalizedString)
+            {
+                var unicodeCategory = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+                if (unicodeCategory != System.Globalization.UnicodeCategory.NonSpacingMark)
+                {
+                    stringBuilder.Append(c);
+                }
+            }
+
+            return stringBuilder.ToString().Normalize(System.Text.NormalizationForm.FormC).ToLower();
         }
     }
 }

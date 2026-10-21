@@ -1,0 +1,160 @@
+@model List<Healthy_System.Models.Doctor>
+@{
+    ViewData["Title"] = "Quản Lý Bác Sĩ & Chuyên Khoa";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+        <h4 class="fw-bold text-dark mb-1">
+            <i class="fa-solid fa-user-doctor me-2" style="color:#7c3aed"></i>Quản Lý Đội Ngũ Bác Sĩ
+        </h4>
+        <p class="text-muted mb-0 small">Hồ sơ chuyên môn, chuyên khoa, phòng khám và phân công bác sĩ phòng khám</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-3 fw-semibold">
+            <i class="fa-solid fa-arrow-left me-1"></i> Quay lại Dashboard
+        </a>
+        <a asp-action="CreateDoctor" class="btn btn-primary rounded-pill px-4 fw-semibold" style="background:#7c3aed; border-color:#7c3aed;">
+            <i class="fa-solid fa-user-plus me-2"></i>Tiếp Nhận Bác Sĩ Mới
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 rounded-3 shadow-sm text-white" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="fs-2 fw-bold">@Model.Count</div>
+                        <div class="opacity-75 small">Tổng số bác sĩ hoạt động</div>
+                    </div>
+                    <i class="fa-solid fa-user-doctor fs-1 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 rounded-3 shadow-sm text-white" style="background:linear-gradient(135deg,#0369a1,#0284c7)">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="fs-2 fw-bold">@(ViewBag.Specialties != null ? ((List<Healthy_System.Models.Specialty>)ViewBag.Specialties).Count : 0)</div>
+                        <div class="opacity-75 small">Chuyên khoa hiện có</div>
+                    </div>
+                    <i class="fa-solid fa-stethoscope fs-1 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 rounded-3 shadow-sm text-white" style="background:linear-gradient(135deg,#059669,#10b981)">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="fs-2 fw-bold">@Model.Sum(d => d.Appointments?.Count ?? 0)</div>
+                        <div class="opacity-75 small">Tổng lượt khám phụ trách</div>
+                    </div>
+                    <i class="fa-solid fa-calendar-check fs-1 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 rounded-3 shadow-sm">
+    <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
+        <h6 class="fw-bold mb-0">
+            <i class="fa-solid fa-list-check me-2 text-purple" style="color:#7c3aed"></i>Danh Sách Bác Sĩ & Hồ Sơ Chuyên Khoa
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="px-4 py-3">Bác sĩ</th>
+                        <th class="py-3">Chuyên khoa</th>
+                        <th class="py-3">Phòng khám</th>
+                        <th class="py-3">Kinh nghiệm</th>
+                        <th class="py-3">Phí khám</th>
+                        <th class="py-3">Đánh giá</th>
+                        <th class="py-3">Lượt khám</th>
+                        <th class="px-4 py-3 text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-user-doctor fs-1 mb-3 text-secondary opacity-50 d-block"></i>
+                                Chưa có bác sĩ nào trong hệ thống. Hãy tiếp nhận bác sĩ mới!
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var d in Model)
+                        {
+                            <tr>
+                                <td class="px-4">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="@(string.IsNullOrWhiteSpace(d.User?.AvatarUrl) ? "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=100&auto=format&fit=crop&q=80" : d.User.AvatarUrl)" 
+                                             alt="@d.User?.FullName" 
+                                             class="rounded-circle border" 
+                                             style="width: 44px; height: 44px; object-fit: cover;" />
+                                        <div>
+                                            <div class="fw-bold text-dark">@d.User?.FullName</div>
+                                            <small class="text-muted"><i class="fa-solid fa-envelope me-1"></i>@d.User?.Email</small>
+                                            @if (!string.IsNullOrWhiteSpace(d.User?.PhoneNumber))
+                                            {
+                                                <small class="text-muted ms-2"><i class="fa-solid fa-phone me-1"></i>@d.User?.PhoneNumber</small>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 fw-semibold">
+                                        <i class="fa-solid fa-stethoscope me-1"></i>@d.Specialty?.Name
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border rounded-pill px-3 py-1">
+                                        <i class="fa-solid fa-door-open me-1 text-secondary"></i>@d.RoomNumber
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-secondary">@d.ExperienceYears năm</span>
+                                    <div class="small text-muted">@d.Title</div>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">@d.ConsultationFee.ToString("N0") VNĐ</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <i class="fa-solid fa-star text-warning"></i>
+                                        <span class="fw-bold">@d.Rating.ToString("F1")</span>
+                                        <small class="text-muted">(@d.ReviewCount)</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">
+                                        @(d.Appointments?.Count ?? 0) ca
+                                    </span>
+                                </td>
+                                <td class="px-4 text-end">
+                                    <a asp-action="EditDoctor" asp-route-id="@d.Id" 
+                                       class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                                        <i class="fa-solid fa-pen-to-square me-1"></i>Hồ sơ & Phòng
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

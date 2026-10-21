@@ -31,19 +31,19 @@ namespace Healthy_System.Controllers
                 .FirstOrDefault(d => d.UserId == userId);
         }
 
+        [AllowAnonymous]
+        public IActionResult Unconfigured()
+        {
+            return View();
+        }
+
         // US-30: View Doctor Dashboard & Queue
         public IActionResult Dashboard()
         {
             var doctor = GetCurrentDoctor();
             if (doctor == null)
             {
-                // Fallback for Admin testing
-                doctor = _context.Doctors.Include(d => d.User).Include(d => d.Specialty).FirstOrDefault();
-            }
-
-            if (doctor == null)
-            {
-                return Content("Không tìm thấy thông tin bác sĩ liên kết với tài khoản này.");
+                return RedirectToAction(nameof(Unconfigured));
             }
 
             var today = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
@@ -78,8 +78,8 @@ namespace Healthy_System.Controllers
         // US-30: View Patient Queue for today
         public IActionResult Queue()
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).FirstOrDefault();
-            if (doctor == null) return NotFound();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
             var today = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
             var queue = _context.Appointments
@@ -96,13 +96,19 @@ namespace Healthy_System.Controllers
         // US-31 & US-34: Clinical Examination & e-Prescription
         public IActionResult Examination(int id)
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.FirstOrDefault();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
+
             var appointment = _context.Appointments
                 .Include(a => a.Patient)
                 .Include(a => a.Specialty)
-                .FirstOrDefault(a => a.Id == id);
+                .FirstOrDefault(a => a.Id == id && a.DoctorId == doctor.Id);
 
-            if (appointment == null) return NotFound();
+            if (appointment == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy lịch hẹn hoặc bạn không phụ trách ca khám này.";
+                return RedirectToAction(nameof(Queue));
+            }
 
             // Medical history of this patient
             ViewBag.PatientHistory = _context.Appointments
@@ -120,8 +126,15 @@ namespace Healthy_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult CompleteExamination(int appointmentId, string diagnosis, string prescription, string? labRequest, string? doctorNotes)
         {
-            var appt = _context.Appointments.Include(a => a.Patient).FirstOrDefault(a => a.Id == appointmentId);
-            if (appt == null) return NotFound();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
+
+            var appt = _context.Appointments.Include(a => a.Patient).FirstOrDefault(a => a.Id == appointmentId && a.DoctorId == doctor.Id);
+            if (appt == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy ca khám hoặc bạn không phụ trách ca khám này.";
+                return RedirectToAction(nameof(Queue));
+            }
 
             appt.Status = "Completed";
             appt.Diagnosis = diagnosis?.Trim();
@@ -152,13 +165,19 @@ namespace Healthy_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult CancelEmergency(int appointmentId, string emergencyReason)
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.FirstOrDefault();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
+
             var appt = _context.Appointments
                 .Include(a => a.Patient)
                 .Include(a => a.Doctor).ThenInclude(d => d!.User)
-                .FirstOrDefault(a => a.Id == appointmentId);
+                .FirstOrDefault(a => a.Id == appointmentId && a.DoctorId == doctor.Id);
 
-            if (appt == null) return NotFound();
+            if (appt == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy ca khám hoặc bạn không phụ trách ca khám này.";
+                return RedirectToAction(nameof(Queue));
+            }
 
             if (string.IsNullOrWhiteSpace(emergencyReason))
             {
@@ -193,12 +212,18 @@ namespace Healthy_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult RescheduleEmergency(int appointmentId, DateTime newDate, string newTimeSlot, string emergencyReason)
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.FirstOrDefault();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
+
             var appt = _context.Appointments
                 .Include(a => a.Patient)
-                .FirstOrDefault(a => a.Id == appointmentId);
+                .FirstOrDefault(a => a.Id == appointmentId && a.DoctorId == doctor.Id);
 
-            if (appt == null) return NotFound();
+            if (appt == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy ca khám hoặc bạn không phụ trách ca khám này.";
+                return RedirectToAction(nameof(Queue));
+            }
 
             if (newDate.Date < DateTime.Today)
             {
@@ -233,8 +258,8 @@ namespace Healthy_System.Controllers
         // US06: Xem danh sách hồ sơ khám bệnh, đơn thuốc đã khám
         public IActionResult MedicalRecords(string? searchKeyword)
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.FirstOrDefault();
-            if (doctor == null) return NotFound();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
             var query = _context.Appointments
                 .Include(a => a.Patient)
@@ -263,26 +288,31 @@ namespace Healthy_System.Controllers
         // US06: Xem chi tiết hồ sơ khám bệnh & đơn thuốc
         public IActionResult MedicalRecord(int id)
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.FirstOrDefault();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
+
             var appt = _context.Appointments
                 .Include(a => a.Patient)
                 .Include(a => a.Doctor).ThenInclude(d => d!.User)
                 .Include(a => a.Doctor).ThenInclude(d => d!.Specialty)
                 .Include(a => a.Specialty)
-                .FirstOrDefault(a => a.Id == id);
+                .FirstOrDefault(a => a.Id == id && a.DoctorId == doctor.Id);
 
-            if (appt == null) return NotFound();
+            if (appt == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy hồ sơ hoặc bạn không phụ trách ca khám này.";
+                return RedirectToAction(nameof(MedicalRecords));
+            }
 
             ViewBag.Doctor = doctor;
             return View(appt);
         }
 
         // US-35: Doctor Work Schedule
-        // US-35: Doctor Work Schedule
         public IActionResult Schedule()
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.FirstOrDefault();
-            if (doctor == null) return NotFound();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
             var today = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
             var schedules = _context.DoctorSchedules
@@ -300,7 +330,7 @@ namespace Healthy_System.Controllers
         public IActionResult Profile()
         {
             var doctor = GetCurrentDoctor();
-            if (doctor == null) return NotFound();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
             var model = new DoctorProfileViewModel
             {
@@ -325,6 +355,12 @@ namespace Healthy_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Profile(DoctorProfileViewModel model)
         {
+            var currentDoctor = GetCurrentDoctor();
+            if (currentDoctor == null || currentDoctor.Id != model.Id)
+            {
+                return Forbid();
+            }
+
             if (!ModelState.IsValid)
             {
                 model.Specialties = _context.Specialties.Where(s => s.IsActive).OrderBy(s => s.Name).ToList();
@@ -365,7 +401,7 @@ namespace Healthy_System.Controllers
         public IActionResult AddSchedule(DateTime workDate, string timeSlot, int maxPatients = 1, string? notes = null)
         {
             var doctor = GetCurrentDoctor();
-            if (doctor == null) return NotFound();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
             if (workDate.Date < DateTime.Today)
             {
@@ -409,7 +445,7 @@ namespace Healthy_System.Controllers
         public IActionResult ToggleScheduleStatus(int id)
         {
             var doctor = GetCurrentDoctor();
-            if (doctor == null) return NotFound();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
             var schedule = _context.DoctorSchedules.FirstOrDefault(s => s.Id == id && s.DoctorId == doctor.Id);
             if (schedule == null) return NotFound();
@@ -428,6 +464,7 @@ namespace Healthy_System.Controllers
             TempData["SuccessMessage"] = $"Đã cập nhật ca trực {schedule.TimeSlot} sang trạng thái: {statusStr}";
             return RedirectToAction(nameof(Schedule));
         }
+
         // =====================================================================
         // US20: Gửi thông báo / liên hệ bệnh nhân khi cần
         // =====================================================================
@@ -435,15 +472,19 @@ namespace Healthy_System.Controllers
         [HttpGet]
         public IActionResult SendNotification(int appointmentId)
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).FirstOrDefault();
-            if (doctor == null) return NotFound();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
             var appointment = _context.Appointments
                 .Include(a => a.Patient)
                 .Include(a => a.Specialty)
-                .FirstOrDefault(a => a.Id == appointmentId);
+                .FirstOrDefault(a => a.Id == appointmentId && a.DoctorId == doctor.Id);
 
-            if (appointment == null) return NotFound();
+            if (appointment == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy lịch hẹn hoặc bạn không phụ trách ca khám này.";
+                return RedirectToAction(nameof(PatientList));
+            }
 
             ViewBag.Doctor = doctor;
             ViewBag.Appointment = appointment;
@@ -454,12 +495,18 @@ namespace Healthy_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult SendNotification(int appointmentId, string notificationType, string notificationTitle, string notificationMessage)
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).FirstOrDefault();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
+
             var appointment = _context.Appointments
                 .Include(a => a.Patient)
-                .FirstOrDefault(a => a.Id == appointmentId);
+                .FirstOrDefault(a => a.Id == appointmentId && a.DoctorId == doctor.Id);
 
-            if (appointment == null) return NotFound();
+            if (appointment == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy lịch hẹn hoặc bạn không phụ trách ca khám này.";
+                return RedirectToAction(nameof(PatientList));
+            }
 
             if (string.IsNullOrWhiteSpace(notificationMessage))
             {
@@ -467,7 +514,7 @@ namespace Healthy_System.Controllers
                 return RedirectToAction(nameof(SendNotification), new { appointmentId });
             }
 
-            var doctorName = doctor?.User?.FullName ?? "Bác sĩ phụ trách";
+            var doctorName = doctor.User?.FullName ?? "Bác sĩ phụ trách";
 
             _context.Notifications.Add(new Notification
             {
@@ -494,8 +541,8 @@ namespace Healthy_System.Controllers
         [HttpGet]
         public IActionResult PatientList(string? search, string? status, string? dateFilter)
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).FirstOrDefault();
-            if (doctor == null) return NotFound();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
             var query = _context.Appointments
                 .Include(a => a.Patient)
@@ -550,8 +597,8 @@ namespace Healthy_System.Controllers
         [HttpGet]
         public IActionResult PatientProfile(int appointmentId)
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).FirstOrDefault();
-            if (doctor == null) return NotFound();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
             var appointment = _context.Appointments
                 .Include(a => a.Patient)
@@ -581,15 +628,19 @@ namespace Healthy_System.Controllers
         [HttpGet]
         public IActionResult LabRequestForm(int id)
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).Include(d => d.Specialty).FirstOrDefault();
-            if (doctor == null) return NotFound();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
             var appointment = _context.Appointments
                 .Include(a => a.Patient)
                 .Include(a => a.Specialty)
-                .FirstOrDefault(a => a.Id == id);
+                .FirstOrDefault(a => a.Id == id && a.DoctorId == doctor.Id);
 
-            if (appointment == null) return NotFound();
+            if (appointment == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy ca khám hoặc bạn không phụ trách ca khám này.";
+                return RedirectToAction(nameof(PatientList));
+            }
 
             ViewBag.Doctor = doctor;
             return View(appointment);
@@ -599,11 +650,18 @@ namespace Healthy_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult SaveLabRequest(int appointmentId, string labRequest)
         {
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
+
             var appt = _context.Appointments
                 .Include(a => a.Patient)
-                .FirstOrDefault(a => a.Id == appointmentId);
+                .FirstOrDefault(a => a.Id == appointmentId && a.DoctorId == doctor.Id);
 
-            if (appt == null) return NotFound();
+            if (appt == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy ca khám hoặc bạn không phụ trách ca khám này.";
+                return RedirectToAction(nameof(PatientList));
+            }
 
             appt.LabRequest = labRequest?.Trim();
             appt.UpdatedAt = DateTime.UtcNow;
@@ -635,15 +693,19 @@ namespace Healthy_System.Controllers
         [HttpGet]
         public IActionResult PrescriptionForm(int id)
         {
-            var doctor = GetCurrentDoctor() ?? _context.Doctors.Include(d => d.User).Include(d => d.Specialty).FirstOrDefault();
-            if (doctor == null) return NotFound();
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
             var appointment = _context.Appointments
                 .Include(a => a.Patient)
                 .Include(a => a.Specialty)
-                .FirstOrDefault(a => a.Id == id);
+                .FirstOrDefault(a => a.Id == id && a.DoctorId == doctor.Id);
 
-            if (appointment == null) return NotFound();
+            if (appointment == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy ca khám hoặc bạn không phụ trách ca khám này.";
+                return RedirectToAction(nameof(PatientList));
+            }
 
             ViewBag.Doctor = doctor;
             return View(appointment);
@@ -653,11 +715,18 @@ namespace Healthy_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult SavePrescription(int appointmentId, string prescription, string? diagnosis, string? doctorNotes)
         {
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
+
             var appt = _context.Appointments
                 .Include(a => a.Patient)
-                .FirstOrDefault(a => a.Id == appointmentId);
+                .FirstOrDefault(a => a.Id == appointmentId && a.DoctorId == doctor.Id);
 
-            if (appt == null) return NotFound();
+            if (appt == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy ca khám hoặc bạn không phụ trách ca khám này.";
+                return RedirectToAction(nameof(PatientList));
+            }
 
             if (string.IsNullOrWhiteSpace(prescription))
             {

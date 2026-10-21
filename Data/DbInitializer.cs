@@ -41,25 +41,43 @@ namespace Healthy_System.Data
         {
             context.Database.EnsureCreated();
 
-            // Thêm các cột mới vào bảng Appointments nếu chưa có (SQLite không hỗ trợ IF NOT EXISTS nên dùng try-catch)
+            // Kiểm tra các cột đã tồn tại trong bảng Appointments trước khi thêm, tránh log fail
             var newColumns = new[]
             {
-                ("Diagnosis",    "TEXT"),
-                ("Prescription", "TEXT"),
-                ("DoctorNotes",  "TEXT"),
-                ("LabRequest",   "TEXT"),
+                ("Diagnosis",     "TEXT"),
+                ("Prescription",  "TEXT"),
+                ("DoctorNotes",   "TEXT"),
+                ("LabRequest",    "TEXT"),
+                ("Rating",        "INTEGER"),
+                ("ReviewComment", "TEXT"),
+                ("ReviewedAt",    "TEXT"),
             };
 
-            foreach (var (colName, colType) in newColumns)
+            try
             {
-                try
+                var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                using (var command = context.Database.GetDbConnection().CreateCommand())
                 {
-                    context.Database.ExecuteSqlRaw($"ALTER TABLE \"Appointments\" ADD COLUMN \"{colName}\" {colType}");
+                    command.CommandText = "PRAGMA table_info(\"Appointments\");";
+                    context.Database.OpenConnection();
+                    using var reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        existingColumns.Add(reader.GetString(1));
+                    }
                 }
-                catch
+
+                foreach (var (colName, colType) in newColumns)
                 {
-                    // Cột đã tồn tại → bỏ qua lỗi
+                    if (!existingColumns.Contains(colName))
+                    {
+                        context.Database.ExecuteSqlRaw($"ALTER TABLE \"Appointments\" ADD COLUMN \"{colName}\" {colType}");
+                    }
                 }
+            }
+            catch
+            {
+                // Bỏ qua nếu có lỗi
             }
         }
 

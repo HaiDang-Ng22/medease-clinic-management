@@ -49,7 +49,13 @@
             </div>
         </div>
     <div class="col-12 mt-3">
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
+            <a asp-action="Doctors" class="btn btn-outline-primary rounded-pill px-4 fw-semibold" style="color:#7c3aed; border-color:#7c3aed;">
+                <i class="fa-solid fa-user-doctor me-2"></i>Quản Lý Bác Sĩ (@ViewBag.TotalDoctors)
+            </a>
+            <a asp-action="CreateDoctor" class="btn btn-primary rounded-pill px-4 fw-semibold" style="background:#7c3aed; border-color:#7c3aed;">
+                <i class="fa-solid fa-user-plus me-2"></i>Tiếp Nhận Bác Sĩ Mới
+            </a>
             <a asp-action="Equipments" class="btn btn-outline-primary rounded-pill px-4 fw-semibold">
                 <i class="fa-solid fa-microscope me-2"></i>Quản Lý Trang Thiết Bị Y Tế (@ViewBag.TotalEquipments)
             </a>
@@ -62,7 +68,10 @@
 
 <div class="card border-0 rounded-3 shadow-sm">
     <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-        <h6 class="fw-bold mb-0"><i class="fa-solid fa-users me-2 text-purple" style="color:#7c3aed"></i>Danh Sách Người Dùng & Phân Quyền</h6>
+        <div>
+            <h6 class="fw-bold mb-0"><i class="fa-solid fa-users me-2 text-purple" style="color:#7c3aed"></i>Danh Sách Người Dùng & Phân Quyền</h6>
+            <small class="text-muted">Phân quyền nhân sự nội bộ (Bác sĩ được quản lý chuyên sâu theo Chuyên khoa & Phòng khám)</small>
+        </div>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -74,11 +83,15 @@
                         <th class="py-3">Email</th>
                         <th class="py-3">Điện thoại</th>
                         <th class="py-3">Vai trò hiện tại</th>
-                        <th class="py-3">Đổi vai trò</th>
+                        <th class="py-3">Phân quyền vai trò</th>
                         <th class="py-3">Ngày tạo</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @{
+                        var currentUserIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                        int.TryParse(currentUserIdStr, out int currentAdminId);
+                    }
                     @foreach (var u in Model)
                     {
                         <tr>
@@ -102,20 +115,54 @@
                                 </span>
                             </td>
                             <td>
-                                <form asp-action="ChangeRole" method="post" class="d-flex gap-2 align-items-center">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="userId" value="@u.Id" />
-                                    <select name="newRole" class="form-select form-select-sm" style="min-width:140px">
-                                        @foreach (var r in new[]{"Admin","Doctor","Receptionist","LabTech","Accountant","Patient"})
-                                        {
-                                            if (r == u.Role) { <option value="@r" selected>@r</option> }
-                                            else { <option value="@r">@r</option> }
-                                        }
-                                    </select>
-                                    <button type="submit" class="btn btn-sm btn-outline-purple fw-semibold" style="color:#7c3aed;border-color:#7c3aed">
-                                        <i class="fa-solid fa-floppy-disk"></i>
-                                    </button>
-                                </form>
+                                @if (u.Role == "Admin")
+                                {
+                                    @* Admin rows: không được thay đổi qua UI, luôn hiển thị badge cố định *@
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle rounded-pill px-3 py-2"
+                                              title="Quyền Admin không thể thay đổi qua giao diện">
+                                            <i class="fa-solid fa-shield-halved me-1"></i>Cấp cao nhất
+                                        </span>
+                                    </div>
+                                }
+                                else if (u.Role == "Doctor")
+                                {
+                                    @* Doctor rows: không được đổi vai trò, quản lý qua trang Bác Sĩ *@
+                                    <div class="d-flex align-items-center gap-2">
+                                        <a asp-action="Doctors" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                                            <i class="fa-solid fa-stethoscope me-1"></i>Hồ sơ Bác sĩ
+                                        </a>
+                                        <span class="badge bg-light text-muted border small" title="Không thể đổi vai trò Bác sĩ vì liên kết lịch khám">
+                                            <i class="fa-solid fa-lock me-1"></i>Cố định
+                                        </span>
+                                    </div>
+                                }
+                                else if (u.Id == currentAdminId)
+                                {
+                                    @* Chính mình: không cho tự đổi vai trò *@
+                                    <span class="badge bg-light text-muted border rounded-pill px-3 py-2">
+                                        <i class="fa-solid fa-user-check me-1 text-success"></i>Đang đăng nhập
+                                    </span>
+                                }
+                                else
+                                {
+                                    @* Các role khác (Patient, Receptionist, LabTech, Accountant): cho phép đổi sang 4 role thông thường *@
+                                    <form asp-action="ChangeRole" method="post" class="d-flex gap-2 align-items-center">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@u.Id" />
+                                        <select name="newRole" class="form-select form-select-sm" style="min-width:150px">
+                                            @foreach (var r in new[] { "Patient", "Receptionist", "LabTech", "Accountant" })
+                                            {
+                                                if (r == u.Role) { <option value="@r" selected>@r</option> }
+                                                else { <option value="@r">@r</option> }
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-outline-purple fw-semibold"
+                                                style="color:#7c3aed;border-color:#7c3aed" title="Cập nhật vai trò">
+                                            <i class="fa-solid fa-floppy-disk"></i>
+                                        </button>
+                                    </form>
+                                }
                             </td>
                             <td class="text-muted small">@u.CreatedAt.ToString("dd/MM/yyyy")</td>
                         </tr>
