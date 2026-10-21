@@ -4,11 +4,6 @@
 > Case Study 04: Hệ Thống Phòng Khám Tư Nhân
 
 ---
-# Danh Sách Thành Viên 
-Nguyễn Hải Đăng
-Nguyễn Phước Sang
-Nguyễn Hữu Danh
-Lâm Gia Bảo 
 ## 📋 Giới Thiệu
 
 **MedEase (Healthy System)** là ứng dụng web quản lý phòng khám tư nhân, hỗ trợ đầy đủ quy trình từ đặt lịch hẹn, khám bệnh, đến quản lý hệ thống với 4 vai trò người dùng rõ ràng.
