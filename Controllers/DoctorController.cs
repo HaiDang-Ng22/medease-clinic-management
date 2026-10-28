@@ -46,6 +46,8 @@ namespace Healthy_System.Controllers
                 return RedirectToAction(nameof(Unconfigured));
             }
 
+            AutoUpdateOverdueAppointments(doctor.Id);
+
             var today = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
 
             // Appointments today
@@ -81,6 +83,8 @@ namespace Healthy_System.Controllers
             var doctor = GetCurrentDoctor();
             if (doctor == null) return RedirectToAction(nameof(Unconfigured));
 
+            AutoUpdateOverdueAppointments(doctor.Id);
+
             var today = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
             var queue = _context.Appointments
                 .Include(a => a.Patient)
@@ -91,6 +95,39 @@ namespace Healthy_System.Controllers
 
             ViewBag.Doctor = doctor;
             return View(queue);
+        }
+
+        // Tự động rà soát và cập nhật trạng thái các lịch hẹn quá hạn ngày khám
+        private void AutoUpdateOverdueAppointments(int? doctorId = null)
+        {
+            try
+            {
+                var query = _context.Appointments
+                    .Where(a => a.Status == "Pending" || a.Status == "Confirmed");
+
+                if (doctorId.HasValue)
+                {
+                    query = query.Where(a => a.DoctorId == doctorId.Value);
+                }
+
+                var candidates = query.ToList();
+                var today = DateTime.Today;
+                var overdue = candidates.Where(a => a.AppointmentDate.Date < today).ToList();
+
+                if (overdue.Any())
+                {
+                    foreach (var appt in overdue)
+                    {
+                        appt.Status = "Expired";
+                        appt.UpdatedAt = DateTime.UtcNow;
+                    }
+                    _context.SaveChanges();
+                }
+            }
+            catch
+            {
+                // Bỏ qua ngoại lệ nếu có xung đột truy cập đồng thời
+            }
         }
 
         // US-31 & US-34: Clinical Examination & e-Prescription
@@ -108,6 +145,27 @@ namespace Healthy_System.Controllers
             {
                 TempData["ErrorMessage"] = "Không tìm thấy lịch hẹn hoặc bạn không phụ trách ca khám này.";
                 return RedirectToAction(nameof(Queue));
+            }
+
+            // Nếu ca khám đã hoàn thành -> Chuyển hướng sang xem hồ sơ bệnh án, không cho khám lại đè dữ liệu
+            if (appointment.Status == "Completed")
+            {
+                TempData["InfoMessage"] = "Ca khám này đã hoàn tất chẩn đoán. Chuyển hướng đến hồ sơ bệnh án.";
+                return RedirectToAction(nameof(MedicalRecord), new { id = appointment.Id });
+            }
+
+            // Nếu ca khám đã bị hủy
+            if (appointment.Status == "Cancelled")
+            {
+                TempData["ErrorMessage"] = "Lịch hẹn này đã bị hủy, không thể tiến hành khám bệnh.";
+                return RedirectToAction(nameof(PatientList));
+            }
+
+            // Nếu ca khám đã quá hạn (ngày hẹn trong quá khứ mà chưa khám)
+            if (appointment.Status == "Expired" || appointment.AppointmentDate.Date < DateTime.Today)
+            {
+                TempData["ErrorMessage"] = $"Lịch hẹn của bệnh nhân {appointment.Patient?.FullName} đã quá hạn ngày khám ({appointment.AppointmentDate:dd/MM/yyyy}).";
+                return RedirectToAction(nameof(PatientList));
             }
 
             // Medical history of this patient
@@ -543,6 +601,9 @@ namespace Healthy_System.Controllers
         {
             var doctor = GetCurrentDoctor();
             if (doctor == null) return RedirectToAction(nameof(Unconfigured));
+
+            // Tự động quét và cập nhật trạng thái các ca quá hạn khám của bác sĩ
+            AutoUpdateOverdueAppointments(doctor.Id);
 
             var query = _context.Appointments
                 .Include(a => a.Patient)
