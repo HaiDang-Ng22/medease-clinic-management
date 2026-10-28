@@ -3,32 +3,35 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Phòng Khám Healthy System</title>
+    <title>@ViewData["Title"] - Phòng Khám Đa Khoa MedEase</title>
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    <!-- Google Fonts -->
+    <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary: #0284c7;
-            --primary-hover: #0369a1;
-            --primary-light: #e0f2fe;
-            --secondary: #0d9488;
-            --accent: #f59e0b;
+            --primary: #0f766e;
+            --primary-hover: #115e59;
+            --primary-light: #f0fdfa;
+            --secondary: #0284c7;
             --dark: #0f172a;
             --gray-100: #f8fafc;
             --gray-200: #e2e8f0;
             --gray-600: #475569;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             color: #334155;
             background-color: #f8fafc;
             display: flex;
@@ -44,178 +47,175 @@
         .top-bar {
             background-color: #0f172a;
             color: #94a3b8;
-            font-size: 0.85rem;
+            font-size: 0.8125rem;
             padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
         .top-bar a {
             color: #cbd5e1;
             text-decoration: none;
-            transition: color 0.2s;
+            transition: color 0.15s;
         }
         .top-bar a:hover {
-            color: #38bdf8;
+            color: #2dd4bf;
         }
 
         /* Navbar */
         .navbar-main {
             background: #ffffff;
-            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid var(--gray-200);
             padding: 12px 0;
         }
         .navbar-brand {
             font-weight: 800;
-            font-size: 1.45rem;
-            color: var(--primary) !important;
+            font-size: 1.25rem;
+            color: var(--dark) !important;
             display: flex;
             align-items: center;
             gap: 10px;
+            letter-spacing: -0.02em;
         }
-        .navbar-brand i {
-            font-size: 1.8rem;
-            color: var(--secondary);
+        .brand-monogram {
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            background-color: #0f766e;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
         }
         .nav-link {
-            font-weight: 600;
+            font-weight: 500;
             color: #334155 !important;
-            padding: 6px 12px !important;
-            transition: all 0.2s;
-            border-radius: 8px;
-            font-size: 0.9rem;
+            padding: 6px 14px !important;
+            border-radius: 6px;
+            font-size: 0.875rem;
             white-space: nowrap;
+            transition: color 0.15s, background-color 0.15s;
         }
         .nav-link:hover, .nav-link.active {
-            color: var(--primary) !important;
-            background-color: var(--primary-light);
+            color: #0f766e !important;
+            background-color: #f0fdfa;
         }
         .btn-booking {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background-color: var(--primary);
             color: #ffffff !important;
-            font-weight: 700;
-            border: none;
-            border-radius: 9999px;
-            padding: 9px 20px;
-            font-size: 0.9rem;
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
-            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            padding: 8px 18px;
+            font-size: 0.875rem;
+            transition: background-color 0.18s;
             white-space: nowrap;
+            text-decoration: none;
         }
         .btn-booking:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
+            background-color: var(--primary-hover);
+            color: #ffffff !important;
         }
+
         /* Search bar */
         .navbar-search-wrap {
             position: relative;
-            width: 220px;
+            width: 200px;
         }
         .navbar-search-wrap input {
-            border-radius: 9999px;
-            border: 1.5px solid #e2e8f0;
-            padding: 6px 36px 6px 14px;
-            font-size: 0.875rem;
+            border-radius: 6px;
+            border: 1px solid var(--gray-200);
+            padding: 6px 32px 6px 12px;
+            font-size: 0.8125rem;
             width: 100%;
             outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #f8fafc;
         }
         .navbar-search-wrap input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(2,132,199,0.12);
+            background: #ffffff;
         }
         .navbar-search-wrap .search-btn {
             position: absolute;
-            right: 10px;
+            right: 8px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
-            color: var(--primary);
+            color: var(--gray-600);
             cursor: pointer;
             padding: 0;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
         }
 
         /* Hero */
         .hero-section {
-            background: linear-gradient(135deg, #0284c7 0%, #0d9488 100%);
-            color: white;
-            padding: 80px 0 60px;
-            position: relative;
-            overflow: hidden;
+            background-color: #091e1b;
+            color: #ffffff;
+            padding: 72px 0 60px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         /* Card Styles */
         .card-custom {
             border: 1px solid var(--gray-200);
-            border-radius: 16px;
+            border-radius: 8px;
             background: #ffffff;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden;
+            transition: border-color 0.2s;
         }
         .card-custom:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-            border-color: #bae6fd;
+            border-color: #0d9488;
         }
 
         /* Section Titles */
-        .section-badge {
-            display: inline-block;
-            background-color: var(--primary-light);
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 0.85rem;
-            padding: 6px 16px;
-            border-radius: 9999px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 12px;
-        }
         .section-title {
             font-weight: 800;
             color: var(--dark);
-            margin-bottom: 14px;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
         }
 
         /* Footer */
         footer {
             background-color: #0f172a;
             color: #94a3b8;
-            padding: 60px 0 24px;
-            margin-top: 60px;
+            padding: 56px 0 24px;
+            margin-top: 56px;
+            border-top: 1px solid #1e293b;
         }
         footer h5 {
             color: #ffffff;
             font-weight: 700;
-            margin-bottom: 20px;
+            font-size: 0.9375rem;
+            margin-bottom: 16px;
         }
         footer a {
             color: #94a3b8;
             text-decoration: none;
-            transition: color 0.2s;
+            transition: color 0.15s;
         }
         footer a:hover {
-            color: #38bdf8;
+            color: #2dd4bf;
         }
         .footer-bottom {
             border-top: 1px solid #1e293b;
-            padding-top: 24px;
-            margin-top: 40px;
-            font-size: 0.85rem;
+            padding-top: 20px;
+            margin-top: 36px;
+            font-size: 0.8125rem;
         }
     </style>
 </head>
-<body>
+<body data-ui="public-site">
     <!-- Top Bar -->
     <div class="top-bar d-none d-md-block">
         <div class="container d-flex justify-content-between align-items-center">
             <div class="d-flex gap-4">
-                <span><i class="fa-solid fa-location-dot text-primary me-2"></i>280 An Dương Vương, P.4, Q.5, TP. Hồ Chí Minh</span>
-                <span><i class="fa-solid fa-clock text-primary me-2"></i>Giờ mở cửa: Thứ 2 - Thứ 7 (07:30 - 20:00)</span>
+                <span><i class="fa-solid fa-location-dot text-teal me-2" style="color:#2dd4bf;"></i>280 An Dương Vương, P.4, Q.5, TP. Hồ Chí Minh</span>
+                <span><i class="fa-solid fa-clock text-teal me-2" style="color:#2dd4bf;"></i>Giờ làm việc: Thứ 2 - Thứ 7 (07:30 - 20:00)</span>
             </div>
             <div class="d-flex gap-3 align-items-center">
-                <a href="tel:19008888" class="fw-bold text-warning"><i class="fa-solid fa-phone-volume me-1"></i>Hotline: 1900 8888</a>
-                <span class="text-secondary">|</span>
-                <a href="/Home/Contact">Tư Vấn Trực Tuyến</a>
+                <a href="tel:19008888" class="fw-semibold"><i class="fa-solid fa-phone me-1" style="color:#2dd4bf;"></i>Hotline: 1900 8888</a>
+                <span class="text-secondary opacity-50">|</span>
+                <a href="/Home/Contact">Liên hệ & Tư vấn</a>
             </div>
         </div>
     </div>
@@ -224,10 +224,12 @@
     <nav class="navbar navbar-expand-lg navbar-main sticky-top">
         <div class="container">
             <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-                <i class="fa-solid fa-hospital-user"></i>
-                <span>HEALTHY<span class="text-secondary">SYSTEM</span></span>
+                <div class="brand-monogram">
+                    <i class="fa-solid fa-plus"></i>
+                </div>
+                <span>MedEase</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarContent">
@@ -239,10 +241,10 @@
                         <a class="nav-link" asp-controller="Home" asp-action="Specialties">Chuyên khoa</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Home" asp-action="Doctors">Bác sĩ</a>
+                        <a class="nav-link" asp-controller="Home" asp-action="Doctors">Đội ngũ bác sĩ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Home" asp-action="Services">Dịch vụ & Bảng giá</a>
+                        <a class="nav-link" asp-controller="Home" asp-action="Services">Dịch vụ & Biểu giá</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Home" asp-action="Equipment">Thiết bị y tế</a>
@@ -253,50 +255,50 @@
                 </ul>
 
                 <div class="d-flex align-items-center gap-2">
-                    @* Search bar - tìm kiếm bác sĩ/chuyên khoa *@
                     <form asp-controller="Home" asp-action="Search" method="get" class="navbar-search-wrap d-none d-xl-flex me-2">
                         <input type="text" name="q" placeholder="Tìm bác sĩ, chuyên khoa..." autocomplete="off" />
                         <button type="submit" class="search-btn" title="Tìm kiếm">
                             <i class="fa-solid fa-magnifying-glass"></i>
                         </button>
                     </form>
+
                     @if (User.IsInRole("Doctor"))
                     {
-                        <a asp-controller="Doctor" asp-action="Dashboard" class="btn btn-primary rounded-pill px-3 fw-bold">
-                            <i class="fa-solid fa-user-doctor me-1"></i>Vào Cổng Bác Sĩ
+                        <a asp-controller="Doctor" asp-action="Dashboard" class="btn btn-sm btn-primary rounded-1 px-3 py-2 fw-semibold" style="background:#0284c7; border-color:#0284c7;">
+                            <i class="fa-solid fa-user-doctor me-1"></i>Cổng Bác Sĩ
                         </a>
                     }
                     else if (User.IsInRole("Receptionist"))
                     {
-                        <a asp-controller="Receptionist" asp-action="Dashboard" class="btn btn-success rounded-pill px-3 fw-bold">
-                            <i class="fa-solid fa-headset me-1"></i>Vào Bàn Lễ Tân
+                        <a asp-controller="Receptionist" asp-action="Dashboard" class="btn btn-sm btn-primary rounded-1 px-3 py-2 fw-semibold" style="background:#0f766e; border-color:#0f766e;">
+                            <i class="fa-solid fa-clipboard-user me-1"></i>Bàn Lễ Tân
                         </a>
                     }
                     else if (User.IsInRole("Admin"))
                     {
-                        <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-danger rounded-pill px-3 fw-bold">
-                            <i class="fa-solid fa-gear me-1"></i>Quản Trị Hệ Thống
+                        <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-sm btn-dark rounded-1 px-3 py-2 fw-semibold" style="background:#0f172a; border-color:#0f172a;">
+                            <i class="fa-solid fa-shield-halved me-1"></i>Quản Trị
                         </a>
                     }
                     else
                     {
                         <a asp-controller="Appointment" asp-action="Book" class="btn btn-booking">
-                            <i class="fa-solid fa-calendar-check me-2"></i>Đặt Lịch Khám
+                            <i class="fa-solid fa-calendar-check me-1"></i>Đặt Lịch Khám
                         </a>
                     }
 
                     @if (User.Identity?.IsAuthenticated == true)
                     {
-                        <div class="dropdown">
-                            <button class="btn btn-outline-primary dropdown-toggle rounded-pill px-3 py-2 fw-semibold" type="button" data-bs-toggle="dropdown">
-                                <i class="fa-solid fa-circle-user me-1 text-primary"></i>
+                        <div class="dropdown ms-1">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-1 px-3 py-2 fw-semibold" type="button" data-bs-toggle="dropdown" style="border-color:#cbd5e1; color:#334155;">
+                                <i class="fa-regular fa-circle-user me-1"></i>
                                 @User.Identity.Name
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2" style="min-width: 240px;">
+                            <ul class="dropdown-menu dropdown-menu-end border rounded-2 mt-2" style="min-width: 220px; border-color:#e2e8f0;">
                                 <li>
-                                    <div class="px-3 py-2 border-bottom">
-                                        <div class="fw-bold">@User.Identity.Name</div>
-                                        <small class="badge bg-primary-subtle text-primary">
+                                    <div class="px-3 py-2 border-bottom" style="border-color:#e2e8f0 !important;">
+                                        <div class="fw-bold text-dark">@User.Identity.Name</div>
+                                        <small class="text-muted">
                                             @(User.IsInRole("Doctor") ? "Bác sĩ Chuyên khoa" : (User.IsInRole("Receptionist") ? "Nhân viên Lễ tân" : (User.IsInRole("Admin") ? "Quản trị viên" : "Bệnh nhân")))
                                         </small>
                                     </div>
@@ -304,74 +306,26 @@
 
                                 @if (User.IsInRole("Doctor"))
                                 {
-                                    <li>
-                                        <a class="dropdown-item py-2 fw-semibold text-primary" asp-controller="Doctor" asp-action="Dashboard">
-                                            <i class="fa-solid fa-gauge-high me-2"></i>Bàn làm việc Bác sĩ
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item py-2" asp-controller="Doctor" asp-action="Queue">
-                                            <i class="fa-solid fa-list-ol text-info me-2"></i>Hàng đợi khám hôm nay
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item py-2" asp-controller="Doctor" asp-action="Schedule">
-                                            <i class="fa-solid fa-calendar-week text-success me-2"></i>Lịch trực / ca khám
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item py-2" asp-controller="Doctor" asp-action="Profile">
-                                            <i class="fa-solid fa-hospital-user text-secondary me-2"></i>Hồ sơ chuyên môn
-                                        </a>
-                                    </li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Doctor" asp-action="Dashboard"><i class="fa-solid fa-gauge-high me-2 text-muted"></i>Bàn làm việc</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Doctor" asp-action="Queue"><i class="fa-solid fa-list-ol me-2 text-muted"></i>Hàng đợi khám</a></li>
                                 }
                                 else if (User.IsInRole("Receptionist"))
                                 {
-                                    <li>
-                                        <a class="dropdown-item py-2 fw-semibold text-success" asp-controller="Receptionist" asp-action="Dashboard">
-                                            <i class="fa-solid fa-headset me-2"></i>Bàn tiếp đón Lễ tân
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item py-2" asp-controller="Receptionist" asp-action="Appointments">
-                                            <i class="fa-solid fa-calendar-check text-primary me-2"></i>Toàn bộ lịch hẹn
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item py-2" asp-controller="Receptionist" asp-action="CreateAppointment">
-                                            <i class="fa-solid fa-user-plus text-warning me-2"></i>Đặt lịch tại quầy
-                                        </a>
-                                    </li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Receptionist" asp-action="Dashboard"><i class="fa-solid fa-desktop me-2 text-muted"></i>Bàn tiếp đón</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Receptionist" asp-action="Appointments"><i class="fa-solid fa-calendar-check me-2 text-muted"></i>Toàn bộ lịch hẹn</a></li>
                                 }
                                 else
                                 {
-                                    <li>
-                                        <a class="dropdown-item py-2" asp-controller="Appointment" asp-action="MyAppointments">
-                                            <i class="fa-solid fa-calendar-days text-primary me-2"></i>Lịch hẹn của tôi
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item py-2" asp-controller="Appointment" asp-action="MyAppointments" asp-route-status="Completed">
-                                            <i class="fa-solid fa-folder-medical text-success me-2"></i>Hồ sơ khám bệnh &amp; Đơn thuốc
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item py-2" asp-controller="Appointment" asp-action="Notifications">
-                                            <i class="fa-solid fa-bell text-warning me-2"></i>Thông báo
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item py-2" asp-controller="Account" asp-action="Profile">
-                                            <i class="fa-solid fa-id-card text-info me-2"></i>Hồ sơ cá nhân
-                                        </a>
-                                    </li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Appointment" asp-action="MyAppointments"><i class="fa-solid fa-calendar-days me-2 text-muted"></i>Lịch hẹn của tôi</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Appointment" asp-action="MyAppointments" asp-route-status="Completed"><i class="fa-solid fa-folder-medical me-2 text-muted"></i>Hồ sơ bệnh án</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Account" asp-action="Profile"><i class="fa-solid fa-id-card me-2 text-muted"></i>Hồ sơ cá nhân</a></li>
                                 }
-                                <li><hr class="dropdown-divider"></li>
+                                <li><hr class="dropdown-divider my-1"></li>
                                 <li>
-                                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline m-0">
                                         @Html.AntiForgeryToken()
                                         <button type="submit" class="dropdown-item py-2 text-danger">
-                                            <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
+                                            <i class="fa-solid fa-arrow-right-from-bracket me-2"></i>Đăng xuất
                                         </button>
                                     </form>
                                 </li>
@@ -380,9 +334,9 @@
                     }
                     else
                     {
-                        <div class="d-flex gap-2">
-                            <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary rounded-pill px-3 fw-semibold">Đăng nhập</a>
-                            <a asp-controller="Account" asp-action="Register" class="btn btn-primary rounded-pill px-3 fw-semibold">Đăng ký</a>
+                        <div class="d-flex gap-2 ms-1">
+                            <a asp-controller="Account" asp-action="Login" class="btn btn-sm btn-outline-secondary rounded-1 px-3 py-2 fw-semibold" style="border-color:#cbd5e1; color:#334155;">Đăng nhập</a>
+                            <a asp-controller="Account" asp-action="Register" class="btn btn-sm btn-dark rounded-1 px-3 py-2 fw-semibold" style="background:#0f172a; border-color:#0f172a;">Đăng ký</a>
                         </div>
                     }
                 </div>
@@ -394,16 +348,16 @@
     <div class="container mt-3">
         @if (TempData["SuccessMessage"] != null)
         {
-            <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm border-0 d-flex align-items-center" role="alert">
-                <i class="fa-solid fa-circle-check fs-4 me-3 text-success"></i>
+            <div class="alert alert-success alert-dismissible fade show rounded-2 border-0 d-flex align-items-center mb-0" role="alert" style="background:#ecfdf5; color:#065f46; border-left:4px solid #10b981 !important;">
+                <i class="fa-solid fa-circle-check fs-5 me-2" style="color:#059669;"></i>
                 <div class="flex-grow-1">@TempData["SuccessMessage"]</div>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
         @if (TempData["ErrorMessage"] != null)
         {
-            <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm border-0 d-flex align-items-center" role="alert">
-                <i class="fa-solid fa-triangle-exclamation fs-4 me-3 text-danger"></i>
+            <div class="alert alert-danger alert-dismissible fade show rounded-2 border-0 d-flex align-items-center mb-0" role="alert" style="background:#fef2f2; color:#991b1b; border-left:4px solid #ef4444 !important;">
+                <i class="fa-solid fa-circle-exclamation fs-5 me-2" style="color:#dc2626;"></i>
                 <div class="flex-grow-1">@TempData["ErrorMessage"]</div>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -421,22 +375,19 @@
             <div class="row g-4">
                 <div class="col-lg-4 col-md-6">
                     <div class="d-flex align-items-center gap-2 mb-3">
-                        <i class="fa-solid fa-hospital-user text-primary fs-3"></i>
-                        <span class="fs-4 fw-bold text-white">HEALTHY<span class="text-secondary">SYSTEM</span></span>
+                        <div class="brand-monogram">
+                            <i class="fa-solid fa-plus"></i>
+                        </div>
+                        <span class="fs-4 fw-bold text-white">MedEase</span>
                     </div>
-                    <p class="text-muted pe-lg-4">
-                        Hệ thống phòng khám đa khoa tư nhân chuẩn mực quốc tế, hội tụ đội ngũ chuyên gia đầu ngành cùng hệ thống trang thiết bị chẩn đoán hiện đại bậc nhất.
+                    <p class="text-muted pe-lg-4" style="font-size:0.875rem; line-height:1.6;">
+                        Hệ thống phòng khám đa khoa tư nhân ứng dụng quy chuẩn số hóa tiếp nhận và điều trị. Đồng bộ hồ sơ bệnh án, đặt lịch trực tuyến và quản lý chuyên khoa.
                     </p>
-                    <div class="d-flex gap-3 mt-3">
-                        <a href="#" class="btn btn-sm btn-outline-light rounded-circle"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="#" class="btn btn-sm btn-outline-light rounded-circle"><i class="fa-brands fa-youtube"></i></a>
-                        <a href="#" class="btn btn-sm btn-outline-light rounded-circle"><i class="fa-brands fa-tiktok"></i></a>
-                    </div>
                 </div>
 
                 <div class="col-lg-2 col-md-6">
-                    <h5>Liên Kết Nhanh</h5>
-                    <ul class="list-unstyled">
+                    <h5>Danh Mục</h5>
+                    <ul class="list-unstyled" style="font-size:0.875rem;">
                         <li class="mb-2"><a href="/Home/Specialties">Chuyên khoa khám</a></li>
                         <li class="mb-2"><a href="/Home/Doctors">Đội ngũ bác sĩ</a></li>
                         <li class="mb-2"><a href="/Home/Services">Bảng giá dịch vụ</a></li>
@@ -447,35 +398,32 @@
 
                 <div class="col-lg-3 col-md-6">
                     <h5>Thời Gian Làm Việc</h5>
-                    <ul class="list-unstyled text-muted">
+                    <ul class="list-unstyled text-muted" style="font-size:0.875rem;">
                         <li class="mb-2"><strong class="text-white">Thứ 2 - Thứ 7:</strong> 07:30 - 20:00</li>
-                        <li class="mb-2"><strong class="text-white">Chủ Nhật:</strong> 08:00 - 12:00 (Cấp cứu 24/7)</li>
-                        <li class="mb-2"><strong class="text-white">Đặt lịch hẹn:</strong> 24/7 qua Website</li>
-                        <li class="mt-3"><span class="badge bg-success py-2 px-3"><i class="fa-solid fa-shield-halved me-1"></i>Bảo hiểm y tế & Bảo lãnh viện phí</span></li>
+                        <li class="mb-2"><strong class="text-white">Chủ Nhật:</strong> 08:00 - 12:00</li>
+                        <li class="mb-2"><strong class="text-white">Đặt lịch hẹn:</strong> 24/7 qua cổng trực tuyến</li>
                     </ul>
                 </div>
 
                 <div class="col-lg-3 col-md-6">
-                    <h5>Thông Tin Liên Hệ</h5>
-                    <ul class="list-unstyled text-muted">
-                        <li class="mb-2"><i class="fa-solid fa-location-dot text-primary me-2"></i>280 An Dương Vương, P.4, Q.5, TP.HCM</li>
-                        <li class="mb-2"><i class="fa-solid fa-phone text-primary me-2"></i>Hotline: 1900 8888</li>
-                        <li class="mb-2"><i class="fa-solid fa-envelope text-primary me-2"></i>contact@healthysystem.vn</li>
-                        <li class="mb-2"><i class="fa-solid fa-globe text-primary me-2"></i>www.healthysystem.vn</li>
+                    <h5>Địa Chỉ & Hotline</h5>
+                    <ul class="list-unstyled text-muted" style="font-size:0.875rem;">
+                        <li class="mb-2"><i class="fa-solid fa-location-dot me-2" style="color:#2dd4bf;"></i>280 An Dương Vương, P.4, Q.5, TP.HCM</li>
+                        <li class="mb-2"><i class="fa-solid fa-phone me-2" style="color:#2dd4bf;"></i>Tổng đài: 1900 8888</li>
+                        <li class="mb-2"><i class="fa-solid fa-envelope me-2" style="color:#2dd4bf;"></i>contact@healthysystem.vn</li>
                     </ul>
                 </div>
             </div>
 
             <div class="footer-bottom d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-                <div>&copy; 2026 Healthy System. Đồ án môn Công nghệ Phần mềm Nâng cao - Nhóm Case Study 04.</div>
-                <div>Nền tảng ASP.NET Core MVC 8.0 & PostgreSQL Supabase</div>
+                <div>&copy; 2026 MedEase · Hệ Thống Quản Lý Phòng Khám Tư Nhân</div>
+                <div>Đồ án môn Công nghệ Phần mềm Nâng cao · ASP.NET Core 8 & PostgreSQL</div>
             </div>
         </div>
     </footer>
 
     <!-- Bootstrap 5 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

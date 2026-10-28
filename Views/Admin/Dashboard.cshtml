@@ -1,174 +1,244 @@
 @model List<Healthy_System.Models.User>
 @{
-    ViewData["Title"] = "Dashboard Quản Trị";
+    ViewData["Title"] = "Bảng Điều Khiển Quản Trị";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-<div class="row mb-4 g-3">
-    <div class="col-12">
-        <h4 class="fw-bold text-dark mb-0"><i class="fa-solid fa-gauge-high me-2" style="color:#7c3aed"></i>Dashboard Quản Trị</h4>
-        <p class="text-muted mb-0">Quản lý toàn bộ tài khoản và phân quyền hệ thống</p>
+<div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    <div>
+        <h1 class="h4 fw-bold mb-1" style="color:#0f172a; letter-spacing:-0.02em;">Bảng Điều Khiển Quản Trị</h1>
+        <p class="text-muted small mb-0">Giám sát tổng thể tài nguyên hệ thống, phân quyền người dùng và nhân sự phòng khám</p>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 rounded-3 shadow-sm text-white" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">
-            <div class="card-body py-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div><div class="fs-2 fw-bold">@ViewBag.TotalUsers</div><div class="opacity-75">Tổng tài khoản</div></div>
-                    <i class="fa-solid fa-users fs-1 opacity-25"></i>
-                </div>
+    <div class="d-flex align-items-center gap-2">
+        <a asp-action="Doctors" class="btn btn-sm btn-outline-secondary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#ffffff; border-color:#cbd5e1; color:#334155;">
+            <i class="fa-solid fa-user-doctor"></i>
+            <span>Bác Sĩ & Chuyên Khoa</span>
+        </a>
+        <a asp-action="CreateDoctor" class="btn btn-sm btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#0284c7; border-color:#0284c7;">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Thêm Bác Sĩ Mới</span>
+        </a>
+    </div>
+</div>
+
+<!-- Authentic System Metrics (taste-skill app-screens §2.2) -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
+            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Tổng tài khoản hệ thống</div>
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="fs-3 fw-bold" style="color:#0f172a; font-variant-numeric:tabular-nums;">@ViewBag.TotalUsers</span>
+                <span class="small text-muted">users</span>
             </div>
+            <div class="small text-muted mt-1" style="font-size:0.75rem;">Người dùng đã kích hoạt</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 rounded-3 shadow-sm text-white" style="background:linear-gradient(135deg,#0369a1,#0284c7)">
-            <div class="card-body py-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div><div class="fs-2 fw-bold">@ViewBag.TotalDoctors</div><div class="opacity-75">Bác sĩ</div></div>
-                    <i class="fa-solid fa-user-doctor fs-1 opacity-25"></i>
-                </div>
+    <div class="col-6 col-lg-3">
+        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
+            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Đội ngũ bác sĩ</div>
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="fs-3 fw-bold" style="color:#0284c7; font-variant-numeric:tabular-nums;">@ViewBag.TotalDoctors</span>
+                <span class="small text-muted">bác sĩ</span>
             </div>
+            <div class="small text-muted mt-1" style="font-size:0.75rem;">Phục vụ các chuyên khoa</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 rounded-3 shadow-sm text-white" style="background:linear-gradient(135deg,#059669,#10b981)">
-            <div class="card-body py-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div><div class="fs-2 fw-bold">@ViewBag.TotalPatients</div><div class="opacity-75">Bệnh nhân</div></div>
-                    <i class="fa-solid fa-hospital-user fs-1 opacity-25"></i>
-                </div>
+    <div class="col-6 col-lg-3">
+        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
+            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Bệnh nhân đăng ký</div>
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="fs-3 fw-bold" style="color:#0f766e; font-variant-numeric:tabular-nums;">@ViewBag.TotalPatients</span>
+                <span class="small text-muted">hồ sơ</span>
             </div>
+            <div class="small text-muted mt-1" style="font-size:0.75rem;">Có lịch sử khám chữa bệnh</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 rounded-3 shadow-sm text-white" style="background:linear-gradient(135deg,#d97706,#f59e0b)">
-            <div class="card-body py-3">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div><div class="fs-2 fw-bold">@ViewBag.TotalAppointments</div><div class="opacity-75">Lịch hẹn</div></div>
-                    <i class="fa-solid fa-calendar-check fs-1 opacity-25"></i>
-                </div>
+    <div class="col-6 col-lg-3">
+        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
+            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Lịch hẹn & Dịch vụ</div>
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="fs-3 fw-bold" style="color:#475569; font-variant-numeric:tabular-nums;">@ViewBag.TotalAppointments</span>
+                <span class="small text-muted">lượt hẹn</span>
             </div>
-        </div>
-    <div class="col-12 mt-3">
-        <div class="d-flex gap-2 flex-wrap">
-            <a asp-action="Doctors" class="btn btn-outline-primary rounded-pill px-4 fw-semibold" style="color:#7c3aed; border-color:#7c3aed;">
-                <i class="fa-solid fa-user-doctor me-2"></i>Quản Lý Bác Sĩ (@ViewBag.TotalDoctors)
-            </a>
-            <a asp-action="CreateDoctor" class="btn btn-primary rounded-pill px-4 fw-semibold" style="background:#7c3aed; border-color:#7c3aed;">
-                <i class="fa-solid fa-user-plus me-2"></i>Tiếp Nhận Bác Sĩ Mới
-            </a>
-            <a asp-action="Equipments" class="btn btn-outline-primary rounded-pill px-4 fw-semibold">
-                <i class="fa-solid fa-microscope me-2"></i>Quản Lý Trang Thiết Bị Y Tế (@ViewBag.TotalEquipments)
-            </a>
-            <a asp-action="Services" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">
-                <i class="fa-solid fa-list-check me-2"></i>Quản Lý Dịch Vụ & Biểu Giá
-            </a>
+            <div class="small text-muted mt-1" style="font-size:0.75rem;">@ViewBag.TotalEquipments thiết bị y tế hoạt động</div>
         </div>
     </div>
 </div>
 
-<div class="card border-0 rounded-3 shadow-sm">
-    <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-        <div>
-            <h6 class="fw-bold mb-0"><i class="fa-solid fa-users me-2 text-purple" style="color:#7c3aed"></i>Danh Sách Người Dùng & Phân Quyền</h6>
-            <small class="text-muted">Phân quyền nhân sự nội bộ (Bác sĩ được quản lý chuyên sâu theo Chuyên khoa & Phòng khám)</small>
+<!-- Main Table Card: Người Dùng & Phân Quyền -->
+<div class="bg-white rounded-2" style="border:1px solid #e2e8f0;">
+    <!-- Toolbar -->
+    <div class="p-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3" style="border-color:#e2e8f0 !important;">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold" style="color:#0f172a; font-size:0.9375rem;">Danh Sách Người Dùng & Phân Quyền Vai Trò</span>
+            <span class="badge rounded-pill text-bg-light border" style="font-size:0.75rem;">@Model.Count tài khoản</span>
+        </div>
+        
+        <!-- Search & Filter Controls -->
+        <div class="d-flex align-items-center gap-2 w-100 w-md-auto">
+            <div class="input-group input-group-sm" style="max-width:280px;">
+                <span class="input-group-text bg-white border-end-0 text-muted" style="border-color:#e2e8f0;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" id="userFilterInput" class="form-control border-start-0 ps-0" placeholder="Lọc theo tên, email, SĐT..." style="border-color:#e2e8f0; font-size:0.8125rem;">
+            </div>
+            <select id="roleFilterSelect" class="form-select form-select-sm" style="border-color:#e2e8f0; font-size:0.8125rem; max-width:140px;">
+                <option value="">Mọi vai trò</option>
+                <option value="Admin">Admin</option>
+                <option value="Doctor">Doctor</option>
+                <option value="Receptionist">Receptionist</option>
+                <option value="Patient">Patient</option>
+                <option value="LabTech">LabTech</option>
+                <option value="Accountant">Accountant</option>
+            </select>
         </div>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="px-4 py-3">ID</th>
-                        <th class="py-3">Họ tên</th>
-                        <th class="py-3">Email</th>
-                        <th class="py-3">Điện thoại</th>
-                        <th class="py-3">Vai trò hiện tại</th>
-                        <th class="py-3">Phân quyền vai trò</th>
-                        <th class="py-3">Ngày tạo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @{
-                        var currentUserIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                        int.TryParse(currentUserIdStr, out int currentAdminId);
-                    }
-                    @foreach (var u in Model)
-                    {
-                        <tr>
-                            <td class="px-4 text-muted">#@u.Id</td>
-                            <td class="fw-semibold">@u.FullName</td>
-                            <td class="text-muted">@u.Email</td>
-                            <td class="text-muted">@u.PhoneNumber</td>
-                            <td>
-                                @{
-                                    var (badge, icon) = u.Role switch {
-                                        "Admin" => ("bg-purple text-white", "fa-shield-halved"),
-                                        "Doctor" => ("bg-primary text-white", "fa-user-doctor"),
-                                        "Receptionist" => ("bg-success text-white", "fa-headset"),
-                                        "LabTech" => ("bg-info text-white", "fa-flask"),
-                                        "Accountant" => ("bg-warning text-dark", "fa-calculator"),
-                                        _ => ("bg-secondary text-white", "fa-user")
-                                    };
-                                }
-                                <span class="badge @badge rounded-pill px-3">
-                                    <i class="fa-solid @icon me-1"></i>@u.Role
-                                </span>
-                            </td>
-                            <td>
-                                @if (u.Role == "Admin")
-                                {
-                                    @* Admin rows: không được thay đổi qua UI, luôn hiển thị badge cố định *@
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle rounded-pill px-3 py-2"
-                                              title="Quyền Admin không thể thay đổi qua giao diện">
-                                            <i class="fa-solid fa-shield-halved me-1"></i>Cấp cao nhất
-                                        </span>
-                                    </div>
-                                }
-                                else if (u.Role == "Doctor")
-                                {
-                                    @* Doctor rows: không được đổi vai trò, quản lý qua trang Bác Sĩ *@
-                                    <div class="d-flex align-items-center gap-2">
-                                        <a asp-action="Doctors" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
-                                            <i class="fa-solid fa-stethoscope me-1"></i>Hồ sơ Bác sĩ
-                                        </a>
-                                        <span class="badge bg-light text-muted border small" title="Không thể đổi vai trò Bác sĩ vì liên kết lịch khám">
-                                            <i class="fa-solid fa-lock me-1"></i>Cố định
-                                        </span>
-                                    </div>
-                                }
-                                else if (u.Id == currentAdminId)
-                                {
-                                    @* Chính mình: không cho tự đổi vai trò *@
-                                    <span class="badge bg-light text-muted border rounded-pill px-3 py-2">
-                                        <i class="fa-solid fa-user-check me-1 text-success"></i>Đang đăng nhập
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="usersTable" style="font-size:0.875rem;">
+            <thead>
+                <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#64748b; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">
+                    <th class="ps-3 py-2" style="width:70px;">ID</th>
+                    <th class="py-2">Họ và tên</th>
+                    <th class="py-2">Email</th>
+                    <th class="py-2">Số điện thoại</th>
+                    <th class="py-2" style="width:140px;">Vai trò</th>
+                    <th class="py-2" style="width:220px;">Điều chỉnh phân quyền</th>
+                    <th class="text-end pe-3 py-2" style="width:120px;">Ngày tạo</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var currentUserIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    int.TryParse(currentUserIdStr, out int currentAdminId);
+                }
+                @foreach (var u in Model)
+                {
+                    var firstLetter = !string.IsNullOrEmpty(u.FullName) ? u.FullName.Substring(0, 1).ToUpper() : "U";
+                    <tr class="user-row" data-search="@(u.FullName?.ToLower()) @(u.Email?.ToLower()) @(u.PhoneNumber)" data-role="@u.Role">
+                        <td class="ps-3 py-3 text-muted" style="font-variant-numeric:tabular-nums; font-size:0.8125rem;">#@u.Id</td>
+                        <td class="py-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width:28px; height:28px; border-radius:6px; background:#f1f5f9; color:#334155; font-weight:700; font-size:0.75rem; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; flex-shrink:0;">
+                                    @firstLetter
+                                </div>
+                                <span class="fw-semibold text-slate-900" style="color:#0f172a;">@u.FullName</span>
+                            </div>
+                        </td>
+                        <td class="py-3 text-muted">@u.Email</td>
+                        <td class="py-3 text-muted" style="font-variant-numeric:tabular-nums;">@(u.PhoneNumber ?? "—")</td>
+                        <td class="py-3">
+                            @switch (u.Role)
+                            {
+                                case "Admin":
+                                    <span class="badge px-2 py-1" style="background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; font-weight:600;">
+                                        <i class="fa-solid fa-shield-halved me-1"></i>Admin
                                     </span>
-                                }
-                                else
-                                {
-                                    @* Các role khác (Patient, Receptionist, LabTech, Accountant): cho phép đổi sang 4 role thông thường *@
-                                    <form asp-action="ChangeRole" method="post" class="d-flex gap-2 align-items-center">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="userId" value="@u.Id" />
-                                        <select name="newRole" class="form-select form-select-sm" style="min-width:150px">
-                                            @foreach (var r in new[] { "Patient", "Receptionist", "LabTech", "Accountant" })
-                                            {
-                                                if (r == u.Role) { <option value="@r" selected>@r</option> }
-                                                else { <option value="@r">@r</option> }
-                                            }
-                                        </select>
-                                        <button type="submit" class="btn btn-sm btn-outline-purple fw-semibold"
-                                                style="color:#7c3aed;border-color:#7c3aed" title="Cập nhật vai trò">
-                                            <i class="fa-solid fa-floppy-disk"></i>
-                                        </button>
-                                    </form>
-                                }
-                            </td>
-                            <td class="text-muted small">@u.CreatedAt.ToString("dd/MM/yyyy")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                                    break;
+                                case "Doctor":
+                                    <span class="badge px-2 py-1" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-weight:600;">
+                                        <i class="fa-solid fa-user-doctor me-1"></i>Bác Sĩ
+                                    </span>
+                                    break;
+                                case "Receptionist":
+                                    <span class="badge px-2 py-1" style="background:#f0fdfa; color:#0f766e; border:1px solid #ccfbf1; font-weight:600;">
+                                        <i class="fa-solid fa-headset me-1"></i>Lễ Tân
+                                    </span>
+                                    break;
+                                case "LabTech":
+                                    <span class="badge px-2 py-1" style="background:#f3e8ff; color:#6b21a8; border:1px solid #e9d5ff; font-weight:600;">
+                                        <i class="fa-solid fa-flask me-1"></i>Kỹ Thuật Viên
+                                    </span>
+                                    break;
+                                case "Accountant":
+                                    <span class="badge px-2 py-1" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-weight:600;">
+                                        <i class="fa-solid fa-calculator me-1"></i>Kế Toán
+                                    </span>
+                                    break;
+                                default:
+                                    <span class="badge px-2 py-1" style="background:#f8fafc; color:#475569; border:1px solid #e2e8f0; font-weight:600;">
+                                        <i class="fa-regular fa-user me-1"></i>Bệnh Nhân
+                                    </span>
+                                    break;
+                            }
+                        </td>
+                        <td class="py-3">
+                            @if (u.Role == "Admin")
+                            {
+                                <span class="text-muted small d-inline-flex align-items-center gap-1" style="font-size:0.75rem;">
+                                    <i class="fa-solid fa-lock text-muted" style="font-size:0.7rem;"></i>Cố định (Quản trị viên)
+                                </span>
+                            }
+                            else if (u.Role == "Doctor")
+                            {
+                                <div class="d-flex align-items-center gap-2">
+                                    <a asp-action="Doctors" class="btn btn-sm btn-outline-secondary px-2 py-1" style="font-size:0.75rem; border-color:#cbd5e1; color:#334155;">
+                                        <i class="fa-solid fa-stethoscope me-1"></i>Hồ sơ Bác sĩ
+                                    </a>
+                                </div>
+                            }
+                            else if (u.Id == currentAdminId)
+                            {
+                                <span class="text-muted small" style="font-size:0.75rem;">Tài khoản hiện tại</span>
+                            }
+                            else
+                            {
+                                <form asp-action="ChangeRole" method="post" class="d-flex gap-1 align-items-center m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@u.Id" />
+                                    <select name="newRole" class="form-select form-select-sm" style="font-size:0.75rem; height:28px; padding-top:2px; padding-bottom:2px; border-color:#cbd5e1; max-width:130px;">
+                                        @foreach (var r in new[] { "Patient", "Receptionist", "LabTech", "Accountant" })
+                                        {
+                                            if (r == u.Role) { <option value="@r" selected>@r</option> }
+                                            else { <option value="@r">@r</option> }
+                                        }
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-dark px-2 py-0 fw-semibold" style="height:28px; font-size:0.75rem; border-color:#cbd5e1;" title="Lưu phân quyền">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                        <td class="text-end pe-3 py-3 text-muted" style="font-size:0.8125rem; font-variant-numeric:tabular-nums;">
+                            @u.CreatedAt.ToString("dd/MM/yyyy")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const filterInput = document.getElementById('userFilterInput');
+            const roleSelect = document.getElementById('roleFilterSelect');
+            if (!filterInput || !roleSelect) return;
+
+            function applyFilter() {
+                const term = filterInput.value.trim().toLowerCase();
+                const selectedRole = roleSelect.value;
+                const rows = document.querySelectorAll('.user-row');
+
+                rows.forEach(row => {
+                    const searchData = row.getAttribute('data-search') || '';
+                    const role = row.getAttribute('data-role') || '';
+                    
+                    const matchesSearch = !term || searchData.includes(term);
+                    const matchesRole = !selectedRole || role === selectedRole;
+
+                    if (matchesSearch && matchesRole) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            filterInput.addEventListener('input', applyFilter);
+            roleSelect.addEventListener('change', applyFilter);
+        });
+    </script>
+}

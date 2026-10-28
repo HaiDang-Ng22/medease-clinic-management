@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -7,175 +7,740 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        // Khởi tạo trạng thái sidebar từ localStorage ngay lập tức để chống giật trang (FOUC)
+        (function() {
+            try {
+                if (localStorage.getItem('doctor_sidebar_collapsed') === 'true' && window.innerWidth >= 992) {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                }
+            } catch(e) {}
+        })();
+    </script>
+
     <style>
         :root {
-            --doctor-primary: #0369a1;
-            --doctor-secondary: #0284c7;
+            --sidebar-width: 270px;
+            --sidebar-collapsed-width: 76px;
+            --topbar-height: 64px;
+            --doctor-primary: #0284c7;
+            --doctor-primary-dark: #0369a1;
+            --doctor-accent: #38bdf8;
             --doctor-dark: #0f172a;
-            --doctor-bg: #f0fdf4;
+            --doctor-sidebar-bg: #0f172a;
+            --doctor-sidebar-hover: #1e293b;
             --doctor-card-border: #e2e8f0;
+            --transition-speed: 0.3s;
+            --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f1f5f9;
+            background-color: #f8fafc;
             color: #1e293b;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* Layout Container */
+        .doctor-layout-container {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+            position: relative;
+        }
+
+        /* ================= SIDEBAR ================= */
+        .doctor-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #0f172a 0%, #111e38 100%);
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
+            z-index: 1040;
+            display: flex;
+            flex-direction: column;
+            transition: width var(--transition-speed) var(--transition-timing),
+                        transform var(--transition-speed) var(--transition-timing);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            user-select: none;
+        }
+
+        /* Nút thò ra thụt vào ở mép sidebar */
+        .sidebar-edge-toggle {
+            position: absolute;
+            top: 22px;
+            right: -14px;
+            width: 28px;
+            height: 28px;
+            background: var(--doctor-primary);
+            color: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid #0f172a;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.4);
+            transition: all 0.25s ease;
+            z-index: 1050;
+        }
+        .sidebar-edge-toggle:hover {
+            background: #0284c7;
+            transform: scale(1.15);
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.6);
+        }
+        .sidebar-edge-toggle i {
+            font-size: 0.75rem;
+            transition: transform 0.3s ease;
+        }
+
+        /* Header của Sidebar */
+        .sidebar-brand-wrapper {
+            height: var(--topbar-height);
+            display: flex;
+            align-items: center;
+            padding: 0 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.15rem;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+        }
+
+        .sidebar-brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+        }
+
+        .sidebar-brand-text {
+            display: flex;
+            flex-direction: column;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .sidebar-brand-text .brand-title {
+            line-height: 1.2;
+            font-size: 1.1rem;
+        }
+        .sidebar-brand-text .brand-badge {
+            font-size: 0.65rem;
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--doctor-accent);
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            width: fit-content;
+            margin-top: 2px;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+        }
+
+        /* Danh mục Menu Navigation */
+        .sidebar-nav-container {
+            flex-grow: 1;
+            padding: 16px 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .sidebar-nav-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-nav-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .sidebar-category-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            font-weight: 700;
+            padding: 10px 14px 4px 14px;
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 11px 16px;
+            border-radius: 12px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .sidebar-nav-item i.nav-icon {
+            font-size: 1.15rem;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+            color: #64748b;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-nav-item .nav-text {
+            flex-grow: 1;
+            transition: opacity 0.2s ease;
+        }
+
+        .sidebar-nav-item:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .sidebar-nav-item:hover i.nav-icon {
+            color: var(--doctor-accent);
+            transform: scale(1.1);
+        }
+
+        .sidebar-nav-item.active {
+            color: #ffffff;
+            background: linear-gradient(90deg, rgba(2, 132, 199, 0.25) 0%, rgba(2, 132, 199, 0.08) 100%);
+            border-left: 3px solid var(--doctor-accent);
+        }
+        .sidebar-nav-item.active i.nav-icon {
+            color: var(--doctor-accent);
+        }
+
+        /* Footer của Sidebar: Thông tin bác sĩ & Đăng xuất */
+        .sidebar-footer {
+            padding: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+        }
+
+        .doctor-profile-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .doctor-avatar-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #0369a1, #0284c7);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .doctor-profile-info {
+            flex-grow: 1;
+            min-width: 0;
+            overflow: hidden;
+            transition: opacity 0.2s;
+        }
+
+        .doctor-profile-name {
+            color: #f1f5f9;
+            font-size: 0.84rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+
+        .doctor-profile-role {
+            color: var(--doctor-accent);
+            font-size: 0.72rem;
+            white-space: nowrap;
+        }
+
+        .sidebar-logout-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .sidebar-logout-btn:hover {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+        }
+
+        /* ================= CHẾ ĐỘ THU GỌN (COLLAPSED / THỤT VÀO) ================= */
+        html.sidebar-collapsed .doctor-sidebar {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        html.sidebar-collapsed .sidebar-edge-toggle i {
+            transform: rotate(180deg);
+        }
+
+        html.sidebar-collapsed .sidebar-brand-text,
+        html.sidebar-collapsed .sidebar-category-label,
+        html.sidebar-collapsed .sidebar-nav-item .nav-text,
+        html.sidebar-collapsed .doctor-profile-info,
+        html.sidebar-collapsed .sidebar-logout-btn .logout-text {
+            opacity: 0;
+            display: none !important;
+        }
+
+        html.sidebar-collapsed .sidebar-brand-wrapper {
+            justify-content: center;
+            padding: 0;
+        }
+
+        html.sidebar-collapsed .sidebar-nav-container {
+            padding: 16px 8px;
+            align-items: center;
+        }
+
+        html.sidebar-collapsed .sidebar-nav-item {
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            justify-content: center;
+            border-radius: 12px;
+        }
+        html.sidebar-collapsed .sidebar-nav-item i.nav-icon {
+            font-size: 1.25rem;
+            margin: 0;
+        }
+        html.sidebar-collapsed .sidebar-nav-item.active {
+            border-left: none;
+            background: var(--doctor-primary);
+            color: #ffffff;
+        }
+        html.sidebar-collapsed .sidebar-nav-item.active i.nav-icon {
+            color: #ffffff;
+        }
+
+        html.sidebar-collapsed .doctor-profile-card {
+            justify-content: center;
+            background: transparent;
+            border: none;
+            padding: 4px 0;
+        }
+
+        html.sidebar-collapsed .sidebar-logout-btn {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            margin: 0 auto;
+            border-radius: 10px;
+        }
+
+        /* ================= MAIN CONTENT WRAPPER ================= */
+        .doctor-main-wrapper {
+            flex-grow: 1;
+            margin-left: var(--sidebar-width);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            transition: margin-left var(--transition-speed) var(--transition-timing);
+            width: calc(100% - var(--sidebar-width));
         }
-        .doctor-navbar {
-            background: #0f172a;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            padding: 12px 0;
+
+        html.sidebar-collapsed .doctor-main-wrapper {
+            margin-left: var(--sidebar-collapsed-width);
+            width: calc(100% - var(--sidebar-collapsed-width));
         }
-        .doctor-brand {
-            color: #ffffff !important;
-            font-weight: 800;
-            font-size: 1.35rem;
+
+        /* Topbar Header */
+        .doctor-topbar {
+            height: var(--topbar-height);
+            background: #ffffff;
+            border-bottom: 1px solid var(--doctor-card-border);
+            padding: 0 24px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            text-decoration: none;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
         }
-        .doctor-brand-badge {
-            background-color: #0284c7;
-            color: white;
-            font-size: 0.75rem;
-            padding: 4px 10px;
-            border-radius: 9999px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+
+        .topbar-toggle-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .doctor-nav-link {
-            color: #cbd5e1 !important;
-            font-weight: 600;
-            padding: 6px 12px !important;
-            border-radius: 8px;
-            transition: all 0.2s;
-            text-decoration: none;
-            font-size: 0.875rem;
-            white-space: nowrap;
+        .topbar-toggle-btn:hover {
+            background: #e2e8f0;
+            color: var(--doctor-primary);
         }
-        .doctor-nav-link:hover, .doctor-nav-link.active {
-            color: #ffffff !important;
-            background-color: rgba(255,255,255,0.1);
-        }
+
+        /* Thẻ Card Bác Sĩ chung */
         .card-doctor {
             background: #ffffff;
             border: 1px solid var(--doctor-card-border);
             border-radius: 14px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            transition: all 0.2s ease;
         }
         .card-doctor:hover {
-            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
         }
+
+        /* Footer */
         footer {
             margin-top: auto;
-            background: #0f172a;
-            color: #94a3b8;
-            padding: 20px 0;
+            background: #ffffff;
+            color: #64748b;
+            padding: 16px 24px;
             font-size: 0.85rem;
+            border-top: 1px solid var(--doctor-card-border);
+        }
+
+        /* Mobile Backdrop */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(2px);
+            z-index: 1035;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Responsive Mobile & Tablet */
+        @@media (max-width: 991.98px) {
+            .doctor-sidebar {
+                transform: translateX(-100%);
+                width: 270px !important;
+            }
+            .doctor-main-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            .sidebar-edge-toggle {
+                display: none;
+            }
+
+            body.sidebar-mobile-open .doctor-sidebar {
+                transform: translateX(0);
+            }
+            body.sidebar-mobile-open .sidebar-backdrop {
+                display: block;
+                opacity: 1;
+            }
+        }
+
+        /* Print styles */
+        @@media print {
+            .doctor-navbar,
+            .doctor-sidebar,
+            .doctor-topbar,
+            .sidebar-edge-toggle,
+            .sidebar-backdrop,
+            footer,
+            .no-print {
+                display: none !important;
+            }
+            .doctor-main-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+                padding: 0 !important;
+            }
+            body {
+                background: white !important;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Doctor Top Header -->
-    <nav class="navbar navbar-expand-lg doctor-navbar sticky-top">
-        <div class="container-fluid px-4">
-            <a class="doctor-brand" asp-controller="Doctor" asp-action="Dashboard">
-                <i class="fa-solid fa-user-doctor text-info fs-3"></i>
-                <span>HEALTHY<span class="text-info">SYSTEM</span></span>
-                <span class="doctor-brand-badge ms-2"><i class="fa-solid fa-stethoscope me-1"></i>BÁC SĨ KHÁM</span>
-            </a>
-            <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse" data-bs-target="#doctorNav">
-                <span class="navbar-toggler-icon"></span>
+    @{
+        var currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
+        var currentController = ViewContext.RouteData.Values["Controller"]?.ToString() ?? "";
+    }
+
+    <!-- Backdrop for mobile drawer -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <div class="doctor-layout-container">
+        <!-- ================= SIDEBAR CỦA BÁC SĨ (THÒ RA / THỤT VÀO) ================= -->
+        <aside class="doctor-sidebar doctor-navbar no-print" id="doctorSidebar">
+            <!-- Nút toggle viền (thò ra / thụt vào) -->
+            <button type="button" class="sidebar-edge-toggle" id="btnEdgeToggle" title="Thu gọn / Mở rộng thanh điều hướng" aria-label="Toggle sidebar">
+                <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <div class="collapse navbar-collapse" id="doctorNav">
-                <ul class="navbar-nav me-auto ms-4 mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="doctor-nav-link" asp-controller="Doctor" asp-action="Dashboard">
-                            <i class="fa-solid fa-gauge-high me-1"></i>Tổng Quan Ca Khám
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="doctor-nav-link" asp-controller="Doctor" asp-action="Queue">
-                            <i class="fa-solid fa-list-ol me-1"></i>Hàng Đợi Khám Hôm Nay
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="doctor-nav-link" asp-controller="Doctor" asp-action="Schedule">
-                            <i class="fa-solid fa-calendar-week me-1"></i>Lịch Trực / Ca Khám
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="doctor-nav-link" asp-controller="Doctor" asp-action="MedicalRecords">
-                            <i class="fa-solid fa-folder-medical me-1"></i>Hồ Sơ & Đơn Thuốc
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="doctor-nav-link" asp-controller="Doctor" asp-action="PatientList">
-                            <i class="fa-solid fa-users me-1"></i>Danh S&#225;ch B&#7879;nh Nh&#226;n
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="doctor-nav-link" asp-controller="Doctor" asp-action="Profile">
-                            <i class="fa-solid fa-hospital-user me-1"></i>Hồ Sơ Chuyên Môn
-                        </a>
-                    </li>
-                </ul>
 
-                <!-- Doctor Right Profile -->
-                <div class="d-flex align-items-center gap-3">
-                    <div class="text-end text-white d-none d-md-block">
-                        <div class="fw-bold fs-6">@User.Identity?.Name</div>
-                        <small class="text-info">Bác sĩ chuyên khoa</small>
+            <!-- Brand Header -->
+            <div class="sidebar-brand-wrapper">
+                <a class="sidebar-brand-link" asp-controller="Doctor" asp-action="Dashboard">
+                    <div class="sidebar-brand-icon">
+                        <i class="fa-solid fa-stethoscope"></i>
                     </div>
-                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 fw-semibold">
-                            <i class="fa-solid fa-right-from-bracket me-1"></i>Đăng Xuất
-                        </button>
-                    </form>
+                    <div class="sidebar-brand-text">
+                        <span class="brand-title">HEALTHY<span style="color:var(--doctor-accent)">SYSTEM</span></span>
+                        <span class="brand-badge"><i class="fa-solid fa-user-doctor me-1"></i>BÁC SĨ KHÁM</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Menu Navigation Links -->
+            <nav class="sidebar-nav-container">
+                <div class="sidebar-category-label">Khám Chữa Bệnh</div>
+
+                <a asp-controller="Doctor" asp-action="Dashboard" 
+                   class="sidebar-nav-item @(currentAction == "Dashboard" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Tổng Quan Ca Khám">
+                    <i class="fa-solid fa-gauge-high nav-icon"></i>
+                    <span class="nav-text">Tổng Quan Ca Khám</span>
+                </a>
+
+                <a asp-controller="Doctor" asp-action="Queue" 
+                   class="sidebar-nav-item @(currentAction == "Queue" || currentAction == "Examination" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Hàng Đợi Khám Hôm Nay">
+                    <i class="fa-solid fa-list-ol nav-icon"></i>
+                    <span class="nav-text">Hàng Đợi Khám Hôm Nay</span>
+                </a>
+
+                <a asp-controller="Doctor" asp-action="Schedule" 
+                   class="sidebar-nav-item @(currentAction == "Schedule" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Lịch Trực / Ca Khám">
+                    <i class="fa-solid fa-calendar-week nav-icon"></i>
+                    <span class="nav-text">Lịch Trực / Ca Khám</span>
+                </a>
+
+                <div class="sidebar-category-label mt-2">Dữ Liệu Y Tế</div>
+
+                <a asp-controller="Doctor" asp-action="MedicalRecords" 
+                   class="sidebar-nav-item @(currentAction == "MedicalRecords" || currentAction == "MedicalRecord" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Hồ Sơ & Đơn Thuốc">
+                    <i class="fa-solid fa-folder-medical nav-icon"></i>
+                    <span class="nav-text">Hồ Sơ & Đơn Thuốc</span>
+                </a>
+
+                <a asp-controller="Doctor" asp-action="PatientList" 
+                   class="sidebar-nav-item @(currentAction == "PatientList" || currentAction == "PatientProfile" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Danh Sách Bệnh Nhân">
+                    <i class="fa-solid fa-users nav-icon"></i>
+                    <span class="nav-text">Danh Sách Bệnh Nhân</span>
+                </a>
+
+                <div class="sidebar-category-label mt-2">Cá Nhân</div>
+
+                <a asp-controller="Doctor" asp-action="Profile" 
+                   class="sidebar-nav-item @(currentAction == "Profile" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Hồ Sơ Chuyên Môn">
+                    <i class="fa-solid fa-id-card-clip nav-icon"></i>
+                    <span class="nav-text">Hồ Sơ Chuyên Môn</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer: Thông tin & Đăng xuất -->
+            <div class="sidebar-footer">
+                <div class="doctor-profile-card">
+                    <div class="doctor-avatar-circle" data-bs-toggle="tooltip" data-bs-placement="right" title="@User.Identity?.Name">
+                        <i class="fa-solid fa-user-doctor"></i>
+                    </div>
+                    <div class="doctor-profile-info">
+                        <div class="doctor-profile-name" title="@User.Identity?.Name">@User.Identity?.Name</div>
+                        <div class="doctor-profile-role"><i class="fa-solid fa-circle text-success fs-6 me-1" style="font-size:0.5rem !important"></i>Bác sĩ điều trị</div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </nav>
 
-    <!-- Global Alerts -->
-    <div class="container-fluid px-4 mt-3">
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm border-0 d-flex align-items-center" role="alert">
-                <i class="fa-solid fa-circle-check fs-4 me-3 text-success"></i>
-                <div class="flex-grow-1">@TempData["SuccessMessage"]</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="sidebar-logout-btn" data-bs-toggle="tooltip" data-bs-placement="right" title="Đăng Xuất">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span class="logout-text">Đăng Xuất</span>
+                    </button>
+                </form>
             </div>
-        }
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 d-flex align-items-center" role="alert">
-                <i class="fa-solid fa-triangle-exclamation fs-4 me-3 text-danger"></i>
-                <div class="flex-grow-1">@TempData["ErrorMessage"]</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </aside>
+
+        <!-- ================= MAIN CONTENT WRAPPER ================= -->
+        <div class="doctor-main-wrapper">
+            <!-- Topbar Header Nhẹ Nhàng -->
+            <header class="doctor-topbar no-print">
+                <div class="d-flex align-items-center gap-3">
+                    <button type="button" class="topbar-toggle-btn" id="btnTopbarToggle" title="Đóng / Mở Menu">
+                        <i class="fa-solid fa-bars-staggered"></i>
+                    </button>
+                    <div class="d-none d-sm-block">
+                        <div class="fw-bold text-dark fs-6">Phân Hệ Bác Sĩ & Điều Trị</div>
+                        <small class="text-muted">Phòng Khám Đa Khoa Healthy System</small>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-none d-md-flex align-items-center text-muted small bg-light px-3 py-1 rounded-pill border">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle me-2">
+                            <i class="fa-solid fa-circle me-1" style="font-size:0.5rem"></i>Đang trực
+                        </span>
+                        <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="text-end d-none d-md-block">
+                            <div class="fw-bold fs-6 text-dark">@User.Identity?.Name</div>
+                            <small class="text-info-emphasis">Bác sĩ chuyên khoa</small>
+                        </div>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1 fw-semibold" title="Đăng xuất khỏi ca">
+                                <i class="fa-solid fa-right-from-bracket me-1"></i><span class="d-none d-sm-inline">Đăng Xuất</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Global Alerts -->
+            <div class="container-fluid px-4 mt-3 no-print">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm border-0 d-flex align-items-center" role="alert">
+                        <i class="fa-solid fa-circle-check fs-4 me-3 text-success"></i>
+                        <div class="flex-grow-1">@TempData["SuccessMessage"]</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 d-flex align-items-center" role="alert">
+                        <i class="fa-solid fa-triangle-exclamation fs-4 me-3 text-danger"></i>
+                        <div class="flex-grow-1">@TempData["ErrorMessage"]</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
             </div>
-        }
+
+            <!-- Main Body -->
+            <main class="container-fluid px-4 py-3 flex-grow-1">
+                @RenderBody()
+            </main>
+
+            <!-- Footer -->
+            <footer class="no-print">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                    <span>&copy; 2026 Cổng Thông Tin Bác Sĩ - Phòng Khám Healthy System.</span>
+                    <span class="small text-muted">Hệ thống hỗ trợ chẩn đoán & Quản lý điều trị điện tử.</span>
+                </div>
+            </footer>
+        </div>
     </div>
-
-    <!-- Main Doctor Content -->
-    <main class="container-fluid px-4 py-3 flex-grow-1">
-        @RenderBody()
-    </main>
-
-    <footer>
-        <div class="container-fluid px-4 text-center">
-            <span>&copy; 2026 Cổng Thông Tin Bác Sĩ - Phòng Khám Healthy System. Phân hệ phục vụ Bác Sĩ & Điều trị.</span>
-        </div>
-    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <script>
+        // Xử lý Thò ra / Thụt vào của Sidebar Bác Sĩ
+        document.addEventListener('DOMContentLoaded', function () {
+            const htmlEl = document.documentElement;
+            const btnEdgeToggle = document.getElementById('btnEdgeToggle');
+            const btnTopbarToggle = document.getElementById('btnTopbarToggle');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+            // Khởi tạo Bootstrap tooltips khi thu gọn sidebar
+            let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            let tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            function toggleSidebar() {
+                if (window.innerWidth >= 992) {
+                    // Màn hình Desktop / Laptop: Thò ra / Thụt vào (Expand / Collapse)
+                    const isCollapsed = htmlEl.classList.toggle('sidebar-collapsed');
+                    localStorage.setItem('doctor_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+                } else {
+                    // Màn hình Mobile / Tablet: Mở / Đóng dạng Drawer
+                    document.body.classList.toggle('sidebar-mobile-open');
+                }
+            }
+
+            if (btnEdgeToggle) {
+                btnEdgeToggle.addEventListener('click', toggleSidebar);
+            }
+
+            if (btnTopbarToggle) {
+                btnTopbarToggle.addEventListener('click', toggleSidebar);
+            }
+
+            if (sidebarBackdrop) {
+                sidebarBackdrop.addEventListener('click', function () {
+                    document.body.classList.remove('sidebar-mobile-open');
+                });
+            }
+
+            // Tự động đóng mobile sidebar khi click vào menu link trên màn hình nhỏ
+            const navItems = document.querySelectorAll('.sidebar-nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth < 992) {
+                        document.body.classList.remove('sidebar-mobile-open');
+                    }
+                });
+            });
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-

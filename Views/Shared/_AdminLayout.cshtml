@@ -3,101 +3,659 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Admin | Healthy System</title>
+    <title>@ViewData["Title"] - Quản Trị Hệ Thống | MedEase</title>
+    
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        // Khởi tạo trạng thái sidebar từ localStorage để chống giật trang (FOUC)
+        (function() {
+            try {
+                if (localStorage.getItem('admin_sidebar_collapsed') === 'true' && window.innerWidth >= 992) {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                }
+            } catch(e) {}
+        })();
+    </script>
+
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; }
-        .admin-navbar { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.2); padding: 12px 0; }
-        .admin-brand { color: #ffffff !important; font-weight: 800; font-size: 1.35rem; display: flex; align-items: center; gap: 10px; text-decoration: none; }
-        .admin-brand-badge { background-color: #7c3aed; color: white; font-size: 0.72rem; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; }
-        .admin-nav-link { color: #c4b5fd !important; font-weight: 600; padding: 6px 12px !important; border-radius: 8px; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; white-space: nowrap; }
-        .admin-nav-link:hover, .admin-nav-link.active { color: #ffffff !important; background-color: rgba(255,255,255,0.12); }
-        footer { margin-top: auto; background: #1e1b4b; color: #a5b4fc; padding: 20px 0; font-size: 0.85rem; }
+        :root {
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 72px;
+            --topbar-height: 64px;
+            --admin-primary: #0284c7;
+            --admin-primary-dark: #0369a1;
+            --sidebar-bg: #090d16;
+            --sidebar-surface: #131b2e;
+            --sidebar-border: rgba(255, 255, 255, 0.08);
+            --content-bg: #f8fafc;
+            --border-subtle: #e2e8f0;
+            --text-heading: #0f172a;
+            --text-body: #334155;
+            --text-muted: #64748b;
+            --transition-speed: 0.25s;
+            --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--content-bg);
+            color: var(--text-body);
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* Layout Container */
+        .admin-shell {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+            position: relative;
+        }
+
+        /* ================= SIDEBAR ================= */
+        .admin-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            z-index: 1040;
+            display: flex;
+            flex-direction: column;
+            transition: width var(--transition-speed) var(--transition-timing),
+                        transform var(--transition-speed) var(--transition-timing);
+            user-select: none;
+        }
+
+        /* Sidebar Edge Toggle */
+        .sidebar-edge-toggle {
+            position: absolute;
+            top: 20px;
+            right: -13px;
+            width: 26px;
+            height: 26px;
+            background-color: var(--admin-primary);
+            color: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid var(--sidebar-bg);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            z-index: 1050;
+        }
+        .sidebar-edge-toggle:hover {
+            background-color: var(--admin-primary-dark);
+            transform: scale(1.1);
+        }
+        .sidebar-edge-toggle i {
+            font-size: 0.75rem;
+            transition: transform var(--transition-speed) ease;
+        }
+
+        /* Sidebar Brand */
+        .sidebar-brand-wrapper {
+            height: var(--topbar-height);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--sidebar-border);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #ffffff;
+            width: 100%;
+        }
+
+        .brand-icon-box {
+            width: 38px;
+            height: 38px;
+            background-color: rgba(2, 132, 199, 0.15);
+            color: #38bdf8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+        }
+
+        .brand-text-block {
+            display: flex;
+            flex-direction: column;
+            white-space: nowrap;
+            overflow: hidden;
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        .brand-title {
+            font-weight: 800;
+            font-size: 1.05rem;
+            letter-spacing: -0.01em;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+
+        .brand-subtitle {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: #38bdf8;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* Sidebar Navigation Menu */
+        .sidebar-menu-wrapper {
+            flex: 1;
+            padding: 16px 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sidebar-menu-wrapper::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-menu-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+
+        .sidebar-section-label {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 10px 10px 4px 10px;
+            white-space: nowrap;
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            margin-bottom: 3px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.18s ease;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .sidebar-nav-item i.nav-icon {
+            font-size: 1.05rem;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+            color: #64748b;
+            transition: color 0.18s ease;
+        }
+
+        .sidebar-nav-item:hover {
+            color: #ffffff;
+            background-color: var(--sidebar-surface);
+        }
+        .sidebar-nav-item:hover i.nav-icon {
+            color: #38bdf8;
+        }
+
+        .sidebar-nav-item.active {
+            color: #ffffff;
+            background-color: var(--sidebar-surface);
+            font-weight: 600;
+            border-left: 3px solid #38bdf8;
+        }
+        .sidebar-nav-item.active i.nav-icon {
+            color: #38bdf8;
+        }
+
+        .sidebar-nav-label {
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        /* Sidebar Footer */
+        .sidebar-footer-wrapper {
+            padding: 12px 14px;
+            border-top: 1px solid var(--sidebar-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+        }
+
+        .admin-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background-color: #0369a1;
+            color: #e0f2fe;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .admin-info {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            white-space: nowrap;
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        .admin-name {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            line-height: 1.2;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .admin-role {
+            font-size: 0.6875rem;
+            color: #94a3b8;
+        }
+
+        /* ================= MAIN WRAPPER ================= */
+        .admin-main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: calc(100% - var(--sidebar-width));
+            transition: margin-left var(--transition-speed) var(--transition-timing),
+                        width var(--transition-speed) var(--transition-timing);
+        }
+
+        /* Top Bar */
+        .admin-topbar {
+            height: var(--topbar-height);
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-topbar-toggle {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+        .btn-topbar-toggle:hover {
+            color: var(--text-heading);
+            background: #f1f5f9;
+        }
+
+        .system-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #10b981;
+            display: inline-block;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-admin-action {
+            background-color: #ffffff;
+            color: var(--text-heading) !important;
+            border: 1px solid var(--border-subtle);
+            font-weight: 600;
+            font-size: 0.8125rem;
+            padding: 7px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s ease;
+        }
+        .btn-admin-action:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        /* Content Container */
+        .admin-content {
+            flex: 1;
+            padding: 24px;
+        }
+
+        /* Footer */
+        .admin-footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 14px 24px;
+            background: #ffffff;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        /* ================= COLLAPSED STATE (Desktop) ================= */
+        html.sidebar-collapsed .admin-sidebar {
+            width: var(--sidebar-collapsed-width);
+        }
+        html.sidebar-collapsed .admin-main-wrapper {
+            margin-left: var(--sidebar-collapsed-width);
+            width: calc(100% - var(--sidebar-collapsed-width));
+        }
+        html.sidebar-collapsed .brand-text-block,
+        html.sidebar-collapsed .sidebar-section-label,
+        html.sidebar-collapsed .sidebar-nav-label,
+        html.sidebar-collapsed .admin-info {
+            opacity: 0;
+            pointer-events: none;
+            display: none;
+        }
+        html.sidebar-collapsed .sidebar-edge-toggle i {
+            transform: rotate(180deg);
+        }
+        html.sidebar-collapsed .sidebar-nav-item {
+            justify-content: center;
+            padding: 10px 0;
+        }
+        html.sidebar-collapsed .sidebar-nav-item i.nav-icon {
+            margin: 0;
+        }
+        html.sidebar-collapsed .sidebar-footer-wrapper {
+            justify-content: center;
+            padding: 12px 0;
+        }
+
+        /* ================= MOBILE / TABLET RESPONSIVE ================= */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.5);
+            z-index: 1035;
+        }
+
+        @@media (max-width: 991.98px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+                width: 260px !important;
+            }
+            .sidebar-edge-toggle {
+                display: none;
+            }
+            .admin-main-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            body.sidebar-mobile-open .admin-sidebar {
+                transform: translateX(0);
+            }
+            body.sidebar-mobile-open .sidebar-backdrop {
+                display: block;
+            }
+            .brand-text-block,
+            .sidebar-section-label,
+            .sidebar-nav-label,
+            .admin-info {
+                display: flex !important;
+                opacity: 1 !important;
+            }
+            .sidebar-nav-item {
+                justify-content: flex-start !important;
+                padding: 10px 12px !important;
+            }
+        }
     </style>
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg admin-navbar sticky-top">
-        <div class="container-fluid px-4">
-            <a class="admin-brand" asp-controller="Admin" asp-action="Dashboard">
-                <i class="fa-solid fa-shield-halved text-violet-300 fs-3" style="color:#a78bfa"></i>
-                <span>HEALTHY<span style="color:#a78bfa">SYSTEM</span></span>
-                <span class="admin-brand-badge ms-2"><i class="fa-solid fa-user-shield me-1"></i>QUẢN TRỊ</span>
-            </a>
-            <button class="navbar-toggler text-white border-0" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="adminNav">
-                <ul class="navbar-nav me-auto ms-4 mb-2 mb-lg-0 gap-1">
-                    <li class="nav-item">
-                        <a class="admin-nav-link" asp-controller="Admin" asp-action="Dashboard">
-                            <i class="fa-solid fa-gauge-high"></i>Dashboard & Người Dùng
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="admin-nav-link" asp-controller="Admin" asp-action="Doctors">
-                            <i class="fa-solid fa-user-doctor"></i>Bác Sĩ & Chuyên Khoa
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="admin-nav-link" asp-controller="Admin" asp-action="Services">
-                            <i class="fa-solid fa-list-check"></i>Dịch Vụ & Biểu Giá
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="admin-nav-link" asp-controller="Admin" asp-action="Equipments">
-                            <i class="fa-solid fa-microscope"></i>Trang Thiết Bị Y Tế
-                        </a>
-                    </li>
-                </ul>
-                <div class="d-flex align-items-center gap-3">
-                    <div class="text-end text-white d-none d-md-block">
-                        <div class="fw-bold fs-6">@User.Identity?.Name</div>
-                        <small style="color:#a78bfa">Quản Trị Viên</small>
+<body data-ui="app-screen">
+    <!-- Mobile Backdrop -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <div class="admin-shell">
+        <!-- ================= SIDEBAR ================= -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <!-- Nút thu gọn / mở rộng ở mép -->
+            <div class="sidebar-edge-toggle d-none d-lg-flex" id="btnEdgeToggle" title="Thu gọn / Mở rộng">
+                <i class="fa-solid fa-chevron-left"></i>
+            </div>
+
+            <!-- Brand Header -->
+            <div class="sidebar-brand-wrapper">
+                <a asp-controller="Admin" asp-action="Dashboard" class="sidebar-brand-link">
+                    <div class="brand-icon-box">
+                        <i class="fa-solid fa-shield-halved"></i>
                     </div>
-                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                    <div class="brand-text-block">
+                        <span class="brand-title">MedEase</span>
+                        <span class="brand-subtitle">Quản Trị Hệ Thống</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="sidebar-menu-wrapper">
+                <div class="sidebar-section-label">Tổng quan & Phân quyền</div>
+
+                <a asp-controller="Admin" asp-action="Dashboard" 
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Bảng Điều Khiển & Phân Quyền">
+                    <i class="fa-solid fa-chart-pie nav-icon"></i>
+                    <span class="sidebar-nav-label">Bảng Điều Khiển</span>
+                </a>
+
+                <div class="sidebar-section-label mt-3">Nhân sự & Chuyên môn</div>
+
+                <a asp-controller="Admin" asp-action="Doctors" 
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Doctors" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Bác Sĩ & Chuyên Khoa">
+                    <i class="fa-solid fa-user-doctor nav-icon"></i>
+                    <span class="sidebar-nav-label">Bác Sĩ & Chuyên Khoa</span>
+                </a>
+
+                <div class="sidebar-section-label mt-3">Hạ tầng & Dịch vụ</div>
+
+                <a asp-controller="Admin" asp-action="Services" 
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Services" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Dịch Vụ & Biểu Giá">
+                    <i class="fa-solid fa-list-check nav-icon"></i>
+                    <span class="sidebar-nav-label">Dịch Vụ & Biểu Giá</span>
+                </a>
+
+                <a asp-controller="Admin" asp-action="Equipments" 
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Equipments" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Trang Thiết Bị Y Tế">
+                    <i class="fa-solid fa-microscope nav-icon"></i>
+                    <span class="sidebar-nav-label">Thiết Bị Phòng Khám</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar User Profile -->
+            <div class="sidebar-footer-wrapper">
+                <div class="admin-avatar">
+                    @(User.Identity?.Name?.Substring(0, 1).ToUpper() ?? "A")
+                </div>
+                <div class="admin-info">
+                    <span class="admin-name">@User.Identity?.Name</span>
+                    <span class="admin-role">Quản trị viên</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ================= MAIN WRAPPER ================= -->
+        <div class="admin-main-wrapper">
+            <!-- Topbar -->
+            <header class="admin-topbar">
+                <div class="topbar-left">
+                    <button class="btn-topbar-toggle" id="btnTopbarToggle" type="button" aria-label="Toggle menu">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="system-badge">
+                        <span class="status-dot"></span>
+                        <span>Trực tuyến · Cổng Quản Trị Hệ Thống</span>
+                    </div>
+                </div>
+
+                <div class="topbar-right">
+                    <a asp-controller="Admin" asp-action="CreateDoctor" class="btn btn-sm btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#0284c7; border-color:#0284c7; font-size:0.8125rem;">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Thêm Bác Sĩ</span>
+                    </a>
+                    
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline m-0">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 fw-semibold">
-                            <i class="fa-solid fa-right-from-bracket me-1"></i>Đăng Xuất
+                        <button type="submit" class="btn-admin-action" title="Đăng xuất khỏi hệ thống">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                            <span class="d-none d-sm-inline">Đăng xuất</span>
                         </button>
                     </form>
                 </div>
-            </div>
-        </div>
-    </nav>
+            </header>
 
-    <div class="container-fluid px-4 mt-3">
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm border-0 d-flex align-items-center" role="alert">
-                <i class="fa-solid fa-circle-check fs-4 me-3 text-success"></i>
-                <div class="flex-grow-1">@TempData["SuccessMessage"]</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <!-- Global Alerts -->
+            <div class="px-4 pt-3">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show border-0 rounded-2 d-flex align-items-center mb-0" role="alert" style="background:#ecfdf5; color:#065f46; border-left:4px solid #10b981 !important;">
+                        <i class="fa-solid fa-circle-check fs-5 me-2" style="color:#059669;"></i>
+                        <div class="flex-grow-1">@TempData["SuccessMessage"]</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show border-0 rounded-2 d-flex align-items-center mb-0" role="alert" style="background:#fef2f2; color:#991b1b; border-left:4px solid #ef4444 !important;">
+                        <i class="fa-solid fa-circle-exclamation fs-5 me-2" style="color:#dc2626;"></i>
+                        <div class="flex-grow-1">@TempData["ErrorMessage"]</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
             </div>
-        }
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 d-flex align-items-center" role="alert">
-                <i class="fa-solid fa-triangle-exclamation fs-4 me-3 text-danger"></i>
-                <div class="flex-grow-1">@TempData["ErrorMessage"]</div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        }
+
+            <!-- Content Area -->
+            <main class="admin-content">
+                @RenderBody()
+            </main>
+
+            <!-- Footer -->
+            <footer class="admin-footer">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                    <span>Hệ Thống Quản Lý Phòng Khám MedEase · Trung tâm điều hành Quản trị</span>
+                    <span class="text-muted small">Môi trường bảo mật & phân quyền vai trò</span>
+                </div>
+            </footer>
+        </div>
     </div>
 
-    <main class="container-fluid px-4 py-3 flex-grow-1">
-        @RenderBody()
-    </main>
-
-    <footer>
-        <div class="container-fluid px-4 text-center">
-            <span>&copy; 2026 Cổng Quản Trị Hệ Thống - Phòng Khám Healthy System.</span>
-        </div>
-    </footer>
-
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const htmlEl = document.documentElement;
+            const btnEdgeToggle = document.getElementById('btnEdgeToggle');
+            const btnTopbarToggle = document.getElementById('btnTopbarToggle');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+            let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
+
+            function toggleSidebar() {
+                if (window.innerWidth >= 992) {
+                    const isCollapsed = htmlEl.classList.toggle('sidebar-collapsed');
+                    localStorage.setItem('admin_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+                } else {
+                    document.body.classList.toggle('sidebar-mobile-open');
+                }
+            }
+
+            if (btnEdgeToggle) btnEdgeToggle.addEventListener('click', toggleSidebar);
+            if (btnTopbarToggle) btnTopbarToggle.addEventListener('click', toggleSidebar);
+            if (sidebarBackdrop) {
+                sidebarBackdrop.addEventListener('click', function () {
+                    document.body.classList.remove('sidebar-mobile-open');
+                });
+            }
+
+            const navItems = document.querySelectorAll('.sidebar-nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth < 992) {
+                        document.body.classList.remove('sidebar-mobile-open');
+                    }
+                });
+            });
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

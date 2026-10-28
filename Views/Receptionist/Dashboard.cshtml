@@ -1,104 +1,173 @@
+@using Healthy_System.Models
 @{
     Layout = "_ReceptionistLayout";
     ViewData["Title"] = "Bàn Tiếp Đón Lễ Tân";
     var todayAppointments = ViewBag.TodayAppointments as List<Appointment> ?? new List<Appointment>();
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
-        <h2 class="fw-bold mb-1"><i class="fa-solid fa-headset text-success me-2"></i>Bàn Tiếp Đón & Điều Phối Lễ Tân</h2>
-        <p class="text-muted mb-0">Hôm nay: <strong>@DateTime.Today.ToString("dddd, dd/MM/yyyy")</strong></p>
+        <h1 class="h4 fw-bold text-slate-900 mb-1" style="color:#0f172a; letter-spacing:-0.02em;">Bàn Tiếp Đón & Điều Phối Ca Khám</h1>
+        <p class="text-muted small mb-0">Theo dõi luồng bệnh nhân tiếp nhận, phân luồng phòng khám và xác nhận ca hẹn trong ngày</p>
     </div>
-    <div class="d-flex gap-2">
-        <a asp-action="CreateAppointment" class="btn btn-success rounded-pill px-4 fw-bold">
-            <i class="fa-solid fa-user-plus me-1"></i>Tiếp Nhận Tại Quầy
+    <div class="d-flex align-items-center gap-2">
+        <a asp-action="CreateAppointment" class="btn btn-sm btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#0f766e; border-color:#0f766e;">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Tiếp Nhận Tại Quầy</span>
         </a>
     </div>
 </div>
 
-<!-- Stats -->
+<!-- Authentic Clinical Metrics (app-screens §2.2) -->
 <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-reception p-3 border-start border-success border-4">
-            <div class="text-muted small fw-semibold">Tổng Lịch Hẹn Hôm Nay</div>
-            <div class="display-6 fw-bold text-dark">@ViewBag.TotalToday</div>
+    <div class="col-6 col-lg-3">
+        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
+            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Tổng lịch hẹn hôm nay</div>
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="fs-3 fw-bold" style="color:#0f172a; font-variant-numeric:tabular-nums;">@ViewBag.TotalToday</span>
+                <span class="small text-muted">ca</span>
+            </div>
+            <div class="small text-muted mt-1" style="font-size:0.75rem;">Toàn bộ lượt đặt khám</div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-reception p-3 border-start border-warning border-4">
-            <div class="text-muted small fw-semibold">Cần Xác Nhận Trực Tuyến</div>
-            <div class="display-6 fw-bold text-warning">@ViewBag.PendingConfirmation</div>
+    <div class="col-6 col-lg-3">
+        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
+            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Chờ tiếp đón / xác nhận</div>
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="fs-3 fw-bold" style="color:#d97706; font-variant-numeric:tabular-nums;">@ViewBag.PendingConfirmation</span>
+                <span class="small text-muted">ca</span>
+            </div>
+            <div class="small text-warning mt-1" style="font-size:0.75rem;">Cần kiểm tra check-in</div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-reception p-3 border-start border-primary border-4">
-            <div class="text-muted small fw-semibold">Đã Tiếp Nhận & Xác Nhận</div>
-            <div class="display-6 fw-bold text-primary">@ViewBag.ConfirmedToday</div>
+    <div class="col-6 col-lg-3">
+        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
+            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Đã tiếp nhận & xếp phòng</div>
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="fs-3 fw-bold" style="color:#0f766e; font-variant-numeric:tabular-nums;">@ViewBag.ConfirmedToday</span>
+                <span class="small text-muted">ca</span>
+            </div>
+            <div class="small text-muted mt-1" style="font-size:0.75rem;">Sẵn sàng vào phòng khám</div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card card-reception p-3 border-start border-info border-4">
-            <div class="text-muted small fw-semibold">Đã Khám Xong</div>
-            <div class="display-6 fw-bold text-info">@ViewBag.CompletedToday</div>
+    <div class="col-6 col-lg-3">
+        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
+            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Đã hoàn thành khám</div>
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="fs-3 fw-bold" style="color:#475569; font-variant-numeric:tabular-nums;">@ViewBag.CompletedToday</span>
+                <span class="small text-muted">ca</span>
+            </div>
+            <div class="small text-muted mt-1" style="font-size:0.75rem;">Đã nhận toa & thanh toán</div>
         </div>
     </div>
 </div>
 
-<!-- Table of Today Appointments -->
-<div class="card card-reception p-4">
-    <h5 class="fw-bold mb-3"><i class="fa-solid fa-clipboard-list text-success me-2"></i>Lịch Hẹn Khám Trong Ngày</h5>
+<!-- Main Table Card -->
+<div class="bg-white rounded-2" style="border:1px solid #e2e8f0;">
+    <!-- Card Toolbar -->
+    <div class="p-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3" style="border-color:#e2e8f0 !important;">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold" style="color:#0f172a; font-size:0.9375rem;">Danh Sách Ca Khám Hôm Nay</span>
+            <span class="badge rounded-pill text-bg-light border" style="font-size:0.75rem;">@todayAppointments.Count</span>
+        </div>
+        
+        <!-- Live Instant Filter -->
+        <div class="d-flex align-items-center gap-2 w-100 w-md-auto" style="max-width:380px;">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0 text-muted" style="border-color:#e2e8f0;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" id="quickFilterInput" class="form-control border-start-0 ps-0" placeholder="Lọc nhanh tên, SĐT hoặc mã số..." style="border-color:#e2e8f0; font-size:0.8125rem;">
+            </div>
+        </div>
+    </div>
+
     @if (todayAppointments.Any())
     {
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Giờ hẹn</th>
-                        <th>Mã lịch</th>
-                        <th>Bệnh nhân</th>
-                        <th>Số điện thoại</th>
-                        <th>Bác sĩ & Phòng</th>
-                        <th>Trạng thái</th>
-                        <th class="text-center">Thao tác</th>
+            <table class="table table-hover align-middle mb-0" id="todayAppointmentsTable" style="font-size:0.875rem;">
+                <thead>
+                    <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#64748b; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">
+                        <th class="ps-3 py-2" style="width:100px;">Giờ hẹn</th>
+                        <th class="py-2" style="width:120px;">Mã phiếu</th>
+                        <th class="py-2">Bệnh nhân</th>
+                        <th class="py-2">Số điện thoại</th>
+                        <th class="py-2">Bác sĩ phụ trách</th>
+                        <th class="py-2">Phòng khám</th>
+                        <th class="py-2" style="width:140px;">Trạng thái</th>
+                        <th class="text-end pe-3 py-2" style="width:130px;">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var a in todayAppointments)
                     {
-                        <tr>
-                            <td class="fw-bold text-success">@a.TimeSlot</td>
-                            <td><span class="badge bg-light text-dark border">@a.AppointmentCode</span></td>
-                            <td><strong>@a.Patient?.FullName</strong></td>
-                            <td>@a.Patient?.PhoneNumber</td>
-                            <td>@a.Doctor?.Title @a.Doctor?.User?.FullName (@a.Doctor?.RoomNumber)</td>
-                            <td>
+                        var patientName = a.Patient?.FullName ?? "Chưa rõ";
+                        var firstLetter = !string.IsNullOrEmpty(patientName) ? patientName.Substring(0, 1).ToUpper() : "P";
+                        
+                        <tr class="appointment-row" data-search="@patientName.ToLower() @(a.Patient?.PhoneNumber) @(a.AppointmentCode?.ToLower())">
+                            <td class="ps-3 py-3">
+                                <span class="fw-bold" style="color:#0f766e; font-variant-numeric:tabular-nums;">@a.TimeSlot</span>
+                            </td>
+                            <td class="py-3">
+                                <span class="badge font-monospace bg-light text-dark border px-2 py-1" style="font-size:0.75rem;">@a.AppointmentCode</span>
+                            </td>
+                            <td class="py-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width:28px; height:28px; border-radius:6px; background:#f1f5f9; color:#334155; font-weight:700; font-size:0.75rem; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; flex-shrink:0;">
+                                        @firstLetter
+                                    </div>
+                                    <span class="fw-semibold text-slate-900" style="color:#0f172a;">@patientName</span>
+                                </div>
+                            </td>
+                            <td class="py-3 text-muted" style="font-variant-numeric:tabular-nums;">
+                                @(a.Patient?.PhoneNumber ?? "—")
+                            </td>
+                            <td class="py-3">
+                                <span class="text-slate-800">@(a.Doctor?.Title ?? "BS.") @(a.Doctor?.User?.FullName ?? "Chưa phân công")</span>
+                            </td>
+                            <td class="py-3">
+                                <span class="badge bg-light text-secondary border" style="font-size:0.75rem;">
+                                    <i class="fa-solid fa-door-open me-1"></i>@(a.Doctor?.RoomNumber ?? "P.01")
+                                </span>
+                            </td>
+                            <td class="py-3">
                                 @if (a.Status == "Confirmed")
                                 {
-                                    <span class="badge bg-success-subtle text-success">Đã xác nhận</span>
+                                    <span class="badge px-2 py-1 text-teal" style="background:#f0fdfa; color:#0f766e; border:1px solid #ccfbf1; font-weight:600;">
+                                        <i class="fa-solid fa-circle-check me-1" style="font-size:0.65rem;"></i>Đã xác nhận
+                                    </span>
                                 }
                                 else if (a.Status == "Pending")
                                 {
-                                    <span class="badge bg-warning-subtle text-dark">Chờ xác nhận</span>
+                                    <span class="badge px-2 py-1" style="background:#fffbeb; color:#b45309; border:1px solid #fef3c7; font-weight:600;">
+                                        <i class="fa-regular fa-clock me-1" style="font-size:0.65rem;"></i>Chờ xác nhận
+                                    </span>
                                 }
                                 else if (a.Status == "Completed")
                                 {
-                                    <span class="badge bg-info-subtle text-info">Đã khám</span>
+                                    <span class="badge px-2 py-1" style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; font-weight:600;">
+                                        <i class="fa-solid fa-check me-1" style="font-size:0.65rem;"></i>Đã khám xong
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-light text-muted border px-2 py-1">@a.Status</span>
                                 }
                             </td>
-                            <td class="text-center">
+                            <td class="text-end pe-3 py-3">
                                 @if (a.Status == "Pending")
                                 {
-                                    <form asp-action="Confirm" method="post" class="d-inline">
+                                    <form asp-action="Confirm" method="post" class="d-inline m-0">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@a.Id" />
-                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                                        <button type="submit" class="btn btn-sm px-2 py-1 fw-semibold" style="background:#0f766e; color:#ffffff; font-size:0.75rem; border-radius:4px;">
                                             <i class="fa-solid fa-check me-1"></i>Xác nhận
                                         </button>
                                     </form>
                                 }
                                 else
                                 {
-                                    <span class="text-muted small">OK</span>
+                                    <span class="text-muted small" style="font-size:0.75rem;">—</span>
                                 }
                             </td>
                         </tr>
@@ -109,6 +178,33 @@
     }
     else
     {
-        <div class="text-center py-4 text-muted">Hôm nay chưa có lịch hẹn nào.</div>
+        <div class="text-center py-5 text-muted">
+            <i class="fa-regular fa-calendar-xmark fs-2 text-muted mb-2 d-block opacity-50"></i>
+            <div class="fw-semibold">Chưa có lịch hẹn nào trong ngày hôm nay</div>
+            <small class="text-muted">Các lượt đặt khám mới qua website hoặc tại quầy sẽ hiển thị ngay tại đây.</small>
+        </div>
     }
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const filterInput = document.getElementById('quickFilterInput');
+            if (!filterInput) return;
+
+            filterInput.addEventListener('input', function () {
+                const term = this.value.trim().toLowerCase();
+                const rows = document.querySelectorAll('.appointment-row');
+                
+                rows.forEach(row => {
+                    const searchData = row.getAttribute('data-search') || '';
+                    if (!term || searchData.includes(term)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+}
