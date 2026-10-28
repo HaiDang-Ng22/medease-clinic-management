@@ -70,9 +70,18 @@
                             </td>
                             <td class="text-center pe-3">
                                 <div class="btn-group">
-                                    <a asp-action="Examination" asp-route-id="@appt.Id" class="btn btn-primary rounded-pill btn-sm px-3 fw-bold me-1">
-                                        <i class="fa-solid fa-stethoscope me-1"></i>@(appt.Status == "Completed" ? "Bệnh án" : "Vào Khám")
-                                    </a>
+                                    @if (appt.Status == "Completed")
+                                    {
+                                        <a asp-action="MedicalRecord" asp-route-id="@appt.Id" class="btn btn-outline-success rounded-pill btn-sm px-3 fw-bold me-1">
+                                            <i class="fa-solid fa-file-medical me-1"></i>Bệnh án
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-action="Examination" asp-route-id="@appt.Id" class="btn btn-primary rounded-pill btn-sm px-3 fw-bold me-1">
+                                            <i class="fa-solid fa-stethoscope me-1"></i>Vào Khám
+                                        </a>
+                                    }
                                     @if (appt.Status != "Completed" && appt.Status != "Cancelled")
                                     {
                                         <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Xử lý khẩn cấp">

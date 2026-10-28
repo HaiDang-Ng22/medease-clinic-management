@@ -77,6 +77,7 @@
                 @if (curStatus == "Pending") { <option value="Pending" selected>Cho tiep nhan</option> } else { <option value="Pending">Cho tiep nhan</option> }
                 @if (curStatus == "Confirmed") { <option value="Confirmed" selected>Da xac nhan</option> } else { <option value="Confirmed">Da xac nhan</option> }
                 @if (curStatus == "Completed") { <option value="Completed" selected>Da hoan thanh</option> } else { <option value="Completed">Da hoan thanh</option> }
+                @if (curStatus == "Expired") { <option value="Expired" selected>Qua han</option> } else { <option value="Expired">Qua han</option> }
                 @if (curStatus == "Cancelled") { <option value="Cancelled" selected>Da huy</option> } else { <option value="Cancelled">Da huy</option> }
             </select>
         </div>
@@ -149,6 +150,12 @@
                                         <i class="fa-solid fa-check me-1"></i>Da hoan thanh
                                     </span>
                                 }
+                                else if (appt.Status == "Expired" || (appt.AppointmentDate.Date < DateTime.Today && appt.Status != "Completed" && appt.Status != "Cancelled"))
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary py-2 px-3 rounded-pill fw-bold">
+                                        <i class="fa-solid fa-clock-rotate-left me-1"></i>Qua han
+                                    </span>
+                                }
                                 else if (appt.Status == "Confirmed")
                                 {
                                     <span class="badge bg-primary-subtle text-primary py-2 px-3 rounded-pill fw-bold">
@@ -174,7 +181,20 @@
                                        class="btn btn-sm btn-outline-info rounded-pill px-2" title="Xem ho so">
                                         <i class="fa-solid fa-id-card me-1"></i>Ho so
                                     </a>
-                                    @if (appt.Status != "Cancelled")
+                                    @if (appt.Status == "Completed")
+                                    {
+                                        <a asp-action="MedicalRecord" asp-route-id="@appt.Id"
+                                           class="btn btn-sm btn-outline-success rounded-pill px-2" title="Xem benh an">
+                                            <i class="fa-solid fa-file-medical me-1"></i>Benh an
+                                        </a>
+                                    }
+                                    else if (appt.Status == "Expired" || (appt.AppointmentDate.Date < DateTime.Today && appt.Status != "Completed" && appt.Status != "Cancelled"))
+                                    {
+                                        <span class="btn btn-sm btn-outline-secondary rounded-pill px-2 disabled opacity-50" title="Ca khám đã quá hạn">
+                                            <i class="fa-solid fa-clock-rotate-left me-1"></i>Qua han
+                                        </span>
+                                    }
+                                    else if (appt.Status != "Cancelled")
                                     {
                                         <a asp-action="Examination" asp-route-id="@appt.Id"
                                            class="btn btn-sm btn-primary rounded-pill px-2" title="Vao kham">
