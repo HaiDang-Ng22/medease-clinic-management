@@ -363,6 +363,7 @@ namespace Healthy_System.Controllers
             }
 
             ViewBag.Doctor = doctor;
+            ViewBag.HasLabResult = _context.LabResults.Any(r => r.AppointmentId == id);
             return View(appt);
         }
 
@@ -724,18 +725,37 @@ namespace Healthy_System.Controllers
                 return RedirectToAction(nameof(PatientList));
             }
 
-            appt.LabRequest = labRequest?.Trim();
+            // Validation: phai co noi dung
+            if (string.IsNullOrWhiteSpace(labRequest))
+            {
+                TempData["ErrorMessage"] = "Vui long nhap noi dung phieu xet nghiem truoc khi luu.";
+                return RedirectToAction(nameof(LabRequestForm), new { id = appointmentId });
+            }
+
+            appt.LabRequest = labRequest.Trim();
             appt.UpdatedAt = DateTime.UtcNow;
 
-            // Gửi thông báo cho bệnh nhân
-            if (!string.IsNullOrWhiteSpace(labRequest))
+            // Gui thong bao cho benh nhan
+            _context.Notifications.Add(new Notification
+            {
+                UserId = appt.PatientId,
+                Title = "Phieu Yeu Cau Xet Nghiem",
+                Message = $"Bac si da lap phieu xet nghiem cho lich hen {appt.AppointmentCode}. KTV se xu ly va thong bao ket qua.",
+                Type = "LabResult",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            // Gui thong bao cho tat ca KTV
+            var labTechs = _context.Users.Where(u => u.Role == "LabTech").ToList();
+            foreach (var ktv in labTechs)
             {
                 _context.Notifications.Add(new Notification
                 {
-                    UserId = appt.PatientId,
-                    Title = "🔬 Phiếu Yêu Cầu Xét Nghiệm / Chụp Chiếu",
-                    Message = $"Bác sĩ đã lập phiếu yêu cầu xét nghiệm cho lịch hẹn {appt.AppointmentCode}. Bạn có thể xem chi tiết bằng cách vào mục \"Lịch hẹn của tôi\" → tìm lịch hẹn {appt.AppointmentCode} → nhấn nút \"Xem Phiếu Xét Nghiệm\" (màu xanh dương).",
-                    Type = "General",
+                    UserId = ktv.Id,
+                    Title = "Co Phieu XN Moi Can Xu Ly",
+                    Message = $"BS {doctor.User?.FullName} vua lap phieu XN cho BN {appt.Patient?.FullName} (ma: {appt.AppointmentCode}). Vao Phieu Yeu Cau XN de xu ly.",
+                    Type = "LabResult",
                     IsRead = false,
                     CreatedAt = DateTime.UtcNow
                 });
@@ -743,11 +763,36 @@ namespace Healthy_System.Controllers
 
             _context.SaveChanges();
 
-            TempData["SuccessMessage"] = $"Đã lưu phiếu yêu cầu xét nghiệm cho bệnh nhân {appt.Patient?.FullName}!";
+            TempData["SuccessMessage"] = $"Da luu phieu XN cho BN {appt.Patient?.FullName}! Da thong bao KTV va benh nhan.";
             return RedirectToAction(nameof(LabRequestForm), new { id = appointmentId });
+
+        }
+        // =====================================================================
+        // =====================================================================
+        // US23: Bac si xem ket qua xet nghiem
+        // =====================================================================
+        [HttpGet]
+        public IActionResult LabResultView(int appointmentId)
+        {
+            var doctor = GetCurrentDoctor();
+            if (doctor == null) return RedirectToAction(nameof(Unconfigured));
+
+            // Lay ket qua XN cua appointment nay
+            var result = _context.LabResults
+                .Include(r => r.Appointment).ThenInclude(a => a!.Patient)
+                .Include(r => r.Appointment).ThenInclude(a => a!.Specialty)
+                .Include(r => r.LabTech)
+                .FirstOrDefault(r => r.AppointmentId == appointmentId && r.Appointment!.DoctorId == doctor.Id);
+
+            if (result == null)
+            {
+                TempData["ErrorMessage"] = "Chua co ket qua xet nghiem cho ca kham nay.";
+                return RedirectToAction(nameof(MedicalRecord), new { id = appointmentId });
+            }
+
+            return View(result);
         }
 
-        // =====================================================================
         // US24: Kê đơn thuốc điện tử cho bệnh nhân
         // =====================================================================
 

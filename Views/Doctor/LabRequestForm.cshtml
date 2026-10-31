@@ -1,9 +1,10 @@
-﻿@model Appointment
+@model Appointment
 @{
     Layout = "_DoctorLayout";
     ViewData["Title"] = "Phiếu Yêu Cầu Xét Nghiệm - " + Model.Patient?.FullName;
     var doctor = ViewBag.Doctor as Doctor;
     var existingLab = Model.LabRequest ?? "";
+    bool hasLabRequest = !string.IsNullOrWhiteSpace(existingLab);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -21,6 +22,21 @@
     </div>
 </div>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <div class="row g-4">
     <!-- Form phiếu xét nghiệm -->
     <div class="col-lg-8">
@@ -31,7 +47,17 @@
                     <i class="fa-solid fa-hospital me-2"></i>PHÒNG KHÁM HEALTHY SYSTEM
                 </h4>
                 <div class="text-muted small">PHIẾU YÊU CẦU XÉT NGHIỆM / CHẨN ĐOÁN HÌNH ẢNH</div>
-                <div class="badge bg-info-subtle text-info mt-1">Mã: @Model.AppointmentCode</div>
+                <div class="mt-2">
+                    <span class="badge bg-info-subtle text-info">Mã: @Model.AppointmentCode</span>
+                    @if (hasLabRequest)
+                    {
+                        <span class="badge bg-success ms-2"><i class="fa-solid fa-check me-1"></i>Đã lập phiếu</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark ms-2"><i class="fa-solid fa-clock me-1"></i>Chưa lập phiếu</span>
+                    }
+                </div>
             </div>
 
             <!-- Thông tin bệnh nhân & bác sĩ -->
@@ -56,7 +82,7 @@
                 </div>
             </div>
 
-            <form asp-action="SaveLabRequest" method="post">
+            <form id="labForm" asp-action="SaveLabRequest" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="appointmentId" value="@Model.Id" />
 
@@ -90,39 +116,47 @@
                     <h6 class="fw-bold mb-3 text-success"><i class="fa-solid fa-x-ray me-2"></i>3. CHẨN ĐOÁN HÌNH ẢNH</h6>
                     <div class="row g-2 ps-3">
                         <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_xray_chest" value="X-quang ngực thẳng"><label class="form-check-label" for="img_xray_chest">X-quang ngực thẳng</label></div></div>
-                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_xray_bone" value="X-quang xương khớp (ghi rõ vị trí)"><label class="form-check-label" for="img_xray_bone">X-quang xương khớp</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_xray_bone" value="X-quang xương khớp"><label class="form-check-label" for="img_xray_bone">X-quang xương khớp</label></div></div>
                         <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_ultrasound_abdomen" value="Siêu âm bụng tổng quát"><label class="form-check-label" for="img_ultrasound_abdomen">Siêu âm bụng tổng quát</label></div></div>
                         <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_ultrasound_heart" value="Siêu âm tim Doppler màu"><label class="form-check-label" for="img_ultrasound_heart">Siêu âm tim Doppler màu</label></div></div>
                         <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_ct_brain" value="CT sọ não không tiêm thuốc"><label class="form-check-label" for="img_ct_brain">CT sọ não không tiêm thuốc</label></div></div>
-                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_mri" value="MRI não (ghi rõ vùng)"><label class="form-check-label" for="img_mri">MRI não</label></div></div>
+                        <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_mri" value="MRI não"><label class="form-check-label" for="img_mri">MRI não</label></div></div>
                         <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_ecg" value="Điện tim 12 chuyển đạo (ECG)"><label class="form-check-label" for="img_ecg">Điện tim 12 chuyển đạo (ECG)</label></div></div>
                         <div class="col-md-6"><div class="form-check"><input class="form-check-input lab-check" type="checkbox" id="img_endoscopy" value="Nội soi dạ dày - thực quản"><label class="form-check-label" for="img_endoscopy">Nội soi dạ dày - thực quản</label></div></div>
                     </div>
                 </div>
 
-                <!-- Ghi chú thêm -->
+                <!-- Ghi chú / tổng hợp -->
                 <div class="mb-4">
-                    <label class="form-label fw-bold">4. Ghi Chú Thêm / Xét Nghiệm Khác</label>
-                    <textarea id="labRequest" name="labRequest" rows="4" class="form-control rounded-3 font-monospace"
-                              placeholder="Nhập các xét nghiệm khác hoặc ghi chú đặc biệt cho bộ phận xét nghiệm...">@existingLab</textarea>
-                    <div class="form-text">Các mục đã tích ở trên sẽ tự động được thêm vào ô này khi bạn nhấn nút lưu.</div>
+                    <label class="form-label fw-bold">4. Nội Dung Phiếu Xét Nghiệm <span class="text-danger">*</span></label>
+                    <div class="form-text mb-2 text-info">
+                        <i class="fa-solid fa-circle-info me-1"></i>
+                        Tích chọn các mục ở trên → nhấn <strong>"Thêm vào phiếu"</strong> để thêm vào ô bên dưới. Hoặc gõ trực tiếp.
+                    </div>
+                    <div class="mb-2">
+                        <button type="button" id="btnAddChecked" class="btn btn-outline-info btn-sm rounded-pill">
+                            <i class="fa-solid fa-plus me-1"></i>Thêm mục đã tích vào phiếu
+                        </button>
+                        <button type="button" id="btnClear" class="btn btn-outline-secondary btn-sm rounded-pill ms-2">
+                            <i class="fa-solid fa-eraser me-1"></i>Xóa trắng
+                        </button>
+                    </div>
+                    <textarea id="labRequest" name="labRequest" rows="6" class="form-control rounded-3 font-monospace"
+                              placeholder="Ví dụ:&#10;- Công thức máu (CBC)&#10;- X-quang ngực thẳng&#10;- Siêu âm bụng tổng quát&#10;...">@existingLab</textarea>
+                    <div id="validationMsg" class="text-danger small mt-1 d-none">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>Vui lòng nhập nội dung phiếu xét nghiệm trước khi lưu.
+                    </div>
                 </div>
 
-                @if (!string.IsNullOrWhiteSpace(existingLab))
-                {
-                    <div class="alert alert-success-subtle border border-success rounded-3 mb-4 small">
-                        <i class="fa-solid fa-circle-check text-success me-2"></i>
-                        <strong>Phiếu xét nghiệm đã được lưu trước đó.</strong> Bạn có thể chỉnh sửa và lưu lại.
-                    </div>
-                }
-
                 <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                    <a asp-action="Examination" asp-route-id="@Model.Id" class="btn btn-outline-secondary rounded-pill px-4">Quay lại</a>
+                    <a asp-action="Examination" asp-route-id="@Model.Id" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="fa-solid fa-arrow-left me-1"></i>Quay lại
+                    </a>
                     <div class="d-flex gap-2">
                         <button type="button" onclick="window.print()" class="btn btn-outline-info rounded-pill px-4">
                             <i class="fa-solid fa-print me-2"></i>In Phiếu
                         </button>
-                        <button type="submit" class="btn btn-info btn-lg rounded-pill px-5 fw-bold shadow text-white">
+                        <button type="submit" id="btnSave" class="btn btn-info btn-lg rounded-pill px-5 fw-bold shadow text-white">
                             <i class="fa-solid fa-floppy-disk me-2"></i>LƯU PHIẾU XÉT NGHIỆM
                         </button>
                     </div>
@@ -131,42 +165,102 @@
         </div>
     </div>
 
-    <!-- Sidebar hướng dẫn -->
+    <!-- Sidebar hướng dẫn + trạng thái -->
     <div class="col-lg-4">
         <div class="card card-doctor p-4 mb-4">
             <h6 class="fw-bold mb-3"><i class="fa-solid fa-circle-question text-muted me-2"></i>Hướng Dẫn</h6>
             <ul class="list-unstyled small text-muted mb-0">
-                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Tích chọn các xét nghiệm cần thiết ở bảng bên trái.</li>
-                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Các mục đã tích sẽ tự thêm vào ô ghi chú.</li>
-                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Bạn có thể gõ thêm vào ô ghi chú nếu cần.</li>
-                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Nhấn <strong>Lưu</strong> để ghi lại và thông báo bệnh nhân.</li>
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Tích chọn các xét nghiệm cần thiết.</li>
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Nhấn <strong>"Thêm vào phiếu"</strong> để gộp vào ô nội dung.</li>
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Có thể gõ thêm trực tiếp vào ô nội dung.</li>
+                <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i>Nhấn <strong>Lưu</strong> → hệ thống tự thông báo KTV và bệnh nhân.</li>
                 <li class="mb-2"><i class="fa-solid fa-print text-info me-2"></i>Nhấn <strong>In Phiếu</strong> để in ra giấy.</li>
             </ul>
         </div>
 
-        @if (!string.IsNullOrWhiteSpace(existingLab))
-        {
-            <div class="card card-doctor p-4">
-                <h6 class="fw-bold mb-3"><i class="fa-solid fa-clipboard-list text-info me-2"></i>Phiếu XN Đã Lưu</h6>
-                <div class="small text-muted font-monospace" style="white-space:pre-wrap;">@existingLab</div>
+        <!-- Trạng thái phiếu -->
+        <div class="card card-doctor p-4 mb-4">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-timeline text-primary me-2"></i>Trạng Thái Phiếu</h6>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge @(hasLabRequest ? "bg-success" : "bg-warning text-dark") rounded-pill px-3">
+                    @(hasLabRequest ? "✅ Bác sĩ đã lập phiếu" : "⏳ Chưa lập phiếu")
+                </span>
             </div>
-        }
+            @if (hasLabRequest)
+            {
+                <div class="small text-muted mt-2">
+                    <i class="fa-solid fa-bell text-info me-1"></i>
+                    Hệ thống đã thông báo KTV và bệnh nhân sau khi lưu.
+                </div>
+                <div class="mt-3 p-2 bg-light rounded small font-monospace" style="white-space:pre-wrap;max-height:200px;overflow-y:auto;">@existingLab</div>
+            }
+        </div>
+
+        <!-- Thông tin lịch hẹn -->
+        <div class="card card-doctor p-4">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-calendar text-secondary me-2"></i>Thông Tin Ca Khám</h6>
+            <div class="small">
+                <div class="mb-1"><span class="text-muted">Ngày khám:</span> <strong>@Model.AppointmentDate.ToString("dd/MM/yyyy")</strong></div>
+                <div class="mb-1"><span class="text-muted">Giờ:</span> <strong>@Model.TimeSlot</strong></div>
+                <div class="mb-1"><span class="text-muted">Chuyên khoa:</span> <strong>@Model.Specialty?.Name</strong></div>
+                <div class="mb-1"><span class="text-muted">Trạng thái:</span>
+                    <span class="badge @(Model.Status == "Completed" ? "bg-success" : Model.Status == "Confirmed" ? "bg-primary" : "bg-secondary")">
+                        @Model.Status
+                    </span>
+                </div>
+                <div class="mt-2"><span class="text-muted">Lý do khám:</span><br /><em>@Model.ReasonForVisit</em></div>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
 <script>
-    // Khi bấm submit, gộp các checkbox đã chọn vào textarea
-    document.querySelector('form').addEventListener('submit', function(e) {
+    // Nút "Thêm vào phiếu" — gộp các checkbox đã tích vào textarea (không duplicate)
+    document.getElementById('btnAddChecked').addEventListener('click', function () {
         var checked = [];
-        document.querySelectorAll('.lab-check:checked').forEach(function(cb) {
+        document.querySelectorAll('.lab-check:checked').forEach(function (cb) {
             checked.push('- ' + cb.value);
         });
+        if (checked.length === 0) {
+            alert('Bạn chưa tích chọn mục nào. Hãy tích ít nhất 1 mục trước khi thêm.');
+            return;
+        }
         var textarea = document.getElementById('labRequest');
-        if (checked.length > 0) {
-            var existing = textarea.value.trim();
-            var prefix = checked.join('\n');
-            textarea.value = existing ? prefix + '\n' + existing : prefix;
+        var existing = textarea.value.trim();
+        // Tránh duplicate: chỉ thêm dòng chưa có trong textarea
+        var toAdd = checked.filter(function (line) {
+            return existing.indexOf(line.replace('- ', '').trim()) === -1;
+        });
+        if (toAdd.length > 0) {
+            textarea.value = existing ? existing + '\n' + toAdd.join('\n') : toAdd.join('\n');
+        }
+        // Uncheck tất cả sau khi thêm
+        document.querySelectorAll('.lab-check:checked').forEach(function (cb) { cb.checked = false; });
+    });
+
+    // Nút xóa trắng
+    document.getElementById('btnClear').addEventListener('click', function () {
+        if (confirm('Xóa toàn bộ nội dung phiếu?')) {
+            document.getElementById('labRequest').value = '';
+        }
+    });
+
+    // Validate trước khi submit
+    document.getElementById('labForm').addEventListener('submit', function (e) {
+        var textarea = document.getElementById('labRequest');
+        if (!textarea.value.trim()) {
+            e.preventDefault();
+            document.getElementById('validationMsg').classList.remove('d-none');
+            textarea.focus();
+            textarea.classList.add('is-invalid');
+        }
+    });
+
+    document.getElementById('labRequest').addEventListener('input', function () {
+        if (this.value.trim()) {
+            document.getElementById('validationMsg').classList.add('d-none');
+            this.classList.remove('is-invalid');
         }
     });
 </script>
