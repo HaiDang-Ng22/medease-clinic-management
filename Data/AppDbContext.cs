@@ -18,6 +18,7 @@ namespace Healthy_System.Data
         public DbSet<Appointment> Appointments => Set<Appointment>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
+        public DbSet<LabResult> LabResults => Set<LabResult>(); // US29 & US30
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -81,6 +82,20 @@ namespace Healthy_System.Data
                 .WithMany(u => u.Notifications)
                 .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // LabResult - Appointment (US29 & US30)
+            modelBuilder.Entity<LabResult>()
+                .HasOne(r => r.Appointment)
+                .WithMany()
+                .HasForeignKey(r => r.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // LabResult - LabTech (User)
+            modelBuilder.Entity<LabResult>()
+                .HasOne(r => r.LabTech)
+                .WithMany()
+                .HasForeignKey(r => r.LabTechId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

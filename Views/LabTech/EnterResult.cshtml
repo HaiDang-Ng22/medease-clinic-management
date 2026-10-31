@@ -1,0 +1,155 @@
+@model Appointment
+@{
+    ViewData["Title"] = "Nhap Ket Qua Xet Nghiem";
+    Layout = "_LabTechLayout";
+    var existing = ViewBag.ExistingResult as LabResult;
+}
+
+<div class="row g-4">
+    <!-- Thong tin benh nhan & phieu yeu cau -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-primary text-white fw-bold">
+                <i class="fa-solid fa-user me-2"></i>Thông tin bệnh nhân
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <small class="text-muted">Họ tên</small>
+                    <div class="fw-bold">@Model.Patient?.FullName</div>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">SĐT</small>
+                    <div>@Model.Patient?.PhoneNumber</div>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Mã lịch hẹn</small>
+                    <div><span class="badge bg-primary">@Model.AppointmentCode</span></div>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Ngày khám</small>
+                    <div>@Model.AppointmentDate.ToString("dd/MM/yyyy") – @Model.TimeSlot</div>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Bác sĩ yêu cầu</small>
+                    <div>@Model.Doctor?.Title @Model.Doctor?.User?.FullName</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-warning text-dark fw-bold">
+                <i class="fa-solid fa-clipboard-list me-2"></i>Yêu cầu xét nghiệm
+            </div>
+            <div class="card-body">
+                <p class="small mb-0" style="white-space:pre-line">@Model.LabRequest</p>
+            </div>
+        </div>
+
+        @if (existing?.ImageFilePath != null)
+        {
+            <div class="card border-0 shadow-sm mt-3">
+                <div class="card-header bg-info text-white fw-bold">
+                    <i class="fa-solid fa-image me-2"></i>File đính kèm hiện tại
+                </div>
+                <div class="card-body text-center">
+                    @{
+                        var ext = existing.ImageFileType?.ToLower();
+                    }
+                    @if (ext == "jpg" || ext == "jpeg" || ext == "png")
+                    {
+                        <img src="@existing.ImageFilePath" class="img-fluid rounded" style="max-height:200px" />
+                    }
+                    else
+                    {
+                        <i class="fa-solid fa-file-pdf text-danger fa-3x mb-2"></i>
+                        <div class="small">@existing.ImageFileName</div>
+                    }
+                    <div class="mt-2">
+                        <a href="@existing.ImageFilePath" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fa-solid fa-external-link me-1"></i>Mở file
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Form nhap ket qua (US29) + upload file (US30) -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-success text-white fw-bold">
+                <i class="fa-solid fa-flask-vial me-2"></i>
+                @(existing != null ? "Cập nhật kết quả xét nghiệm" : "Nhập kết quả xét nghiệm")
+            </div>
+            <div class="card-body">
+                <form asp-action="SaveResult" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="appointmentId" value="@Model.Id" />
+
+                    <!-- US29: Ket qua tom tat -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            Kết quả tóm tắt <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="resultSummary" rows="3" class="form-control"
+                                  placeholder="VD: Tất cả chỉ số trong giới hạn bình thường. Không phát hiện bất thường."
+                                  required>@(existing?.ResultSummary)</textarea>
+                    </div>
+
+                    <!-- US29: Ket qua chi tiet tung chi so -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Kết quả chi tiết từng chỉ số</label>
+                        <textarea name="detailedResult" rows="6" class="form-control font-monospace"
+                                  placeholder="VD:&#10;Hồng cầu (RBC): 4.8 T/L [BT: 4.2-5.4]&#10;Bạch cầu (WBC): 7.2 G/L [BT: 4.0-10.0]&#10;Hemoglobin: 138 g/L [BT: 120-160]&#10;Tiểu cầu: 285 G/L [BT: 150-400]">@(existing?.DetailedResult)</textarea>
+                    </div>
+
+                    <!-- US30: Upload file hinh anh -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fa-solid fa-paperclip me-1 text-info"></i>
+                            Đính kèm file hình ảnh (US30)
+                        </label>
+                        <input type="file" name="imageFile" class="form-control"
+                               accept=".jpg,.jpeg,.png,.pdf,.dcm" />
+                        <div class="form-text">
+                            Chấp nhận: JPG, PNG (ảnh X-quang, siêu âm), PDF (báo cáo), DICOM (.dcm). Tối đa 10MB.
+                        </div>
+                    </div>
+
+                    <!-- Ghi chu KTV -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Ghi chú của kỹ thuật viên</label>
+                        <textarea name="labTechNotes" rows="2" class="form-control"
+                                  placeholder="Ghi chú thêm nếu cần (VD: Mẫu XN đạt tiêu chuẩn, thực hiện bởi KTV...)">@(existing?.LabTechNotes)</textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="fa-solid fa-floppy-disk me-2"></i>
+                            @(existing != null ? "Cập nhật kết quả" : "Lưu kết quả")
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">
+                            <i class="fa-solid fa-arrow-left me-1"></i>Quay lại
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if (existing != null)
+        {
+            <div class="card border-0 shadow-sm mt-3 border-success">
+                <div class="card-body">
+                    <div class="small text-muted">
+                        <i class="fa-solid fa-circle-check text-success me-1"></i>
+                        Đã nhập bởi KTV: <strong>@existing.LabTech?.FullName</strong>
+                        lúc @existing.ResultDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                        @if (existing.UpdatedAt.HasValue)
+                        {
+                            <span> – Cập nhật lần cuối: @existing.UpdatedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
