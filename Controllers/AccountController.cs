@@ -129,6 +129,7 @@ namespace Healthy_System.Controllers
                 "Doctor" => RedirectToAction("Dashboard", "Doctor"),
                 "Receptionist" => RedirectToAction("Dashboard", "Receptionist"),
                 "Admin" => RedirectToAction("Dashboard", "Admin"),
+                "LabTech"      => RedirectToAction("Index", "LabTech"),
                 _ => RedirectToAction("Index", "Home")
             };
         }

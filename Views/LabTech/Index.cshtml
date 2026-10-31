@@ -1,0 +1,129 @@
+@model List<Appointment>
+@{
+    ViewData["Title"] = "Danh Sach Phieu Yeu Cau Xet Nghiem";
+    Layout = "_LabTechLayout";
+    var enteredIds = ViewBag.EnteredIds as List<int> ?? new List<int>();
+    string? search = ViewBag.Search;
+    string? filter = ViewBag.Filter;
+}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-1 fw-bold text-danger">@ViewBag.TotalPending</div>
+            <div class="text-muted small">Chưa có kết quả</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-1 fw-bold text-success">@ViewBag.TotalDone</div>
+            <div class="text-muted small">Đã nhập kết quả</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-1 fw-bold text-primary">@Model.Count</div>
+            <div class="text-muted small">Tổng phiếu</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter + Search -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label small fw-bold">Tìm kiếm bệnh nhân / mã lịch hẹn</label>
+                <input type="text" name="search" value="@search"
+                       class="form-control" placeholder="Nhập tên BN hoặc mã lịch..." />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Trạng thái</label>
+                <select name="filter" class="form-select">
+                    <option value="" selected="@(string.IsNullOrEmpty(filter))">Tất cả</option>
+                    <option value="pending" selected="@(filter == "pending")">Chưa có kết quả</option>
+                    <option value="done" selected="@(filter == "done")">Đã nhập kết quả</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i>Tìm
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Danh sach phieu -->
+@if (Model.Any())
+{
+    <div class="row g-3">
+        @foreach (var appt in Model)
+        {
+            bool isDone = enteredIds.Contains(appt.Id);
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-1 text-center">
+                                @if (isDone)
+                                {
+                                    <i class="fa-solid fa-circle-check text-success fa-2x"></i>
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-clock text-warning fa-2x"></i>
+                                }
+                            </div>
+                            <div class="col-md-4">
+                                <div class="fw-bold">@appt.Patient?.FullName</div>
+                                <div class="small text-muted">
+                                    <span class="badge bg-light text-primary border">@appt.AppointmentCode</span>
+                                    &nbsp;@appt.AppointmentDate.ToString("dd/MM/yyyy") &bull; @appt.TimeSlot
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    <i class="fa-solid fa-user-doctor me-1"></i>
+                                    @appt.Doctor?.Title @appt.Doctor?.User?.FullName
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="small fw-bold text-muted mb-1">Yêu cầu xét nghiệm:</div>
+                                <div class="small bg-light p-2 rounded" style="max-height:60px;overflow:hidden">
+                                    @appt.LabRequest
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                @if (isDone)
+                                {
+                                    <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill d-block mb-2">
+                                        <i class="fa-solid fa-check me-1"></i>Đã nhập
+                                    </span>
+                                    <a asp-action="EnterResult" asp-route-id="@appt.Id"
+                                       class="btn btn-outline-secondary btn-sm w-100">
+                                        <i class="fa-solid fa-pen me-1"></i>Sửa lại
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-action="EnterResult" asp-route-id="@appt.Id"
+                                       class="btn btn-primary btn-sm w-100">
+                                        <i class="fa-solid fa-flask-vial me-1"></i>Nhập kết quả
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fa-solid fa-flask text-muted fa-3x mb-3"></i>
+        <h5 class="text-muted">Không có phiếu yêu cầu xét nghiệm nào</h5>
+        <p class="text-muted small">Khi bác sĩ lập phiếu yêu cầu, chúng sẽ hiển thị tại đây</p>
+    </div>
+}

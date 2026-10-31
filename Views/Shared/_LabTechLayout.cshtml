@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] – Kỹ Thuật Viên | MedEase</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        body { background-color: #f0f4f8; }
+        .labtech-sidebar {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            width: 240px;
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 100;
+            padding-top: 1rem;
+        }
+        .labtech-sidebar .brand {
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 1rem 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+        }
+        .labtech-sidebar .nav-link {
+            color: rgba(255,255,255,0.85);
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            margin: 0.1rem 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .labtech-sidebar .nav-link:hover,
+        .labtech-sidebar .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        .labtech-sidebar .nav-link i { width: 1.4rem; }
+        .main-content {
+            margin-left: 240px;
+            min-height: 100vh;
+        }
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="labtech-sidebar d-flex flex-column">
+        <div class="brand">
+            <i class="fa-solid fa-flask-vial me-2"></i>MedEase
+            <div class="small fw-normal opacity-75 mt-1">Kỹ Thuật Viên XN</div>
+        </div>
+        <nav class="flex-grow-1 py-2">
+            <a asp-controller="LabTech" asp-action="Index"
+               class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                <i class="fa-solid fa-list-ul me-2"></i>Phiếu Yêu Cầu XN
+            </a>
+        </nav>
+        <div class="p-3 border-top border-white border-opacity-25">
+            <div class="small mb-2 opacity-75">
+                <i class="fa-solid fa-user-nurse me-1"></i>@User.Identity?.Name
+            </div>
+            <a asp-controller="Account" asp-action="Logout"
+               class="btn btn-sm btn-outline-light w-100">
+                <i class="fa-solid fa-right-from-bracket me-1"></i>Đăng xuất
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="top-bar">
+            <h6 class="mb-0 fw-bold text-primary">
+                <i class="fa-solid fa-microscope me-2"></i>@ViewData["Title"]
+            </h6>
+        </div>
+
+        <div class="p-4">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>@TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

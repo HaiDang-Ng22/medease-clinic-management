@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using BCrypt.Net;
@@ -205,7 +205,18 @@ namespace Healthy_System.Data
                     Address = "Quận 3, TP.HCM"
                 };
 
-                context.Users.AddRange(admin, receptionist, patient);
+                var labTech = new User
+                {
+                    FullName = "Tran Minh Khoa (KTV Xet Nghiem)",
+                    Email = "ktv@healthysystem.vn",
+                    PasswordHash = hashedPass,
+                    PhoneNumber = "0933445566",
+                    Role = "LabTech",
+                    Gender = "Nam",
+                    Address = "Quan Binh Thanh, TP.HCM"
+                };
+
+                context.Users.AddRange(admin, receptionist, patient, labTech);
                 context.SaveChanges();
 
                 // Add Doctor Users
