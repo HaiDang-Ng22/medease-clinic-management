@@ -1,0 +1,186 @@
+@model Healthy_System.Models.LabResult
+@{
+    Layout = "_DoctorLayout";
+    ViewData["Title"] = "Kết Quả Xét Nghiệm - " + Model.Appointment?.Patient?.FullName;
+    var appt = Model.Appointment;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="fa-solid fa-microscope text-success me-2"></i>Kết Quả Xét Nghiệm</h2>
+        <p class="text-muted mb-0">
+            Bệnh nhân: <strong>@appt?.Patient?.FullName</strong> |
+            Mã lịch hẹn: <strong>@appt?.AppointmentCode</strong>
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="MedicalRecord" asp-route-id="@appt?.Id" class="btn btn-outline-primary rounded-pill px-4">
+            <i class="fa-solid fa-file-medical me-1"></i>Hồ Sơ Khám
+        </a>
+        <a asp-action="PatientList" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="fa-solid fa-arrow-left me-1"></i>Danh Sách
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Kết quả chính -->
+    <div class="col-lg-8">
+
+        <!-- Tóm tắt kết quả -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-success text-white d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-check"></i>
+                <span class="fw-bold">Tóm Tắt Kết Quả Xét Nghiệm</span>
+                <span class="badge bg-white text-success ms-auto">@Model.ResultDate.ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="p-3 bg-success-subtle rounded-3 font-monospace" style="white-space:pre-wrap;">@Model.ResultSummary</div>
+            </div>
+        </div>
+
+        <!-- Kết quả chi tiết -->
+        @if (!string.IsNullOrWhiteSpace(Model.DetailedResult))
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white fw-bold">
+                    <i class="fa-solid fa-table-list me-2"></i>Kết Quả Chi Tiết Từng Chỉ Số
+                </div>
+                <div class="card-body p-4">
+                    <div class="p-3 bg-light rounded-3 font-monospace" style="white-space:pre-wrap;">@Model.DetailedResult</div>
+                </div>
+            </div>
+        }
+
+        <!-- File đính kèm (US30) -->
+        @if (!string.IsNullOrWhiteSpace(Model.ImageFilePath))
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-info text-white fw-bold">
+                    <i class="fa-solid fa-paperclip me-2"></i>File Đính Kèm (X-quang / Siêu âm / Hình ảnh)
+                </div>
+                <div class="card-body p-4 text-center">
+                    @{
+                        var fileType = Model.ImageFileType?.ToLower() ?? "";
+                        bool isImage = fileType == "jpg" || fileType == "jpeg" || fileType == "png";
+                        bool isPdf = fileType == "pdf";
+                    }
+                    @if (isImage)
+                    {
+                        <img src="@Model.ImageFilePath" alt="Hình ảnh xét nghiệm"
+                             class="img-fluid rounded-3 shadow" style="max-height:500px;" />
+                        <div class="mt-3">
+                            <a href="@Model.ImageFilePath" target="_blank" class="btn btn-outline-info rounded-pill px-4">
+                                <i class="fa-solid fa-expand me-2"></i>Xem Toàn Màn Hình
+                            </a>
+                            <a href="@Model.ImageFilePath" download="@Model.ImageFileName" class="btn btn-outline-secondary rounded-pill px-4 ms-2">
+                                <i class="fa-solid fa-download me-2"></i>Tải Xuống
+                            </a>
+                        </div>
+                    }
+                    else if (isPdf)
+                    {
+                        <div class="p-4">
+                            <i class="fa-solid fa-file-pdf text-danger fa-4x mb-3 d-block"></i>
+                            <div class="fw-bold mb-1">@Model.ImageFileName</div>
+                            <a href="@Model.ImageFilePath" target="_blank" class="btn btn-danger rounded-pill px-4 me-2">
+                                <i class="fa-solid fa-eye me-2"></i>Xem PDF
+                            </a>
+                            <a href="@Model.ImageFilePath" download="@Model.ImageFileName" class="btn btn-outline-secondary rounded-pill px-4">
+                                <i class="fa-solid fa-download me-2"></i>Tải Xuống
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-4">
+                            <i class="fa-solid fa-file-medical text-primary fa-4x mb-3 d-block"></i>
+                            <div class="fw-bold mb-1">@Model.ImageFileName</div>
+                            <a href="@Model.ImageFilePath" download="@Model.ImageFileName" class="btn btn-primary rounded-pill px-4">
+                                <i class="fa-solid fa-download me-2"></i>Tải File (@fileType.ToUpper())
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Ghi chú của KTV -->
+        @if (!string.IsNullOrWhiteSpace(Model.LabTechNotes))
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-warning text-dark fw-bold">
+                    <i class="fa-solid fa-note-sticky me-2"></i>Ghi Chú Của Kỹ Thuật Viên
+                </div>
+                <div class="card-body p-4">
+                    <div class="p-3 bg-warning-subtle rounded-3" style="white-space:pre-wrap;">@Model.LabTechNotes</div>
+                </div>
+            </div>
+        }
+
+        <!-- Phiếu yêu cầu gốc -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light fw-bold text-muted">
+                <i class="fa-solid fa-flask me-2"></i>Phiếu Yêu Cầu Xét Nghiệm (Bác Sĩ Đã Lập)
+            </div>
+            <div class="card-body p-4">
+                <div class="p-3 bg-light rounded-3 font-monospace small" style="white-space:pre-wrap;">@appt?.LabRequest</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar thông tin -->
+    <div class="col-lg-4">
+
+        <!-- Thông tin bệnh nhân -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white fw-bold">
+                <i class="fa-solid fa-user me-2"></i>Thông Tin Bệnh Nhân
+            </div>
+            <div class="card-body p-3 small">
+                <div class="mb-2"><span class="text-muted">Họ tên:</span> <strong>@appt?.Patient?.FullName</strong></div>
+                <div class="mb-2"><span class="text-muted">Ngày sinh:</span> @(appt?.Patient?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa rõ")</div>
+                <div class="mb-2"><span class="text-muted">Giới tính:</span> @appt?.Patient?.Gender</div>
+                <div class="mb-2"><span class="text-muted">SĐT:</span> @appt?.Patient?.PhoneNumber</div>
+            </div>
+        </div>
+
+        <!-- Thông tin ca khám -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white fw-bold">
+                <i class="fa-solid fa-calendar-check me-2"></i>Thông Tin Ca Khám
+            </div>
+            <div class="card-body p-3 small">
+                <div class="mb-2"><span class="text-muted">Mã lịch hẹn:</span> <span class="badge bg-info text-dark">@appt?.AppointmentCode</span></div>
+                <div class="mb-2"><span class="text-muted">Ngày khám:</span> <strong>@appt?.AppointmentDate.ToString("dd/MM/yyyy")</strong></div>
+                <div class="mb-2"><span class="text-muted">Giờ:</span> @appt?.TimeSlot</div>
+                <div class="mb-2"><span class="text-muted">Chuyên khoa:</span> @appt?.Specialty?.Name</div>
+                <div class="mb-2"><span class="text-muted">Lý do khám:</span><br /><em>@appt?.ReasonForVisit</em></div>
+            </div>
+        </div>
+
+        <!-- Thông tin KTV -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-success text-white fw-bold">
+                <i class="fa-solid fa-user-nurse me-2"></i>Kỹ Thuật Viên Thực Hiện
+            </div>
+            <div class="card-body p-3 small">
+                <div class="mb-2"><span class="text-muted">Họ tên:</span> <strong>@Model.LabTech?.FullName</strong></div>
+                <div class="mb-2"><span class="text-muted">Ngày nhập:</span> @Model.ResultDate.ToString("dd/MM/yyyy HH:mm")</div>
+                @if (Model.UpdatedAt.HasValue)
+                {
+                    <div class="mb-2"><span class="text-muted">Cập nhật lần cuối:</span> @Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                }
+                <div class="mb-2">
+                    <span class="text-muted">Trạng thái:</span>
+                    <span class="badge bg-success">✅ @Model.Status</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nút in -->
+        <button onclick="window.print()" class="btn btn-outline-secondary w-100 rounded-pill">
+            <i class="fa-solid fa-print me-2"></i>In Kết Quả
+        </button>
+    </div>
+</div>

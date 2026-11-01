@@ -5,6 +5,8 @@
     var doctor = ViewBag.Doctor as Doctor;
     string curStatus = ViewBag.Status as string ?? "";
     string curDate = ViewBag.DateFilter as string ?? "";
+    var labRequestIds = ViewBag.LabRequestIds as List<int> ?? new List<int>();
+    var labResultIds  = ViewBag.LabResultIds  as List<int> ?? new List<int>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -19,7 +21,7 @@
 
 <!-- Thong ke nhanh -->
 <div class="row g-3 mb-4">
-    <div class="col-sm-4">
+    <div class="col-sm-3">
         <div class="card card-doctor p-3 border-start border-primary border-4">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -32,7 +34,7 @@
             </div>
         </div>
     </div>
-    <div class="col-sm-4">
+    <div class="col-sm-3">
         <div class="card card-doctor p-3 border-start border-warning border-4">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -45,7 +47,7 @@
             </div>
         </div>
     </div>
-    <div class="col-sm-4">
+    <div class="col-sm-3">
         <div class="card card-doctor p-3 border-start border-success border-4">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -54,6 +56,19 @@
                 </div>
                 <div class="p-3 bg-success-subtle text-success rounded-circle">
                     <i class="fa-solid fa-circle-check fs-4"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="card card-doctor p-3 border-start border-info border-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold">Co KQ Xet Nghiem</div>
+                    <div class="display-6 fw-bold text-info">@labResultIds.Count</div>
+                </div>
+                <div class="p-3 bg-info-subtle text-info rounded-circle">
+                    <i class="fa-solid fa-microscope fs-4"></i>
                 </div>
             </div>
         </div>
@@ -112,7 +127,6 @@
                         <th>Thong tin lien he</th>
                         <th>Lich hen</th>
                         <th>Chuyen khoa</th>
-                        <th>Ly do kham</th>
                         <th>Trang thai</th>
                         <th class="text-center pe-3">Thao tac</th>
                     </tr>
@@ -120,7 +134,9 @@
                 <tbody>
                     @foreach (var appt in Model)
                     {
-                        <tr>
+                        bool hasLabRequest = labRequestIds.Contains(appt.Id);
+                        bool hasLabResult  = labResultIds.Contains(appt.Id);
+                        <tr class="@(hasLabResult ? "table-info bg-opacity-25" : "")">
                             <td class="ps-3">
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold" style="width:38px;height:38px;font-size:0.9rem;">
@@ -129,6 +145,18 @@
                                     <div>
                                         <div class="fw-bold">@appt.Patient?.FullName</div>
                                         <small class="text-muted">@(appt.Patient?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chua ro") | @appt.Patient?.Gender</small>
+                                        @if (hasLabResult)
+                                        {
+                                            <span class="badge bg-info text-white ms-1" title="Da co ket qua xet nghiem">
+                                                <i class="fa-solid fa-microscope me-1"></i>Co KQ XN
+                                            </span>
+                                        }
+                                        else if (hasLabRequest)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-1" title="Cho ket qua xet nghiem">
+                                                <i class="fa-solid fa-flask me-1"></i>Cho KQ XN
+                                            </span>
+                                        }
                                     </div>
                                 </div>
                             </td>
@@ -142,7 +170,6 @@
                                 <div><span class="badge bg-light text-dark border" style="font-size:0.7rem;">@appt.AppointmentCode</span></div>
                             </td>
                             <td><small class="text-muted">@appt.Specialty?.Name</small></td>
-                            <td><small class="text-muted text-truncate d-inline-block" style="max-width:160px;">@appt.ReasonForVisit</small></td>
                             <td>
                                 @if (appt.Status == "Completed")
                                 {
@@ -176,7 +203,7 @@
                                 }
                             </td>
                             <td class="text-center pe-3">
-                                <div class="d-flex gap-1 justify-content-center">
+                                <div class="d-flex gap-1 justify-content-center flex-wrap">
                                     <a asp-action="PatientProfile" asp-route-appointmentId="@appt.Id"
                                        class="btn btn-sm btn-outline-info rounded-pill px-2" title="Xem ho so">
                                         <i class="fa-solid fa-id-card me-1"></i>Ho so
@@ -190,7 +217,7 @@
                                     }
                                     else if (appt.Status == "Expired" || (appt.AppointmentDate.Date < DateTime.Today && appt.Status != "Completed" && appt.Status != "Cancelled"))
                                     {
-                                        <span class="btn btn-sm btn-outline-secondary rounded-pill px-2 disabled opacity-50" title="Ca khám đã quá hạn">
+                                        <span class="btn btn-sm btn-outline-secondary rounded-pill px-2 disabled opacity-50">
                                             <i class="fa-solid fa-clock-rotate-left me-1"></i>Qua han
                                         </span>
                                     }
@@ -203,6 +230,14 @@
                                         <a asp-action="SendNotification" asp-route-appointmentId="@appt.Id"
                                            class="btn btn-sm btn-outline-warning rounded-pill px-2" title="Gui thong bao">
                                             <i class="fa-solid fa-bell"></i>
+                                        </a>
+                                    }
+                                    @* US23: Nut xem KQ XN *@
+                                    @if (hasLabResult)
+                                    {
+                                        <a asp-action="LabResultView" asp-route-appointmentId="@appt.Id"
+                                           class="btn btn-sm btn-info rounded-pill px-2 text-white" title="Xem ket qua xet nghiem">
+                                            <i class="fa-solid fa-microscope me-1"></i>KQ XN
                                         </a>
                                     }
                                 </div>
