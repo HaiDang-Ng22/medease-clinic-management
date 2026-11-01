@@ -1,159 +1,166 @@
-@using Healthy_System.Models
-@model List<Appointment>
-@{
-    Layout = "_ReceptionistLayout";
-    ViewData["Title"] = "Quản Lý Lịch Hẹn Toàn Phòng Khám";
-}
-
-<div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-    <div>
-        <h1 class="h4 fw-bold text-slate-900 mb-1" style="color:#0f172a; letter-spacing:-0.02em;">Quản Lý Lịch Hẹn Toàn Phòng Khám</h1>
-        <p class="text-muted small mb-0">Theo dõi, tìm kiếm và cập nhật trạng thái mọi ca khám từ xa hoặc trực tiếp</p>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-        <a asp-action="SearchPatient" class="btn btn-sm btn-outline-secondary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#ffffff; border-color:#cbd5e1; color:#334155;">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span>Tìm Bệnh Nhân</span>
-        </a>
-        <a asp-action="CreateAppointment" class="btn btn-sm btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#0f766e; border-color:#0f766e;">
-            <i class="fa-solid fa-plus"></i>
-            <span>Đặt Lịch Tại Quầy</span>
-        </a>
-    </div>
-</div>
-
-<!-- Search & Filter Card -->
-<div class="bg-white p-3 rounded-2 mb-4" style="border:1px solid #e2e8f0;">
-    <form method="get" class="row g-2 align-items-center">
-        <div class="col-md-7">
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-white text-muted border-end-0" style="border-color:#e2e8f0;">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </span>
-                <input type="text" name="search" class="form-control border-start-0 ps-0"
-                       placeholder="Tìm theo tên bệnh nhân, số điện thoại hoặc mã hẹn..."
-                       value="@ViewBag.SearchTerm" style="border-color:#e2e8f0; font-size:0.875rem;" />
-            </div>
-        </div>
-        <div class="col-md-3">
-            <select name="status" class="form-select form-select-sm" style="border-color:#e2e8f0; font-size:0.875rem;">
-                <option value="">Tất cả trạng thái</option>
-                <option value="Pending" selected="@(ViewBag.SelectedStatus == "Pending")">Chờ xác nhận</option>
-                <option value="Confirmed" selected="@(ViewBag.SelectedStatus == "Confirmed")">Đã xác nhận</option>
-                <option value="Completed" selected="@(ViewBag.SelectedStatus == "Completed")">Đã hoàn thành</option>
-                <option value="Cancelled" selected="@(ViewBag.SelectedStatus == "Cancelled")">Đã hủy</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-sm btn-dark w-100 fw-semibold" style="background:#0f172a; border-color:#0f172a; font-size:0.875rem;">
-                Lọc kết quả
-            </button>
-        </div>
-    </form>
-</div>
-
-<!-- Table Card -->
-<div class="bg-white rounded-2" style="border:1px solid #e2e8f0;">
-    <div class="p-3 border-bottom d-flex justify-content-between align-items-center" style="border-color:#e2e8f0 !important;">
-        <span class="fw-bold" style="color:#0f172a; font-size:0.9375rem;">Danh Sách Lịch Hẹn</span>
-        <span class="badge rounded-pill text-bg-light border" style="font-size:0.75rem;">@Model.Count ca hẹn</span>
-    </div>
-
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" style="font-size:0.875rem;">
-            <thead>
-                <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#64748b; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">
-                    <th class="ps-3 py-2" style="width:120px;">Mã hẹn</th>
-                    <th class="py-2" style="width:110px;">Ngày khám</th>
-                    <th class="py-2" style="width:90px;">Giờ hẹn</th>
-                    <th class="py-2">Bệnh nhân</th>
-                    <th class="py-2">Bác sĩ phụ trách</th>
-                    <th class="py-2" style="width:130px;">Trạng thái</th>
-                    <th class="text-end pe-3 py-2" style="width:160px;">Thao tác</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var a in Model)
-                {
-                    var patientName = a.Patient?.FullName ?? "Chưa rõ";
-                    var firstLetter = !string.IsNullOrEmpty(patientName) ? patientName.Substring(0, 1).ToUpper() : "P";
-                    <tr>
-                        <td class="ps-3 py-3">
-                            <span class="badge font-monospace bg-light text-dark border px-2 py-1" style="font-size:0.75rem;">@a.AppointmentCode</span>
-                        </td>
-                        <td class="py-3 text-muted" style="font-variant-numeric:tabular-nums;">
-                            @a.AppointmentDate.ToString("dd/MM/yyyy")
-                        </td>
-                        <td class="py-3">
-                            <span class="fw-bold" style="color:#0f766e; font-variant-numeric:tabular-nums;">@a.TimeSlot</span>
-                        </td>
-                        <td class="py-3">
-                            <div class="d-flex align-items-center gap-2">
-                                <div style="width:26px; height:26px; border-radius:6px; background:#f1f5f9; color:#334155; font-weight:700; font-size:0.7rem; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; flex-shrink:0;">
-                                    @firstLetter
-                                </div>
-                                <div>
-                                    <div class="fw-semibold text-slate-900" style="color:#0f172a; line-height:1.2;">@patientName</div>
-                                    <small class="text-muted" style="font-size:0.75rem; font-variant-numeric:tabular-nums;">@(a.Patient?.PhoneNumber ?? "—")</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="py-3">
-                            <span class="text-slate-800">@(a.Doctor?.Title ?? "BS.") @(a.Doctor?.User?.FullName ?? "Chưa rõ")</span>
-                        </td>
-                        <td class="py-3">
-                            @switch (a.Status)
-                            {
-                                case "Pending":
-                                    <span class="badge px-2 py-1" style="background:#fffbeb; color:#b45309; border:1px solid #fef3c7; font-weight:600;">Chờ xác nhận</span>
-                                    break;
-                                case "Confirmed":
-                                    <span class="badge px-2 py-1" style="background:#f0fdfa; color:#0f766e; border:1px solid #ccfbf1; font-weight:600;">Đã xác nhận</span>
-                                    break;
-                                case "Completed":
-                                    <span class="badge px-2 py-1" style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; font-weight:600;">Đã hoàn thành</span>
-                                    break;
-                                case "Cancelled":
-                                    <span class="badge px-2 py-1" style="background:#fef2f2; color:#b91c1c; border:1px solid #fee2e2; font-weight:600;">Đã hủy</span>
-                                    break;
-                                default:
-                                    <span class="badge bg-light text-muted border px-2 py-1">@a.Status</span>
-                                    break;
-                            }
-                        </td>
-                        <td class="text-end pe-3 py-3">
-                            <div class="d-flex gap-1 justify-content-end align-items-center">
-                                @if (a.Status == "Pending")
-                                {
-                                    <form asp-action="Confirm" method="post" class="d-inline m-0">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@a.Id" />
-                                        <button type="submit" class="btn btn-sm px-2 py-1 fw-semibold" style="background:#0f766e; color:#ffffff; font-size:0.75rem; border-radius:4px;">
-                                            <i class="fa-solid fa-check me-1"></i>Xác nhận
-                                        </button>
-                                    </form>
-                                }
-                                @if (a.Status == "Pending" || a.Status == "Confirmed")
-                                {
-                                    <a asp-action="CancelAppointment" asp-route-id="@a.Id"
-                                       class="btn btn-sm px-2 py-1 fw-semibold" style="background:#ffffff; color:#dc2626; border:1px solid #fecaca; font-size:0.75rem; border-radius:4px;">
-                                        <i class="fa-solid fa-ban me-1"></i>Hủy
-                                    </a>
-                                }
-                            </div>
-                        </td>
-                    </tr>
-                }
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-5">
-                            <i class="fa-regular fa-folder-open fs-3 d-block text-muted opacity-50 mb-2"></i>
-                            <div>Không tìm thấy lịch hẹn phù hợp</div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
+@using Healthy_System.Models
+@model List<Appointment>
+@{
+    Layout = "_ReceptionistLayout";
+    ViewData["Title"] = "Quản Lý Lịch Hẹn Toàn Phòng Khám";
+}
+
+<div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    <div>
+        <h1 class="h4 fw-bold text-slate-900 mb-1" style="color:#0f172a; letter-spacing:-0.02em;">Quản Lý Lịch Hẹn Toàn Phòng Khám</h1>
+        <p class="text-muted small mb-0">Theo dõi, tìm kiếm và cập nhật trạng thái mọi ca khám từ xa hoặc trực tiếp</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a asp-action="SearchPatient" class="btn btn-sm btn-outline-secondary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#ffffff; border-color:#cbd5e1; color:#334155;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span>Tìm Bệnh Nhân</span>
+        </a>
+        <a asp-action="CreateAppointment" class="btn btn-sm btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#0f766e; border-color:#0f766e;">
+            <i class="fa-solid fa-plus"></i>
+            <span>Đặt Lịch Tại Quầy</span>
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="bg-white p-3 rounded-2 mb-4" style="border:1px solid #e2e8f0;">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-7">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white text-muted border-end-0" style="border-color:#e2e8f0;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" name="search" class="form-control border-start-0 ps-0"
+                       placeholder="Tìm theo tên bệnh nhân, số điện thoại hoặc mã hẹn..."
+                       value="@ViewBag.SearchTerm" style="border-color:#e2e8f0; font-size:0.875rem;" />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="form-select form-select-sm" style="border-color:#e2e8f0; font-size:0.875rem;">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Pending" selected="@(ViewBag.SelectedStatus == "Pending")">Chờ xác nhận</option>
+                <option value="Confirmed" selected="@(ViewBag.SelectedStatus == "Confirmed")">Đã xác nhận</option>
+                <option value="Completed" selected="@(ViewBag.SelectedStatus == "Completed")">Đã hoàn thành</option>
+                <option value="Cancelled" selected="@(ViewBag.SelectedStatus == "Cancelled")">Đã hủy</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-sm btn-dark w-100 fw-semibold" style="background:#0f172a; border-color:#0f172a; font-size:0.875rem;">
+                Lọc kết quả
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Table Card -->
+<div class="bg-white rounded-2" style="border:1px solid #e2e8f0;">
+    <div class="p-3 border-bottom d-flex justify-content-between align-items-center" style="border-color:#e2e8f0 !important;">
+        <span class="fw-bold" style="color:#0f172a; font-size:0.9375rem;">Danh Sách Lịch Hẹn</span>
+        <span class="badge rounded-pill text-bg-light border" style="font-size:0.75rem;">@Model.Count ca hẹn</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size:0.875rem;">
+            <thead>
+                <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:#64748b; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">
+                    <th class="ps-3 py-2" style="width:120px;">Mã hẹn</th>
+                    <th class="py-2" style="width:110px;">Ngày khám</th>
+                    <th class="py-2" style="width:90px;">Giờ hẹn</th>
+                    <th class="py-2">Bệnh nhân</th>
+                    <th class="py-2">Bác sĩ phụ trách</th>
+                    <th class="py-2" style="width:130px;">Trạng thái</th>
+                    <th class="text-end pe-3 py-2" style="width:160px;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    var patientName = a.Patient?.FullName ?? "Chưa rõ";
+                    var firstLetter = !string.IsNullOrEmpty(patientName) ? patientName.Substring(0, 1).ToUpper() : "P";
+                    <tr>
+                        <td class="ps-3 py-3">
+                            <span class="badge font-monospace bg-light text-dark border px-2 py-1" style="font-size:0.75rem;">@a.AppointmentCode</span>
+                        </td>
+                        <td class="py-3 text-muted" style="font-variant-numeric:tabular-nums;">
+                            @a.AppointmentDate.ToString("dd/MM/yyyy")
+                        </td>
+                        <td class="py-3">
+                            <span class="fw-bold" style="color:#0f766e; font-variant-numeric:tabular-nums;">@a.TimeSlot</span>
+                        </td>
+                        <td class="py-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width:26px; height:26px; border-radius:6px; background:#f1f5f9; color:#334155; font-weight:700; font-size:0.7rem; display:flex; align-items:center; justify-content:center; border:1px solid #e2e8f0; flex-shrink:0;">
+                                    @firstLetter
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-slate-900" style="color:#0f172a; line-height:1.2;">@patientName</div>
+                                    <small class="text-muted" style="font-size:0.75rem; font-variant-numeric:tabular-nums;">@(a.Patient?.PhoneNumber ?? "—")</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3">
+                            <span class="text-slate-800">@(a.Doctor?.Title ?? "BS.") @(a.Doctor?.User?.FullName ?? "Chưa rõ")</span>
+                        </td>
+                        <td class="py-3">
+                            @switch (a.Status)
+                            {
+                                case "Pending":
+                                    <span class="badge px-2 py-1" style="background:#fffbeb; color:#b45309; border:1px solid #fef3c7; font-weight:600;">Chờ xác nhận</span>
+                                    break;
+                                case "Confirmed":
+                                    <span class="badge px-2 py-1" style="background:#f0fdfa; color:#0f766e; border:1px solid #ccfbf1; font-weight:600;">Đã xác nhận</span>
+                                    break;
+                                case "Completed":
+                                    <span class="badge px-2 py-1" style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; font-weight:600;">Đã hoàn thành</span>
+                                    break;
+                                case "Cancelled":
+                                    <span class="badge px-2 py-1" style="background:#fef2f2; color:#b91c1c; border:1px solid #fee2e2; font-weight:600;">Đã hủy</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-light text-muted border px-2 py-1">@a.Status</span>
+                                    break;
+                            }
+                        </td>
+                        <td class="text-end pe-3 py-3">
+                            <div class="d-flex gap-1 justify-content-end align-items-center">
+                                @if (a.Status == "Pending")
+                                {
+                                    <form asp-action="Confirm" method="post" class="d-inline m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@a.Id" />
+                                        <button type="submit" class="btn btn-sm px-2 py-1 fw-semibold" style="background:#0f766e; color:#ffffff; font-size:0.75rem; border-radius:4px;">
+                                            <i class="fa-solid fa-check me-1"></i>Xác nhận
+                                        </button>
+                                    </form>
+                                }
+                                @if (a.Status == "Completed")
+                                {
+                                    <a asp-controller="Appointment" asp-action="Prescription" asp-route-id="@a.Id" target="_blank"
+                                       class="btn btn-sm px-2 py-1 fw-semibold text-primary" style="background:#ffffff; border:1px solid #bae6fd; font-size:0.75rem; border-radius:4px;" title="Xem & In Hồ sơ bệnh án PDF">
+                                        <i class="fa-solid fa-file-pdf me-1"></i>Hồ sơ PDF
+                                    </a>
+                                }
+                                @if (a.Status == "Pending" || a.Status == "Confirmed")
+                                {
+                                    <a asp-action="CancelAppointment" asp-route-id="@a.Id"
+                                       class="btn btn-sm px-2 py-1 fw-semibold" style="background:#ffffff; color:#dc2626; border:1px solid #fecaca; font-size:0.75rem; border-radius:4px;">
+                                        <i class="fa-solid fa-ban me-1"></i>Hủy
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="fa-regular fa-folder-open fs-3 d-block text-muted opacity-50 mb-2"></i>
+                            <div>Không tìm thấy lịch hẹn phù hợp</div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

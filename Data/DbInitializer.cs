@@ -74,6 +74,28 @@ namespace Healthy_System.Data
                         context.Database.ExecuteSqlRaw($"ALTER TABLE \"Appointments\" ADD COLUMN \"{colName}\" {colType}");
                     }
                 }
+
+                // Tự động tạo bảng LabResults nếu chưa có (US29 & US30)
+                context.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS ""LabResults"" (
+                        ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_LabResults"" PRIMARY KEY AUTOINCREMENT,
+                        ""AppointmentId"" INTEGER NOT NULL,
+                        ""LabTechId"" INTEGER NOT NULL,
+                        ""ResultSummary"" TEXT NOT NULL,
+                        ""DetailedResult"" TEXT NULL,
+                        ""LabTechNotes"" TEXT NULL,
+                        ""ImageFilePath"" TEXT NULL,
+                        ""ImageFileName"" TEXT NULL,
+                        ""ImageFileType"" TEXT NULL,
+                        ""Status"" TEXT NOT NULL,
+                        ""ResultDate"" TEXT NOT NULL,
+                        ""UpdatedAt"" TEXT NULL,
+                        CONSTRAINT ""FK_LabResults_Appointments_AppointmentId"" FOREIGN KEY (""AppointmentId"") REFERENCES ""Appointments"" (""Id"") ON DELETE CASCADE,
+                        CONSTRAINT ""FK_LabResults_Users_LabTechId"" FOREIGN KEY (""LabTechId"") REFERENCES ""Users"" (""Id"") ON DELETE RESTRICT
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_LabResults_AppointmentId"" ON ""LabResults"" (""AppointmentId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_LabResults_LabTechId"" ON ""LabResults"" (""LabTechId"");
+                ");
             }
             catch
             {
