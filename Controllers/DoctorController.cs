@@ -653,6 +653,10 @@ namespace Healthy_System.Controllers
             ViewBag.PendingCount = list.Count(a => a.Status == "Pending" || a.Status == "Confirmed");
             ViewBag.CompletedCount = list.Count(a => a.Status == "Completed");
 
+            // US23: Lay danh sach appointmentId da co LabRequest va da co LabResult
+            var apptIds = list.Select(a => a.Id).ToList();
+            ViewBag.LabRequestIds = list.Where(a => !string.IsNullOrWhiteSpace(a.LabRequest)).Select(a => a.Id).ToList();
+            ViewBag.LabResultIds = _context.LabResults.Where(r => apptIds.Contains(r.AppointmentId)).Select(r => r.AppointmentId).ToList();
             return View(list);
         }
 

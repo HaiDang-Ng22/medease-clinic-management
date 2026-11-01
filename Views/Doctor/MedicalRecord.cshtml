@@ -93,6 +93,38 @@
         </div>
     </div>
 
+    @* US23: Ket qua xet nghiem *@
+    @if (!string.IsNullOrWhiteSpace(Model.LabRequest))
+    {
+        <div class="mb-4">
+            <h6 class="fw-bold text-secondary text-uppercase tracking-wide mb-3"><i class="fa-solid fa-microscope me-2"></i>KET QUA XET NGHIEM</h6>
+            @if (ViewBag.HasLabResult == true)
+            {
+                <div class="d-flex align-items-center gap-3 p-3 bg-success-subtle border border-success rounded-3">
+                    <i class="fa-solid fa-circle-check text-success fa-2x"></i>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold text-success">Da co ket qua xet nghiem</div>
+                        <div class="small text-muted">KTV da nhap ket qua. Bam xem de doc chi tiet.</div>
+                    </div>
+                    <a asp-action="LabResultView" asp-route-appointmentId="@Model.Id"
+                       class="btn btn-success rounded-pill px-4">
+                        <i class="fa-solid fa-eye me-2"></i>Xem Ket Qua XN
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex align-items-center gap-3 p-3 bg-warning-subtle border border-warning rounded-3">
+                    <i class="fa-solid fa-clock text-warning fa-2x"></i>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">Chua co ket qua xet nghiem</div>
+                        <div class="small text-muted">KTV chua nhap ket qua. Vui long doi.</div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
     <!-- Đơn Thuốc Điện Tử -->
     <div class="mb-4">
         <h6 class="fw-bold text-secondary text-uppercase tracking-wide mb-3"><i class="fa-solid fa-pills me-2"></i>3. ĐƠN THUỐC ĐIỆN TỬ (e-Prescription)</h6>
