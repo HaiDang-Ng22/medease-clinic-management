@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MedEase Kế Toán</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5.3 & FontAwesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --topbar-height: 64px;
+            --brand-primary: #047857; /* Emerald Deep */
+            --brand-primary-hover: #065f46;
+            --sidebar-bg: #0f172a; /* Slate 900 */
+            --sidebar-hover: #1e293b;
+            --sidebar-active: #047857;
+            --content-bg: #f8fafc;
+            --border-subtle: #e2e8f0;
+            --text-heading: #0f172a;
+            --text-body: #334155;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--content-bg);
+            color: var(--text-body);
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        /* Sidebar */
+        .app-sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 1040;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.25s ease;
+        }
+
+        .sidebar-brand-wrapper {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .brand-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #ffffff;
+        }
+
+        .brand-logo-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #059669, #047857);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        .brand-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+            line-height: 1.2;
+            display: block;
+        }
+
+        .brand-subtitle {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .sidebar-menu-wrapper {
+            padding: 20px 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .sidebar-section-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #64748b;
+            padding: 8px 12px 6px;
+        }
+
+        .sidebar-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-nav-item:hover {
+            background-color: var(--sidebar-hover);
+            color: #ffffff;
+        }
+
+        .sidebar-nav-item.active {
+            background-color: var(--sidebar-active);
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .sidebar-nav-item i.nav-icon {
+            font-size: 1rem;
+            width: 20px;
+            text-align: center;
+            opacity: 0.9;
+        }
+
+        .sidebar-footer-wrapper {
+            padding: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #1e293b;
+            color: #34d399;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #ffffff;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 0.725rem;
+            color: #94a3b8;
+            display: block;
+        }
+
+        /* Main Wrapper */
+        .app-main-wrapper {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .app-topbar {
+            height: var(--topbar-height);
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+
+        .app-content-body {
+            padding: 28px;
+            flex: 1;
+        }
+
+        .btn-logout {
+            color: #dc2626;
+            background: #fef2f2;
+            border: 1px solid #fee2e2;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .btn-logout:hover {
+            background: #dc2626;
+            color: #ffffff;
+        }
+
+        @@media (max-width: 991.98px) {
+            .app-sidebar {
+                transform: translateX(-100%);
+            }
+            .app-sidebar.show {
+                transform: translateX(0);
+            }
+            .app-main-wrapper {
+                margin-left: 0;
+            }
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Sidebar -->
+        <aside class="app-sidebar" id="appSidebar">
+            <div class="sidebar-brand-wrapper">
+                <a asp-controller="Accountant" asp-action="Dashboard" class="brand-link">
+                    <div class="brand-logo-badge">
+                        <i class="fa-solid fa-calculator"></i>
+                    </div>
+                    <div>
+                        <span class="brand-title">MedEase</span>
+                        <span class="brand-subtitle">Phòng Kế Toán</span>
+                    </div>
+                </a>
+            </div>
+
+            <nav class="sidebar-menu-wrapper">
+                <div class="sidebar-section-label">Quản lý viện phí</div>
+
+                <a asp-controller="Accountant" asp-action="Dashboard"
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")">
+                    <i class="fa-solid fa-chart-pie nav-icon"></i>
+                    <span>Bàn Làm Việc Kế Toán</span>
+                </a>
+
+                <a asp-controller="Accountant" asp-action="PatientCosts"
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "PatientCosts" || ViewContext.RouteData.Values["Action"]?.ToString() == "Calculate" ? "active" : "")">
+                    <i class="fa-solid fa-file-invoice-dollar nav-icon"></i>
+                    <span>Tính Chi Phí Khám Bệnh</span>
+                </a>
+
+                <div class="sidebar-section-label mt-3">Hệ thống & Bảng giá</div>
+
+                <a asp-controller="Home" asp-action="Services" target="_blank"
+                   class="sidebar-nav-item">
+                    <i class="fa-solid fa-list-check nav-icon"></i>
+                    <span>Biểu Giá Dịch Vụ</span>
+                </a>
+
+                <a asp-controller="Home" asp-action="Index"
+                   class="sidebar-nav-item">
+                    <i class="fa-solid fa-house nav-icon"></i>
+                    <span>Trang Chủ Công Khai</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer-wrapper">
+                <div class="user-avatar">
+                    @(User.Identity?.Name?.Substring(0, 1).ToUpper() ?? "K")
+                </div>
+                <div class="user-info">
+                    <span class="user-name">@User.Identity?.Name</span>
+                    <span class="user-role">Kế toán viên</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <div class="app-main-wrapper">
+            <!-- Topbar -->
+            <header class="app-topbar">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-sm btn-light d-lg-none border" id="btnToggleSidebar">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <span class="badge bg-light text-muted border px-2 py-1" style="font-variant-numeric:tabular-nums;">
+                        <i class="fa-regular fa-calendar me-1"></i>@DateTime.Now.ToString("dd/MM/yyyy")
+                    </span>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <a asp-controller="Appointment" asp-action="Notifications" class="btn btn-sm btn-light border text-muted position-relative" title="Thông báo">
+                        <i class="fa-regular fa-bell"></i>
+                    </a>
+
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline m-0">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-logout">
+                            <i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Đăng xuất
+                        </button>
+                    </form>
+                </div>
+            </header>
+
+            <!-- Alerts -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show m-4 mb-0 border-0 shadow-sm" role="alert" style="background:#ecfdf5; color:#065f46; border-left:4px solid #10b981 !important;">
+                    <i class="fa-solid fa-circle-check me-2 text-success"></i>@TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show m-4 mb-0 border-0 shadow-sm" role="alert" style="background:#fef2f2; color:#991b1b; border-left:4px solid #ef4444 !important;">
+                    <i class="fa-solid fa-circle-exclamation me-2 text-danger"></i>@TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Body -->
+            <main class="app-content-body">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+        const appSidebar = document.getElementById('appSidebar');
+        if (btnToggleSidebar && appSidebar) {
+            btnToggleSidebar.addEventListener('click', () => {
+                appSidebar.classList.toggle('show');
+            });
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

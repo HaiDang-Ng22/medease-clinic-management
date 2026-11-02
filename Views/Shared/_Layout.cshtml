@@ -280,6 +280,12 @@
                             <i class="fa-solid fa-shield-halved me-1"></i>Quản Trị
                         </a>
                     }
+                    else if (User.IsInRole("Accountant"))
+                    {
+                        <a asp-controller="Accountant" asp-action="Dashboard" class="btn btn-sm btn-success rounded-1 px-3 py-2 fw-semibold" style="background:#059669; border-color:#059669;">
+                            <i class="fa-solid fa-calculator me-1"></i>Cổng Kế Toán
+                        </a>
+                    }
                     else
                     {
                         <a asp-controller="Appointment" asp-action="Book" class="btn btn-booking">
@@ -302,7 +308,7 @@
                                     <div class="px-3 py-2 border-bottom" style="border-color:#e2e8f0 !important;">
                                         <div class="fw-bold text-dark">@User.Identity.Name</div>
                                         <small class="text-muted">
-                                            @(User.IsInRole("Doctor") ? "Bác sĩ Chuyên khoa" : (User.IsInRole("Receptionist") ? "Nhân viên Lễ tân" : (User.IsInRole("Admin") ? "Quản trị viên" : "Bệnh nhân")))
+                                            @(User.IsInRole("Doctor") ? "Bác sĩ Chuyên khoa" : (User.IsInRole("Receptionist") ? "Nhân viên Lễ tân" : (User.IsInRole("Admin") ? "Quản trị viên" : (User.IsInRole("Accountant") ? "Kế toán viên" : "Bệnh nhân"))))
                                         </small>
                                     </div>
                                 </li>
@@ -316,6 +322,11 @@
                                 {
                                     <li><a class="dropdown-item py-2" asp-controller="Receptionist" asp-action="Dashboard"><i class="fa-solid fa-desktop me-2 text-muted"></i>Bàn tiếp đón</a></li>
                                     <li><a class="dropdown-item py-2" asp-controller="Receptionist" asp-action="Appointments"><i class="fa-solid fa-calendar-check me-2 text-muted"></i>Toàn bộ lịch hẹn</a></li>
+                                }
+                                else if (User.IsInRole("Accountant"))
+                                {
+                                    <li><a class="dropdown-item py-2" asp-controller="Accountant" asp-action="Dashboard"><i class="fa-solid fa-chart-pie me-2 text-muted"></i>Bàn làm việc Kế toán</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Accountant" asp-action="PatientCosts"><i class="fa-solid fa-file-invoice-dollar me-2 text-muted"></i>Tính chi phí khám bệnh</a></li>
                                 }
                                 else
                                 {
