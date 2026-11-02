@@ -88,7 +88,7 @@
                                             <i class="fa-solid fa-triangle-exclamation"></i> Khẩn
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end shadow">
-                                            <li><h6 class="dropdown-header text-danger"><i class="fa-solid fa-bolt me-1"></i>Thao Tác Khẩn Cấp (US27)</h6></li>
+                                            <li><h6 class="dropdown-header text-danger"><i class="fa-solid fa-bolt me-1"></i>Thao Tác Khẩn Cấp </h6></li>
                                             <li>
                                                 <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#cancelModal_@appt.Id">
                                                     <i class="fa-solid fa-ban me-2"></i>Hủy ca khám khẩn cấp
@@ -155,14 +155,23 @@
                                                                 <input type="date" name="newDate" class="form-control" required min="@DateTime.Today.ToString("yyyy-MM-dd")" value="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
                                                             </div>
                                                             <div class="mb-3">
-                                                                <label class="form-label fw-bold">Chọn Khung Giờ Mới <span class="text-danger">*</span>:</label>
-                                                                <select name="newTimeSlot" class="form-select" required>
-                                                                    <option value="08:00 - 09:00">08:00 - 09:00</option>
-                                                                    <option value="09:00 - 10:00">09:00 - 10:00</option>
-                                                                    <option value="10:00 - 11:00">10:00 - 11:00</option>
-                                                                    <option value="13:30 - 14:30">13:30 - 14:30</option>
-                                                                    <option value="14:30 - 15:30">14:30 - 15:30</option>
-                                                                    <option value="15:30 - 16:30">15:30 - 16:30</option>
+                                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                    <label class="form-label fw-bold mb-0">Chọn Khung Giờ Mới <span class="text-danger">*</span>:</label>
+                                                                    <span class="slot-count-badge badge bg-light text-muted border small">Tự động kiểm tra</span>
+                                                                </div>
+                                                                <select name="newTimeSlot" class="form-select select-time-slot" required data-doctor-id="@appt.DoctorId">
+                                                                    <option value="08:00 - 08:30">08:00 - 08:30</option>
+                                                                    <option value="08:30 - 09:00">08:30 - 09:00</option>
+                                                                    <option value="09:00 - 09:30">09:00 - 09:30</option>
+                                                                    <option value="09:30 - 10:00">09:30 - 10:00</option>
+                                                                    <option value="10:00 - 10:30">10:00 - 10:30</option>
+                                                                    <option value="10:30 - 11:00">10:30 - 11:00</option>
+                                                                    <option value="13:30 - 14:00">13:30 - 14:00</option>
+                                                                    <option value="14:00 - 14:30">14:00 - 14:30</option>
+                                                                    <option value="14:30 - 15:00">14:30 - 15:00</option>
+                                                                    <option value="15:00 - 15:30">15:00 - 15:30</option>
+                                                                    <option value="15:30 - 16:00">15:30 - 16:00</option>
+                                                                    <option value="16:00 - 16:30">16:00 - 16:30</option>
                                                                 </select>
                                                             </div>
                                                             <div class="mb-3">
@@ -195,3 +204,61 @@
         </div>
     }
 </div>
+
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Khi mở bất kỳ modal dời lịch nào hoặc khi chọn lại ngày khám
+            document.querySelectorAll('.modal').forEach(function (modal) {
+                const dateInput = modal.querySelector('input[name="newDate"]');
+                const slotSelect = modal.querySelector('select[name="newTimeSlot"]');
+                const badge = modal.querySelector('.slot-count-badge');
+                if (!dateInput || !slotSelect) return;
+
+                const doctorId = slotSelect.getAttribute('data-doctor-id');
+
+                function fetchSlots() {
+                    const dateVal = dateInput.value;
+                    if (!dateVal || !doctorId) return;
+
+                    if (badge) badge.textContent = 'Đang kiểm tra...';
+
+                    fetch(`/Appointment/GetAvailableSlots?doctorId=${doctorId}&date=${dateVal}`)
+                        .then(res => res.json())
+                        .then(slots => {
+                            slotSelect.innerHTML = '';
+                            if (slots && slots.length > 0) {
+                                if (badge) {
+                                    badge.className = 'slot-count-badge badge bg-success-subtle text-success border small';
+                                    badge.textContent = `${slots.length} khung giờ trống`;
+                                }
+                                slots.forEach(s => {
+                                    const opt = document.createElement('option');
+                                    opt.value = s;
+                                    opt.textContent = s;
+                                    slotSelect.appendChild(opt);
+                                });
+                            } else {
+                                if (badge) {
+                                    badge.className = 'slot-count-badge badge bg-danger-subtle text-danger border small';
+                                    badge.textContent = 'Hết khung giờ trống';
+                                }
+                                const opt = document.createElement('option');
+                                opt.value = '';
+                                opt.textContent = '-- Đã kín lịch vào ngày này --';
+                                slotSelect.appendChild(opt);
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Lỗi tải slot:', err);
+                            if (badge) badge.textContent = 'Không thể kiểm tra';
+                        });
+                }
+
+                dateInput.addEventListener('change', fetchSlots);
+                modal.addEventListener('shown.bs.modal', fetchSlots);
+            });
+        });
+    </script>
+}

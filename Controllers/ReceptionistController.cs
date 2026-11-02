@@ -138,6 +138,24 @@ namespace Healthy_System.Controllers
                 _context.SaveChanges();
             }
 
+            // Kiểm tra không đặt lịch vào ngày trong quá khứ
+            if (appointmentDate.Date < DateTime.Today)
+            {
+                TempData["ErrorMessage"] = "Không thể đặt lịch vào ngày trong quá khứ. Vui lòng chọn ngày từ hôm nay trở đi.";
+                ViewBag.Specialties = _context.Specialties.Where(s => s.IsActive).ToList();
+                ViewBag.Doctors = _context.Doctors.Include(d => d.User).ToList();
+                return View();
+            }
+
+            // Kiểm tra không đặt lịch vào khung giờ đã trôi qua trong ngày hôm nay
+            if (appointmentDate.Date == DateTime.Today && IsSlotInPast(timeSlot))
+            {
+                TempData["ErrorMessage"] = $"Khung giờ {timeSlot} đã trôi qua trong ngày hôm nay. Vui lòng chọn khung giờ khác.";
+                ViewBag.Specialties = _context.Specialties.Where(s => s.IsActive).ToList();
+                ViewBag.Doctors = _context.Doctors.Include(d => d.User).ToList();
+                return View();
+            }
+
             // BUG04 Fix: Kiểm tra trùng khung giờ khám trước khi tạo lịch hẹn
             var utcDate = DateTime.SpecifyKind(appointmentDate.Date, DateTimeKind.Utc);
             bool slotConflict = _context.Appointments.Any(a =>
@@ -317,5 +335,316 @@ namespace Healthy_System.Controllers
 
             return stringBuilder.ToString().Normalize(System.Text.NormalizationForm.FormC).ToLower();
         }
-    }
+    
+        // ==========================================
+        // US18: Chuyển đổi lịch hẹn sang bác sĩ khác hoặc thời gian khác
+        // ==========================================
+
+        [HttpGet]
+        public IActionResult TransferAppointment(int id)
+        {
+            var appt = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor).ThenInclude(d => d.User)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (appt == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy lịch hẹn yêu cầu.";
+                return RedirectToAction(nameof(Appointments));
+            }
+
+            if (appt.Status == "Completed" || appt.Status == "Cancelled")
+            {
+                TempData["ErrorMessage"] = $"Không thể chuyển đổi lịch hẹn đã {(appt.Status == "Completed" ? "hoàn thành" : "bị hủy")}!";
+                return RedirectToAction(nameof(Appointments));
+            }
+
+            var specialties = _context.Specialties
+                .OrderBy(s => s.Name)
+                .Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = s.Id.ToString(),
+                    Text = s.Name,
+                    Selected = s.Id == appt.SpecialtyId
+                })
+                .ToList();
+
+            var doctors = _context.Doctors
+                .Include(d => d.User)
+                .Where(d => d.SpecialtyId == appt.SpecialtyId && d.User != null)
+                .Select(d => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = d.Id.ToString(),
+                    Text = $"{d.Title} {d.User!.FullName} (Phòng {d.RoomNumber})",
+                    Selected = d.Id == appt.DoctorId
+                })
+                .ToList();
+
+            var defaultNewDate = appt.AppointmentDate.Date >= DateTime.Today ? appt.AppointmentDate.Date : DateTime.Today.AddDays(1);
+
+            var model = new Healthy_System.Models.ViewModels.TransferAppointmentViewModel
+            {
+                AppointmentId = appt.Id,
+                AppointmentCode = appt.AppointmentCode,
+                PatientName = appt.Patient?.FullName ?? "Chưa rõ",
+                PatientPhone = appt.Patient?.PhoneNumber,
+                ReasonForVisit = appt.ReasonForVisit,
+                CurrentStatus = appt.Status,
+
+                CurrentDoctorId = appt.DoctorId,
+                CurrentDoctorName = $"{appt.Doctor?.Title} {appt.Doctor?.User?.FullName}".Trim(),
+                CurrentDoctorRoom = appt.Doctor?.RoomNumber,
+                CurrentSpecialtyId = appt.SpecialtyId,
+                CurrentSpecialtyName = appt.Specialty?.Name ?? string.Empty,
+                CurrentDate = appt.AppointmentDate,
+                CurrentTimeSlot = appt.TimeSlot,
+
+                NewSpecialtyId = appt.SpecialtyId,
+                NewDoctorId = appt.DoctorId,
+                NewDate = defaultNewDate,
+                NewTimeSlot = appt.TimeSlot,
+                TransferReason = string.Empty,
+
+                Specialties = specialties,
+                Doctors = doctors
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult TransferAppointment(Healthy_System.Models.ViewModels.TransferAppointmentViewModel model)
+        {
+            var appt = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor).ThenInclude(d => d.User)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == model.AppointmentId);
+
+            if (appt == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy lịch hẹn.";
+                return RedirectToAction(nameof(Appointments));
+            }
+
+            if (appt.Status == "Completed" || appt.Status == "Cancelled")
+            {
+                TempData["ErrorMessage"] = "Không thể chuyển đổi lịch hẹn đã hoàn thành hoặc đã bị hủy!";
+                return RedirectToAction(nameof(Appointments));
+            }
+
+            if (model.NewDate.Date < DateTime.Today)
+            {
+                ModelState.AddModelError("NewDate", "Ngày khám mới không được ở trong quá khứ.");
+            }
+
+            if (model.NewDate.Date == DateTime.Today && IsSlotInPast(model.NewTimeSlot))
+            {
+                ModelState.AddModelError("NewTimeSlot", "Khung giờ này đã trôi qua trong ngày hôm nay. Vui lòng chọn khung giờ khác.");
+            }
+
+            var newDoctor = _context.Doctors
+                .Include(d => d.User)
+                .Include(d => d.Specialty)
+                .FirstOrDefault(d => d.Id == model.NewDoctorId);
+
+            if (newDoctor == null)
+            {
+                ModelState.AddModelError("NewDoctorId", "Bác sĩ được chọn không tồn tại.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                bool isConflict = _context.Appointments.Any(a =>
+                    a.Id != model.AppointmentId &&
+                    a.DoctorId == model.NewDoctorId &&
+                    a.AppointmentDate.Date == model.NewDate.Date &&
+                    a.TimeSlot == model.NewTimeSlot &&
+                    a.Status != "Cancelled");
+
+                if (isConflict)
+                {
+                    ModelState.AddModelError("NewTimeSlot", $"Bác sĩ {newDoctor?.User?.FullName} đã có lịch hẹn vào khung giờ {model.NewTimeSlot} ngày {model.NewDate:dd/MM/yyyy}. Vui lòng chọn giờ khác.");
+                }
+
+                bool isUnavailable = _context.DoctorSchedules.Any(s =>
+                    s.DoctorId == model.NewDoctorId &&
+                    s.WorkDate.Date == model.NewDate.Date &&
+                    s.TimeSlot == model.NewTimeSlot &&
+                    !s.IsAvailable);
+
+                if (isUnavailable)
+                {
+                    ModelState.AddModelError("NewTimeSlot", "Bác sĩ không nhận lịch vào khung giờ này theo lịch trực. Vui lòng chọn giờ khác.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.Specialties = _context.Specialties
+                    .OrderBy(s => s.Name)
+                    .Select(s => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                    {
+                        Value = s.Id.ToString(),
+                        Text = s.Name,
+                        Selected = s.Id == model.NewSpecialtyId
+                    })
+                    .ToList();
+
+                model.Doctors = _context.Doctors
+                    .Include(d => d.User)
+                    .Where(d => d.SpecialtyId == model.NewSpecialtyId && d.User != null)
+                    .Select(d => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                    {
+                        Value = d.Id.ToString(),
+                        Text = $"{d.Title} {d.User!.FullName} (Phòng {d.RoomNumber})",
+                        Selected = d.Id == model.NewDoctorId
+                    })
+                    .ToList();
+
+                model.PatientName = appt.Patient?.FullName ?? "Chưa rõ";
+                model.PatientPhone = appt.Patient?.PhoneNumber;
+                model.AppointmentCode = appt.AppointmentCode;
+                model.CurrentDoctorName = $"{appt.Doctor?.Title} {appt.Doctor?.User?.FullName}".Trim();
+                model.CurrentSpecialtyName = appt.Specialty?.Name ?? string.Empty;
+                model.CurrentDate = appt.AppointmentDate;
+                model.CurrentTimeSlot = appt.TimeSlot;
+
+                return View(model);
+            }
+
+            var oldDoctorName = $"{appt.Doctor?.Title} {appt.Doctor?.User?.FullName}".Trim();
+            var newDoctorName = $"{newDoctor?.Title} {newDoctor?.User?.FullName}".Trim();
+            var oldDateStr = appt.AppointmentDate.ToString("dd/MM/yyyy");
+            var newDateStr = model.NewDate.ToString("dd/MM/yyyy");
+            var patientName = appt.Patient?.FullName ?? "Bệnh nhân";
+
+            string transferLog = $"[{DateTime.Now:dd/MM/yyyy HH:mm} - Tiếp tân chuyển đổi]: Lý do: {model.TransferReason.Trim()}. " +
+                                 $"Từ [BS {oldDoctorName} - {oldDateStr} ({appt.TimeSlot})] sang [BS {newDoctorName} - {newDateStr} ({model.NewTimeSlot})]";
+
+            appt.DoctorNotes = string.IsNullOrWhiteSpace(appt.DoctorNotes) 
+                ? transferLog 
+                : $"{appt.DoctorNotes}\n{transferLog}";
+
+            var oldDoctorUserId = appt.Doctor?.UserId;
+            var isDoctorChanged = appt.DoctorId != model.NewDoctorId;
+
+            appt.DoctorId = model.NewDoctorId;
+            appt.SpecialtyId = model.NewSpecialtyId;
+            appt.AppointmentDate = model.NewDate.Date;
+            appt.TimeSlot = model.NewTimeSlot;
+            appt.UpdatedAt = DateTime.UtcNow;
+
+            if (appt.Status == "Expired")
+            {
+                appt.Status = "Confirmed";
+            }
+
+            if (model.NotifyPatient && appt.PatientId > 0)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = appt.PatientId,
+                    Title = "Thông báo điều chỉnh lịch khám",
+                    Message = $"Lịch khám {appt.AppointmentCode} của bạn đã được tiếp tân chuyển sang Bác sĩ {newDoctorName} lúc {model.NewTimeSlot} ngày {newDateStr}. Lý do: {model.TransferReason.Trim()}.",
+                    Type = "StatusUpdate",
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            if (model.NotifyDoctors)
+            {
+                if (newDoctor?.UserId != null)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = newDoctor.UserId,
+                        Title = "Lịch khám mới được điều chuyển đến bạn",
+                        Message = $"Lịch khám {appt.AppointmentCode} của bệnh nhân {patientName} đã được tiếp tân chuyển đến bạn vào ngày {newDateStr} ({model.NewTimeSlot}). Lý do: {model.TransferReason.Trim()}.",
+                        Type = "StatusUpdate",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+
+                if (isDoctorChanged && oldDoctorUserId != null)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = oldDoctorUserId.Value,
+                        Title = "Lịch khám đã chuyển sang bác sĩ khác",
+                        Message = $"Lịch khám {appt.AppointmentCode} (bệnh nhân {patientName}, ngày {oldDateStr} {appt.TimeSlot}) đã được tiếp tân chuyển sang Bác sĩ {newDoctorName}. Lý do: {model.TransferReason.Trim()}.",
+                        Type = "StatusUpdate",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã chuyển đổi thành công lịch hẹn {appt.AppointmentCode} sang BS {newDoctorName} ({newDateStr} lúc {model.NewTimeSlot})!";
+            return RedirectToAction(nameof(Appointments));
+        }
+
+        [HttpGet]
+        public IActionResult GetAvailableSlotsForTransfer(int doctorId, string date, int? currentAppointmentId)
+        {
+            if (!DateTime.TryParse(date, out DateTime parsedDate))
+            {
+                return BadRequest("Ngày không hợp lệ");
+            }
+
+            var defaultSlots = new List<string>
+            {
+                "08:00 - 08:30", "08:30 - 09:00",
+                "09:00 - 09:30", "09:30 - 10:00",
+                "10:00 - 10:30", "10:30 - 11:00",
+                "13:30 - 14:00", "14:00 - 14:30",
+                "14:30 - 15:00", "15:00 - 15:30",
+                "15:30 - 16:00", "16:00 - 16:30"
+            };
+
+            var bookedQuery = _context.Appointments
+                .Where(a => a.DoctorId == doctorId && a.AppointmentDate.Date == parsedDate.Date && a.Status != "Cancelled");
+
+            if (currentAppointmentId.HasValue)
+            {
+                bookedQuery = bookedQuery.Where(a => a.Id != currentAppointmentId.Value);
+            }
+
+            var bookedSlots = bookedQuery.Select(a => a.TimeSlot).ToHashSet();
+
+            var unavailableSlots = _context.DoctorSchedules
+                .Where(s => s.DoctorId == doctorId && s.WorkDate.Date == parsedDate.Date && !s.IsAvailable)
+                .Select(s => s.TimeSlot)
+                .ToHashSet();
+
+            bookedSlots.UnionWith(unavailableSlots);
+
+            var available = defaultSlots.Where(s => !bookedSlots.Contains(s)).ToList();
+
+            if (parsedDate.Date == DateTime.Today)
+            {
+                available = available.Where(s => !IsSlotInPast(s)).ToList();
+            }
+
+            return Json(available);
+        }
+
+        private static bool IsSlotInPast(string timeSlot)
+        {
+            if (string.IsNullOrWhiteSpace(timeSlot)) return false;
+            var parts = timeSlot.Split('-');
+            if (parts.Length > 0 && TimeSpan.TryParse(parts[0].Trim(), out var startTime))
+            {
+                return DateTime.Now.TimeOfDay > startTime;
+            }
+            return false;
+        }
+}
 }

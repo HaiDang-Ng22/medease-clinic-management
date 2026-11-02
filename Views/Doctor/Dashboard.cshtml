@@ -120,31 +120,44 @@
                                     </td>
                                     <td><small class="text-muted text-truncate d-inline-block" style="max-width: 200px;">@appt.ReasonForVisit</small></td>
                                     <td>
-                                        @if (appt.Status == "Completed")
+                                        @switch (appt.Status)
                                         {
-                                            <span class="badge bg-success-subtle text-success">Đã hoàn thành</span>
-                                        }
-                                        else if (appt.Status == "Confirmed")
-                                        {
-                                            <span class="badge bg-primary-subtle text-primary">Đã xác nhận</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-warning-subtle text-dark">Chờ khám</span>
+                                            case "Completed":
+                                                <span class="badge bg-success-subtle text-success">Đã hoàn thành</span>
+                                                break;
+                                            case "Confirmed":
+                                                <span class="badge bg-primary-subtle text-primary">Đã xác nhận</span>
+                                                break;
+                                            case "Pending":
+                                                <span class="badge bg-warning-subtle text-dark">Chờ khám</span>
+                                                break;
+                                            case "Cancelled":
+                                                <span class="badge bg-danger-subtle text-danger">Đã hủy</span>
+                                                break;
+                                            case "Expired":
+                                                <span class="badge bg-secondary-subtle text-secondary">Quá hạn</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-light text-muted">@appt.Status</span>
+                                                break;
                                         }
                                     </td>
                                     <td class="text-center">
-                                        @if (appt.Status != "Completed")
+                                        @if (appt.Status == "Pending" || appt.Status == "Confirmed")
                                         {
                                             <a asp-action="Examination" asp-route-id="@appt.Id" class="btn btn-sm btn-primary rounded-pill px-3">
                                                 <i class="fa-solid fa-stethoscope me-1"></i>Vào Khám
                                             </a>
                                         }
-                                        else
+                                        else if (appt.Status == "Completed")
                                         {
                                             <a asp-action="MedicalRecord" asp-route-id="@appt.Id" class="btn btn-sm btn-outline-success rounded-pill px-3">
                                                 <i class="fa-solid fa-file-medical me-1"></i>Bệnh án
                                             </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small fst-italic">—</span>
                                         }
                                     </td>
                                 </tr>

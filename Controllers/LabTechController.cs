@@ -12,8 +12,9 @@ using System.Security.Claims;
 
 namespace Healthy_System.Controllers
 {
-    // US29: Nhap ket qua xet nghiem / sieu am / X-quang
-    // US30: Dinh kem file hinh anh
+    // US28: Kỹ thuật viên xét nghiệm xem danh sách và chi tiết phiếu yêu cầu
+    // US29: Nhập kết quả xét nghiệm / siêu âm / X-quang
+    // US30: Đính kèm file hình ảnh kết quả
     [Authorize(Roles = "LabTech")]
     public class LabTechController : Controller
     {
@@ -33,7 +34,34 @@ namespace Healthy_System.Controllers
         }
 
         // =====================================================================
-        // US29: Danh sach phieu yeu cau XN can xu ly
+        // US28: Dashboard tổng quan cho Kỹ thuật viên xét nghiệm
+        // =====================================================================
+        public IActionResult Dashboard()
+        {
+            var allRequests = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .Include(a => a.Specialty)
+                .Where(a => !string.IsNullOrWhiteSpace(a.LabRequest))
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenBy(a => a.TimeSlot)
+                .ToList();
+
+            var enteredIds = _context.LabResults.Select(r => r.AppointmentId).ToList();
+
+            ViewBag.TotalRequests = allRequests.Count;
+            ViewBag.TotalPending = allRequests.Count(a => !enteredIds.Contains(a.Id));
+            ViewBag.TotalDone = allRequests.Count(a => enteredIds.Contains(a.Id));
+            ViewBag.TodayRequests = allRequests.Count(a => a.AppointmentDate.Date == DateTime.UtcNow.Date);
+
+            ViewBag.EnteredIds = enteredIds;
+            ViewBag.RecentRequests = allRequests.Take(6).ToList();
+
+            return View();
+        }
+
+        // =====================================================================
+        // US28 & US29: Danh sách phiếu yêu cầu XN cần xử lý
         // =====================================================================
         public IActionResult Index(string? search, string? filter)
         {
@@ -78,6 +106,33 @@ namespace Healthy_System.Controllers
             ViewBag.TotalDone = list.Count(a => enteredIds.Contains(a.Id));
 
             return View(list);
+        }
+
+        // =====================================================================
+        // US28: Xem chi tiết phiếu yêu cầu xét nghiệm của Bác sĩ
+        // =====================================================================
+        [HttpGet]
+        public IActionResult LabRequestDetail(int id)
+        {
+            var appointment = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (appointment == null) return NotFound();
+            if (string.IsNullOrWhiteSpace(appointment.LabRequest))
+            {
+                TempData["ErrorMessage"] = "Lịch hẹn này không có phiếu yêu cầu xét nghiệm.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var labResult = _context.LabResults
+                .Include(r => r.LabTech)
+                .FirstOrDefault(r => r.AppointmentId == id);
+
+            ViewBag.LabResult = labResult;
+            return View(appointment);
         }
 
         // =====================================================================
