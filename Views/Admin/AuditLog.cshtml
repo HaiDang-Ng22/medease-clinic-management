@@ -1,0 +1,245 @@
+@model List<Healthy_System.Models.AuditLog>
+@{
+    ViewData["Title"] = "Nhật Ký Hoạt Động Hệ Thống (Audit Log)";
+    Layout = "_AdminLayout";
+
+    string? search = ViewBag.Search;
+    string? selectedAction = ViewBag.SelectedAction;
+    string? selectedRole = ViewBag.SelectedRole;
+    string? dateFrom = ViewBag.DateFrom;
+    string? dateTo = ViewBag.DateTo;
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalLogs = ViewBag.TotalLogs ?? 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-clock-rotate-left text-danger me-2"></i>Nhật Ký Hoạt Động Hệ Thống (Audit Log)</h4>
+        <p class="text-muted small mb-0">Theo dõi, kiểm tra và truy vết toàn bộ thao tác của người dùng trên hệ thống</p>
+    </div>
+</div>
+
+<!-- Bộ lọc tìm kiếm đa tiêu chí -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="AuditLog" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Từ khóa tìm kiếm</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                    <input type="text" name="search" value="@search" class="form-control" placeholder="Tên người dùng, mô tả, đối tượng..." />
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Hành động</label>
+                <select name="action" class="form-select">
+                    <option value="" selected="@(string.IsNullOrEmpty(selectedAction))">Tất cả hành động</option>
+                    <option value="Create" selected="@(selectedAction == "Create")">Tạo mới (Create)</option>
+                    <option value="Update" selected="@(selectedAction == "Update")">Cập nhật (Update)</option>
+                    <option value="Delete" selected="@(selectedAction == "Delete")">Xóa bỏ (Delete)</option>
+                    <option value="Login" selected="@(selectedAction == "Login")">Đăng nhập (Login)</option>
+                    <option value="Cancel" selected="@(selectedAction == "Cancel")">Hủy bỏ (Cancel)</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Vai trò</label>
+                <select name="role" class="form-select">
+                    <option value="" selected="@(string.IsNullOrEmpty(selectedRole))">Tất cả vai trò</option>
+                    <option value="Admin" selected="@(selectedRole == "Admin")">Admin</option>
+                    <option value="Doctor" selected="@(selectedRole == "Doctor")">Doctor (Bác sĩ)</option>
+                    <option value="Receptionist" selected="@(selectedRole == "Receptionist")">Receptionist (Tiếp tân)</option>
+                    <option value="LabTech" selected="@(selectedRole == "LabTech")">LabTech (KTV)</option>
+                    <option value="Patient" selected="@(selectedRole == "Patient")">Patient (Bệnh nhân)</option>
+                    <option value="System" selected="@(selectedRole == "System")">Hệ thống</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Từ ngày</label>
+                <input type="date" name="dateFrom" value="@dateFrom" class="form-control" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Đến ngày</label>
+                <input type="date" name="dateTo" value="@dateTo" class="form-control" />
+            </div>
+
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100" title="Tìm kiếm">
+                    <i class="fa-solid fa-filter"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bảng nhật ký Audit Log -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0">
+            <i class="fa-solid fa-list-ul text-primary me-2"></i>Lịch Sử Ghi Nhận (@totalLogs bản ghi)
+        </h6>
+        @if (!string.IsNullOrEmpty(search) || !string.IsNullOrEmpty(selectedAction) || !string.IsNullOrEmpty(selectedRole) || !string.IsNullOrEmpty(dateFrom))
+        {
+            <a asp-action="AuditLog" class="btn btn-sm btn-outline-secondary">
+                <i class="fa-solid fa-rotate-left me-1"></i>Đặt lại bộ lọc
+            </a>
+        }
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 160px;">Thời gian</th>
+                        <th>Người thực hiện</th>
+                        <th>Vai trò</th>
+                        <th class="text-center">Hành động</th>
+                        <th>Đối tượng tác động</th>
+                        <th>Chi tiết thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var log in Model)
+                        {
+                            <tr>
+                                <td class="text-muted small">
+                                    <i class="fa-regular fa-clock me-1 text-secondary"></i>
+                                    @log.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">
+                                        <i class="fa-solid fa-user me-1 text-primary"></i>@log.ActorName
+                                    </div>
+                                    @if (log.User != null && !string.IsNullOrEmpty(log.User.Email))
+                                    {
+                                        <div class="small text-muted">@log.User.Email</div>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @(log.ActorRole == "Admin" ? "bg-danger-subtle text-danger" : log.ActorRole == "Doctor" ? "bg-primary-subtle text-primary" : log.ActorRole == "Receptionist" ? "bg-info-subtle text-info" : log.ActorRole == "LabTech" ? "bg-warning-subtle text-warning" : "bg-light text-dark") border px-2 py-1">
+                                        @log.ActorRole
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if (log.Action == "Create")
+                                    {
+                                        <span class="badge bg-success-subtle text-success border px-2 py-1">
+                                            <i class="fa-solid fa-plus me-1"></i>Thêm mới
+                                        </span>
+                                    }
+                                    else if (log.Action == "Update")
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning border px-2 py-1">
+                                            <i class="fa-solid fa-pen me-1"></i>Cập nhật
+                                        </span>
+                                    }
+                                    else if (log.Action == "Delete")
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border px-2 py-1">
+                                            <i class="fa-solid fa-trash me-1"></i>Xóa
+                                        </span>
+                                    }
+                                    else if (log.Action == "Login")
+                                    {
+                                        <span class="badge bg-info-subtle text-info border px-2 py-1">
+                                            <i class="fa-solid fa-right-to-bracket me-1"></i>Đăng nhập
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary border px-2 py-1">
+                                            @log.Action
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        @log.EntityName @(string.IsNullOrEmpty(log.EntityId) ? "" : $"#{log.EntityId}")
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="text-dark small">@log.Description</div>
+                                    @if (!string.IsNullOrEmpty(log.IpAddress))
+                                    {
+                                        <span class="text-muted small" style="font-size: 0.75rem;">IP: @log.IpAddress</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-clipboard-list fa-3x mb-3 text-secondary"></i>
+                                <h6>Chưa có bản ghi nhật ký hoạt động nào</h6>
+                                <p class="small mb-0">Các thao tác trên hệ thống sẽ được tự động ghi lại tại đây.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Phân trang -->
+    @if (totalPages > 1)
+    {
+        <div class="card-footer bg-white border-0 py-3">
+            <nav aria-label="Audit log navigation">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="AuditLog"
+                           asp-route-page="@(currentPage - 1)"
+                           asp-route-search="@search"
+                           asp-route-action="@selectedAction"
+                           asp-route-role="@selectedRole"
+                           asp-route-dateFrom="@dateFrom"
+                           asp-route-dateTo="@dateTo">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                    </li>
+
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        if (i == 1 || i == totalPages || (i >= currentPage - 2 && i <= currentPage + 2))
+                        {
+                            <li class="page-item @(currentPage == i ? "active" : "")">
+                                <a class="page-link" asp-action="AuditLog"
+                                   asp-route-page="@i"
+                                   asp-route-search="@search"
+                                   asp-route-action="@selectedAction"
+                                   asp-route-role="@selectedRole"
+                                   asp-route-dateFrom="@dateFrom"
+                                   asp-route-dateTo="@dateTo">@i</a>
+                            </li>
+                        }
+                        else if (i == currentPage - 3 || i == currentPage + 3)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                    }
+
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="AuditLog"
+                           asp-route-page="@(currentPage + 1)"
+                           asp-route-search="@search"
+                           asp-route-action="@selectedAction"
+                           asp-route-role="@selectedRole"
+                           asp-route-dateFrom="@dateFrom"
+                           asp-route-dateTo="@dateTo">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
