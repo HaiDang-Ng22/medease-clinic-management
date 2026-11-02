@@ -19,7 +19,8 @@ namespace Healthy_System.Data
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
         public DbSet<LabResult> LabResults => Set<LabResult>(); // US29 & US30
-        public DbSet<TimeSlotConfig> TimeSlotConfigs => Set<TimeSlotConfig>(); // US40
+public DbSet<TimeSlotConfig> TimeSlotConfigs => Set<TimeSlotConfig>(); // US40
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>(); // US41
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -49,12 +50,26 @@ namespace Healthy_System.Data
                 .HasForeignKey(d => d.SpecialtyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // AuditLog - User (US41)
+            modelBuilder.Entity<AuditLog>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Appointment - Patient
             modelBuilder.Entity<Appointment>()
                 .HasOne(a => a.Patient)
                 .WithMany(u => u.Appointments)
                 .HasForeignKey(a => a.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // AuditLog - User (US41)
+            modelBuilder.Entity<AuditLog>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Appointment - Doctor
             modelBuilder.Entity<Appointment>()
@@ -63,12 +78,26 @@ namespace Healthy_System.Data
                 .HasForeignKey(a => a.DoctorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // AuditLog - User (US41)
+            modelBuilder.Entity<AuditLog>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Appointment - Specialty
             modelBuilder.Entity<Appointment>()
                 .HasOne(a => a.Specialty)
                 .WithMany(s => s.Appointments)
                 .HasForeignKey(a => a.SpecialtyId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // AuditLog - User (US41)
+            modelBuilder.Entity<AuditLog>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // DoctorSchedule - Doctor
             modelBuilder.Entity<DoctorSchedule>()
@@ -97,6 +126,13 @@ namespace Healthy_System.Data
                 .WithMany()
                 .HasForeignKey(r => r.LabTechId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // AuditLog - User (US41)
+            modelBuilder.Entity<AuditLog>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }
