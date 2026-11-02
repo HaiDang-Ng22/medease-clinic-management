@@ -96,6 +96,41 @@ namespace Healthy_System.Data
                     CREATE INDEX IF NOT EXISTS ""IX_LabResults_AppointmentId"" ON ""LabResults"" (""AppointmentId"");
                     CREATE INDEX IF NOT EXISTS ""IX_LabResults_LabTechId"" ON ""LabResults"" (""LabTechId"");
                 ");
+
+                // Tự động tạo bảng TimeSlotConfigs nếu chưa có (US40)
+                context.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS ""TimeSlotConfigs"" (
+                        ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_TimeSlotConfigs"" PRIMARY KEY AUTOINCREMENT,
+                        ""ShiftName"" TEXT NOT NULL,
+                        ""StartTime"" TEXT NOT NULL,
+                        ""EndTime"" TEXT NOT NULL,
+                        ""SlotDurationMinutes"" INTEGER NOT NULL,
+                        ""MaxPatientsPerSlot"" INTEGER NOT NULL,
+                        ""IsActive"" INTEGER NOT NULL,
+                        ""Notes"" TEXT NULL,
+                        ""CreatedAt"" TEXT NOT NULL,
+                        ""UpdatedAt"" TEXT NULL
+                    );
+                ");
+
+                // Tự động tạo bảng AuditLogs nếu chưa có (US41)
+                context.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS ""AuditLogs"" (
+                        ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_AuditLogs"" PRIMARY KEY AUTOINCREMENT,
+                        ""UserId"" INTEGER NULL,
+                        ""ActorName"" TEXT NOT NULL,
+                        ""ActorRole"" TEXT NOT NULL,
+                        ""Action"" TEXT NOT NULL,
+                        ""EntityName"" TEXT NOT NULL,
+                        ""EntityId"" TEXT NULL,
+                        ""Description"" TEXT NOT NULL,
+                        ""IpAddress"" TEXT NULL,
+                        ""CreatedAt"" TEXT NOT NULL,
+                        CONSTRAINT ""FK_AuditLogs_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE SET NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_AuditLogs_UserId"" ON ""AuditLogs"" (""UserId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_AuditLogs_CreatedAt"" ON ""AuditLogs"" (""CreatedAt"");
+                ");
             }
             catch
             {
@@ -590,6 +625,34 @@ namespace Healthy_System.Data
 
                     context.SaveChanges();
                 }
+            }
+
+            // Seed TimeSlotConfigs (US40)
+            if (!context.TimeSlotConfigs.Any())
+            {
+                context.TimeSlotConfigs.AddRange(
+                    new TimeSlotConfig
+                    {
+                        ShiftName = "Ca Sáng",
+                        StartTime = "08:00",
+                        EndTime = "12:00",
+                        SlotDurationMinutes = 30,
+                        MaxPatientsPerSlot = 2,
+                        IsActive = true,
+                        Notes = "Khung giờ khám tiêu chuẩn buổi sáng"
+                    },
+                    new TimeSlotConfig
+                    {
+                        ShiftName = "Ca Chiều",
+                        StartTime = "13:30",
+                        EndTime = "17:30",
+                        SlotDurationMinutes = 30,
+                        MaxPatientsPerSlot = 2,
+                        IsActive = true,
+                        Notes = "Khung giờ khám tiêu chuẩn buổi chiều"
+                    }
+                );
+                context.SaveChanges();
             }
         }
     }
