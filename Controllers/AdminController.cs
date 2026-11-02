@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Security.Claims;
@@ -436,6 +437,96 @@ namespace Healthy_System.Controllers
                 TempData["SuccessMessage"] = $"Đã chuyển trạng thái thiết bị {equipment.Name} sang: {equipment.Status}";
             }
             return RedirectToAction(nameof(Equipments));
+        }
+
+        // ==========================================
+        // US-34: Báo cáo doanh thu theo ngày / tháng
+        // ==========================================
+        public IActionResult RevenueReport(string? period, int? year, int? month)
+        {
+            period ??= "month";
+            year ??= DateTime.Now.Year;
+            month ??= DateTime.Now.Month;
+
+            var completedAppts = _context.Appointments
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .Include(a => a.Specialty)
+                .Where(a => a.Status == "Completed")
+                .AsQueryable();
+
+            completedAppts = completedAppts.Where(a => a.AppointmentDate.Year == year);
+
+            var labels = new List<string>();
+            var revenueData = new List<decimal>();
+            var countData = new List<int>();
+            decimal totalRevenue = 0;
+            int totalAppointments = 0;
+
+            if (period == "day" && month.HasValue)
+            {
+                var filtered = completedAppts.Where(a => a.AppointmentDate.Month == month).ToList();
+                int daysInMonth = DateTime.DaysInMonth(year.Value, month.Value);
+                for (int d = 1; d <= daysInMonth; d++)
+                {
+                    var dayAppts = filtered.Where(a => a.AppointmentDate.Day == d).ToList();
+                    labels.Add($"Ngày {d:D2}");
+                    decimal rev = dayAppts.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0);
+                    revenueData.Add(rev);
+                    countData.Add(dayAppts.Count);
+                }
+                totalRevenue = filtered.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0);
+                totalAppointments = filtered.Count;
+            }
+            else
+            {
+                var allYear = completedAppts.ToList();
+                for (int m = 1; m <= 12; m++)
+                {
+                    var monthAppts = allYear.Where(a => a.AppointmentDate.Month == m).ToList();
+                    labels.Add($"Tháng {m}");
+                    decimal rev = monthAppts.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0);
+                    revenueData.Add(rev);
+                    countData.Add(monthAppts.Count);
+                }
+                totalRevenue = allYear.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0);
+                totalAppointments = allYear.Count;
+            }
+
+            var topDoctors = _context.Appointments
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .Where(a => a.Status == "Completed" && a.AppointmentDate.Year == year).ToList()
+                .GroupBy(a => a.DoctorId)
+                .Select(g => new {
+                    DoctorName = g.First().Doctor != null && g.First().Doctor!.User != null ? g.First().Doctor!.User!.FullName : "Không rõ",
+                    Count = g.Count(),
+                    Revenue = g.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0)
+                })
+                .OrderByDescending(x => x.Revenue).Take(5).ToList();
+
+            var topSpecialties = _context.Appointments
+                .Include(a => a.Specialty).Include(a => a.Doctor)
+                .Where(a => a.Status == "Completed" && a.AppointmentDate.Year == year).ToList()
+                .GroupBy(a => a.SpecialtyId)
+                .Select(g => new {
+                    SpecialtyName = g.First().Specialty != null ? g.First().Specialty!.Name : "Không rõ",
+                    Count = g.Count(),
+                    Revenue = g.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0)
+                })
+                .OrderByDescending(x => x.Revenue).Take(5).ToList();
+
+            ViewBag.Period = period;
+            ViewBag.Year = year;
+            ViewBag.Month = month;
+            ViewBag.ChartLabels = labels;
+            ViewBag.ChartRevenue = revenueData;
+            ViewBag.ChartCount = countData;
+            ViewBag.TotalRevenue = totalRevenue;
+            ViewBag.TotalAppointments = totalAppointments;
+            ViewBag.TopDoctors = topDoctors;
+            ViewBag.TopSpecialties = topSpecialties;
+            ViewBag.AvgRevenue = totalAppointments > 0 ? totalRevenue / totalAppointments : 0;
+
+            return View();
         }
     }
 }

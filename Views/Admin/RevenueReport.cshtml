@@ -1,0 +1,307 @@
+@{
+    ViewData["Title"] = "Báo Cáo Doanh Thu";
+    Layout = "_AdminLayout";
+
+    string period = ViewBag.Period ?? "month";
+    int currentYear = ViewBag.Year ?? DateTime.Now.Year;
+    int currentMonth = ViewBag.Month ?? DateTime.Now.Month;
+    decimal totalRevenue = ViewBag.TotalRevenue ?? 0m;
+    int totalAppointments = ViewBag.TotalAppointments ?? 0;
+    decimal avgRevenue = ViewBag.AvgRevenue ?? 0m;
+
+    var chartLabels = ViewBag.ChartLabels as List<string> ?? new List<string>();
+    var chartRevenue = ViewBag.ChartRevenue as List<decimal> ?? new List<decimal>();
+    var chartCount = ViewBag.ChartCount as List<int> ?? new List<int>();
+
+    var topDoctors = ViewBag.TopDoctors;
+    var topSpecialties = ViewBag.TopSpecialties;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-chart-line text-success me-2"></i>Báo Cáo Doanh Thu Phòng Khám</h4>
+        <p class="text-muted small mb-0">Theo dõi doanh thu, số lượt khám và hiệu suất của bác sĩ & chuyên khoa</p>
+    </div>
+</div>
+
+<!-- Bộ lọc thời gian -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="RevenueReport" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Chế độ xem</label>
+                <select name="period" id="periodSelect" class="form-select" onchange="toggleMonthSelect(this.value)">
+                    <option value="month" selected="@(period == "month")">Theo từng tháng trong năm</option>
+                    <option value="day" selected="@(period == "day")">Theo từng ngày trong tháng</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Năm</label>
+                <select name="year" class="form-select">
+                    @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 3; y--)
+                    {
+                        <option value="@y" selected="@(currentYear == y)">Năm @y</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3" id="monthContainer" style="@(period == "day" ? "" : "display:none;")">
+                <label class="form-label small fw-bold">Tháng</label>
+                <select name="month" class="form-select">
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        <option value="@m" selected="@(currentMonth == m)">Tháng @m</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fa-solid fa-filter me-1"></i>Xem báo cáo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Thống kê KPI tóm tắt -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-success">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Tổng Doanh Thu</div>
+                    <div class="fs-3 fw-bold text-success mt-1">@totalRevenue.ToString("N0") VNĐ</div>
+                    <div class="text-muted small mt-1">
+                        <i class="fa-solid fa-calendar-check me-1"></i>@(period == "day" ? $"Tháng {currentMonth}/{currentYear}" : $"Năm {currentYear}")
+                    </div>
+                </div>
+                <div class="bg-success-subtle text-success p-3 rounded-circle">
+                    <i class="fa-solid fa-sack-dollar fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-primary">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Lượt Khám Hoàn Thành</div>
+                    <div class="fs-3 fw-bold text-primary mt-1">@totalAppointments</div>
+                    <div class="text-muted small mt-1">
+                        <i class="fa-solid fa-user-check me-1"></i>Lịch hẹn đã khám xong
+                    </div>
+                </div>
+                <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+                    <i class="fa-solid fa-users fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-warning">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Doanh Thu TB / Lượt</div>
+                    <div class="fs-3 fw-bold text-warning mt-1">@avgRevenue.ToString("N0") VNĐ</div>
+                    <div class="text-muted small mt-1">
+                        <i class="fa-solid fa-calculator me-1"></i>Trung bình mỗi ca khám
+                    </div>
+                </div>
+                <div class="bg-warning-subtle text-warning p-3 rounded-circle">
+                    <i class="fa-solid fa-receipt fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Biểu đồ doanh thu -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 py-3">
+        <h6 class="fw-bold mb-0">
+            <i class="fa-solid fa-chart-column text-primary me-2"></i>
+            Biểu đồ Doanh thu & Lượt khám @(period == "day" ? $"theo ngày (Tháng {currentMonth}/{currentYear})" : $"theo tháng (Năm {currentYear})")
+        </h6>
+    </div>
+    <div class="card-body">
+        <div style="height: 350px;">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Bảng xếp hạng Top Bác sĩ & Chuyên khoa -->
+<div class="row g-4">
+    <!-- Top Bác sĩ -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0">
+                    <i class="fa-solid fa-user-doctor text-info me-2"></i>Top 5 Bác Sĩ Đóng Góp Doanh Thu Cao Nhất
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Bác sĩ</th>
+                                <th class="text-center">Số lượt khám</th>
+                                <th class="text-end">Doanh thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (topDoctors != null)
+                            {
+                                int idx = 1;
+                                foreach (var doc in topDoctors)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="badge @(idx == 1 ? "bg-warning text-dark" : idx == 2 ? "bg-secondary text-white" : idx == 3 ? "bg-danger text-white" : "bg-light text-dark") rounded-pill">
+                                                @idx
+                                            </span>
+                                        </td>
+                                        <td class="fw-semibold">@doc.DoctorName</td>
+                                        <td class="text-center"><span class="badge bg-light text-dark border">@doc.Count ca</span></td>
+                                        <td class="text-end text-success fw-bold">@doc.Revenue.ToString("N0") VNĐ</td>
+                                    </tr>
+                                    idx++;
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Chuyên khoa -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0">
+                    <i class="fa-solid fa-stethoscope text-primary me-2"></i>Top 5 Chuyên Khoa Doanh Thu Hàng Đầu
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Chuyên khoa</th>
+                                <th class="text-center">Số lượt khám</th>
+                                <th class="text-end">Doanh thu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (topSpecialties != null)
+                            {
+                                int sIdx = 1;
+                                foreach (var spec in topSpecialties)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="badge @(sIdx == 1 ? "bg-warning text-dark" : sIdx == 2 ? "bg-secondary text-white" : sIdx == 3 ? "bg-danger text-white" : "bg-light text-dark") rounded-pill">
+                                                @sIdx
+                                            </span>
+                                        </td>
+                                        <td class="fw-semibold">@spec.SpecialtyName</td>
+                                        <td class="text-center"><span class="badge bg-light text-dark border">@spec.Count ca</span></td>
+                                        <td class="text-end text-success fw-bold">@spec.Revenue.ToString("N0") VNĐ</td>
+                                    </tr>
+                                    sIdx++;
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function toggleMonthSelect(value) {
+            const container = document.getElementById('monthContainer');
+            if (value === 'day') {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(chartLabels));
+        const revenueData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(chartRevenue));
+        const countData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(chartCount));
+
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Doanh thu (VNĐ)',
+                        data: revenueData,
+                        backgroundColor: 'rgba(25, 135, 84, 0.65)',
+                        borderColor: 'rgb(25, 135, 84)',
+                        borderWidth: 1,
+                        yAxisID: 'y',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Số ca khám',
+                        data: countData,
+                        type: 'line',
+                        borderColor: 'rgb(13, 110, 253)',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Doanh thu (VNĐ)' },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + ' đ';
+                            }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Số ca khám' },
+                        grid: { drawOnChartArea: false }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.yAxisID === 'y') {
+                                    return 'Doanh thu: ' + context.raw.toLocaleString('vi-VN') + ' VNĐ';
+                                }
+                                return 'Số ca: ' + context.raw;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}
