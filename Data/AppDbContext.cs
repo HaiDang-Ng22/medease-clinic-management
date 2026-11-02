@@ -19,6 +19,7 @@ namespace Healthy_System.Data
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
         public DbSet<LabResult> LabResults => Set<LabResult>(); // US29 & US30
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>(); // US41
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -96,6 +97,14 @@ namespace Healthy_System.Data
                 .WithMany()
                 .HasForeignKey(r => r.LabTechId)
                 .OnDelete(DeleteBehavior.Restrict);
+        }
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        }
+    }
+}
         }
     }
 }

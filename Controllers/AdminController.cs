@@ -437,5 +437,66 @@ namespace Healthy_System.Controllers
             }
             return RedirectToAction(nameof(Equipments));
         }
+
+        // ==========================================
+        // US-41: Nhật ký hoạt động hệ thống (Audit Log)
+        // ==========================================
+        public IActionResult AuditLog(string? search, string? action, string? role,
+            string? dateFrom, string? dateTo, int page = 1)
+        {
+            var query = _context.AuditLogs.Include(a => a.User).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLower();
+                query = query.Where(a =>
+                    a.ActorName.ToLower().Contains(term) ||
+                    a.Description.ToLower().Contains(term) ||
+                    a.EntityName.ToLower().Contains(term));
+            }
+
+            if (!string.IsNullOrWhiteSpace(action))
+            {
+                query = query.Where(a => a.Action == action);
+            }
+
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                query = query.Where(a => a.ActorRole == role);
+            }
+
+            if (!string.IsNullOrWhiteSpace(dateFrom) && DateTime.TryParse(dateFrom, out var from))
+            {
+                var fromUtc = DateTime.SpecifyKind(from.Date, DateTimeKind.Utc);
+                query = query.Where(a => a.CreatedAt >= fromUtc);
+            }
+
+            if (!string.IsNullOrWhiteSpace(dateTo) && DateTime.TryParse(dateTo, out var to))
+            {
+                var toUtc = DateTime.SpecifyKind(to.Date.AddDays(1), DateTimeKind.Utc);
+                query = query.Where(a => a.CreatedAt < toUtc);
+            }
+
+            int pageSize = 20;
+            int total = query.Count();
+            int totalPages = (int)Math.Ceiling(total / (double)pageSize);
+            page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
+
+            var logs = query.OrderByDescending(a => a.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.Search = search;
+            ViewBag.SelectedAction = action;
+            ViewBag.SelectedRole = role;
+            ViewBag.DateFrom = dateFrom;
+            ViewBag.DateTo = dateTo;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalLogs = total;
+
+            return View(logs);
+        }
     }
 }

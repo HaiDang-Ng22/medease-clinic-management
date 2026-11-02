@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -534,6 +534,15 @@
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Trang Thiết Bị Y Tế">
                     <i class="fa-solid fa-microscope nav-icon"></i>
                     <span class="sidebar-nav-label">Thiết Bị Phòng Khám</span>
+                </a>
+
+                <div class="sidebar-section-label mt-3">Giám sát & Bảo mật</div>
+
+                <a asp-controller="Admin" asp-action="AuditLog" 
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "AuditLog" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Nhật Ký Hệ Thống">
+                    <i class="fa-solid fa-clock-rotate-left nav-icon"></i>
+                    <span class="sidebar-nav-label">Nhật Ký Hệ Thống</span>
                 </a>
             </nav>
 
