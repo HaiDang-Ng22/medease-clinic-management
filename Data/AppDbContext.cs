@@ -19,6 +19,8 @@ namespace Healthy_System.Data
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
         public DbSet<LabResult> LabResults => Set<LabResult>(); // US29 & US30
+        public DbSet<PayrollConfig> PayrollConfigs { get; set; } // US33
+        public DbSet<Payroll> Payrolls { get; set; } // US33
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -504,7 +504,7 @@
             <nav class="sidebar-menu-wrapper">
                 <div class="sidebar-section-label">Tổng quan & Phân quyền</div>
 
-                <a asp-controller="Admin" asp-action="Dashboard" 
+                <a asp-controller="Admin" asp-action="Dashboard"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")"
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Bảng Điều Khiển & Phân Quyền">
                     <i class="fa-solid fa-chart-pie nav-icon"></i>
@@ -513,23 +513,30 @@
 
                 <div class="sidebar-section-label mt-3">Nhân sự & Chuyên môn</div>
 
-                <a asp-controller="Admin" asp-action="Doctors" 
+                <a asp-controller="Admin" asp-action="Doctors"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Doctors" ? "active" : "")"
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Bác Sĩ & Chuyên Khoa">
                     <i class="fa-solid fa-user-doctor nav-icon"></i>
                     <span class="sidebar-nav-label">Bác Sĩ & Chuyên Khoa</span>
                 </a>
 
+                <a asp-controller="Payroll" asp-action="Index"
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Payroll" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Tính Lương Tháng">
+                    <i class="fa-solid fa-calculator nav-icon text-warning"></i>
+                    <span class="sidebar-nav-label">Tính Lương Tháng</span>
+                </a>
+
                 <div class="sidebar-section-label mt-3">Hạ tầng & Dịch vụ</div>
 
-                <a asp-controller="Admin" asp-action="Services" 
+                <a asp-controller="Admin" asp-action="Services"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Services" ? "active" : "")"
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Dịch Vụ & Biểu Giá">
                     <i class="fa-solid fa-list-check nav-icon"></i>
                     <span class="sidebar-nav-label">Dịch Vụ & Biểu Giá</span>
                 </a>
 
-                <a asp-controller="Admin" asp-action="Equipments" 
+                <a asp-controller="Admin" asp-action="Equipments"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Equipments" ? "active" : "")"
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Trang Thiết Bị Y Tế">
                     <i class="fa-solid fa-microscope nav-icon"></i>

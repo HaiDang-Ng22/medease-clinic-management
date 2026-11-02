@@ -280,6 +280,12 @@
                             <i class="fa-solid fa-cash-register me-1"></i>Quản Lý Thu Ngân
                         </a>
                     }
+                    else if (User.IsInRole("Accountant"))
+                    {
+                        <a asp-controller="Payroll" asp-action="Index" class="btn btn-sm btn-warning rounded-1 px-3 py-2 fw-semibold">
+                            <i class="fa-solid fa-calculator me-1"></i>Tính Lương Tháng
+                        </a>
+                    }
                     else if (User.IsInRole("Admin"))
                     {
                         <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-sm btn-dark rounded-1 px-3 py-2 fw-semibold" style="background:#0f172a; border-color:#0f172a;">
@@ -308,7 +314,7 @@
                                     <div class="px-3 py-2 border-bottom" style="border-color:#e2e8f0 !important;">
                                         <div class="fw-bold text-dark">@User.Identity.Name</div>
                                         <small class="text-muted">
-                                            @(User.IsInRole("Doctor") ? "Bác sĩ Chuyên khoa" : (User.IsInRole("Receptionist") ? "Nhân viên Lễ tân" : (User.IsInRole("Cashier") ? "Nhân viên Thu ngân" : (User.IsInRole("Admin") ? "Quản trị viên" : "Bệnh nhân"))))
+                                            @(User.IsInRole("Doctor") ? "Bác sĩ Chuyên khoa" : (User.IsInRole("Receptionist") ? "Nhân viên Lễ tân" : (User.IsInRole("Cashier") ? "Nhân viên Thu ngân" : (User.IsInRole("Accountant") ? "Kế toán viên" : (User.IsInRole("Admin") ? "Quản trị viên" : "Bệnh nhân")))))
                                         </small>
                                     </div>
                                 </li>
@@ -327,6 +333,16 @@
                                 else if (User.IsInRole("Cashier"))
                                 {
                                     <li><a class="dropdown-item py-2" asp-controller="Cashier" asp-action="Index"><i class="fa-solid fa-cash-register me-2 text-muted"></i>Quản lý thu ngân</a></li>
+                                }
+                                else if (User.IsInRole("Accountant"))
+                                {
+                                    <li><a class="dropdown-item py-2" asp-controller="Payroll" asp-action="Index"><i class="fa-solid fa-calculator me-2 text-muted"></i>Tính lương tháng</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Payroll" asp-action="Config"><i class="fa-solid fa-gear me-2 text-muted"></i>Cấu hình mức lương</a></li>
+                                }
+                                else if (User.IsInRole("Admin"))
+                                {
+                                    <li><a class="dropdown-item py-2" asp-controller="Admin" asp-action="Dashboard"><i class="fa-solid fa-shield-halved me-2 text-muted"></i>Trang quản trị</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Payroll" asp-action="Index"><i class="fa-solid fa-calculator me-2 text-muted"></i>Tính lương tháng</a></li>
                                 }
                                 else
                                 {
