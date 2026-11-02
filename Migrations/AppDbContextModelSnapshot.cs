@@ -15,7 +15,7 @@ namespace Healthy_System.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.11");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
 
             modelBuilder.Entity("Healthy_System.Models.Appointment", b =>
                 {
@@ -38,6 +38,10 @@ namespace Healthy_System.Migrations
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CashierName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -52,12 +56,30 @@ namespace Healthy_System.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("InvoiceCode")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("LabRequest")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("PatientId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Prescription")
                         .HasMaxLength(2000)
@@ -272,6 +294,63 @@ namespace Healthy_System.Migrations
                     b.HasIndex("SpecialtyId");
 
                     b.ToTable("Equipments");
+                });
+
+            modelBuilder.Entity("Healthy_System.Models.LabResult", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AppointmentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DetailedResult")
+                        .HasMaxLength(5000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageFilePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImageFileType")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LabTechId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LabTechNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ResultDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ResultSummary")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("LabTechId");
+
+                    b.ToTable("LabResults");
                 });
 
             modelBuilder.Entity("Healthy_System.Models.Notification", b =>
@@ -509,6 +588,25 @@ namespace Healthy_System.Migrations
                         .HasForeignKey("SpecialtyId");
 
                     b.Navigation("Specialty");
+                });
+
+            modelBuilder.Entity("Healthy_System.Models.LabResult", b =>
+                {
+                    b.HasOne("Healthy_System.Models.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Healthy_System.Models.User", "LabTech")
+                        .WithMany()
+                        .HasForeignKey("LabTechId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("LabTech");
                 });
 
             modelBuilder.Entity("Healthy_System.Models.Notification", b =>

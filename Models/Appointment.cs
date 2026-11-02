@@ -76,5 +76,13 @@ namespace Healthy_System.Models
         public string? ReviewComment { get; set; }
 
         public DateTime? ReviewedAt { get; set; }
+
+        //US32: Thanh toán & Xuất phiếu thu
+        public string PaymentStatus { get; set; } = "Unpaid";
+        public string PaymentMethod { get; set; }
+        public decimal PaidAmount { get; set; }
+        public DateTime? PaidAt { get; set; }
+        public string CashierName { get; set; }
+        public string InvoiceCode { get; set; }
     }
 }
