@@ -164,6 +164,13 @@
                                             <i class="fa-solid fa-check me-1"></i>Xác nhận
                                         </button>
                                     </form>
+                                    @if (a.Status == "Pending" || a.Status == "Confirmed")
+                                    {
+                                        <a asp-action="TransferAppointment" asp-route-id="@a.Id"
+                                           class="btn btn-sm px-2 py-1 fw-semibold text-primary" style="background:#ffffff; border:1px solid #bfdbfe; font-size:0.75rem; border-radius:4px;" title="Chuyển đổi bác sĩ hoặc thời gian">
+                                            <i class="fa-solid fa-arrows-rotate me-1"></i>Đổi BS/Giờ
+                                        </a>
+                                    }
                                 }
                                 else
                                 {
