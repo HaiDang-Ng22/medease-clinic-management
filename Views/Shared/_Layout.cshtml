@@ -289,6 +289,9 @@
 
                     @if (User.Identity?.IsAuthenticated == true)
                     {
+                        <a asp-controller="Appointment" asp-action="Notifications" class="btn btn-sm btn-outline-secondary rounded-1 px-2 py-2 text-secondary me-1" title="Thông báo & Nhắc lịch" style="border-color:#cbd5e1;">
+                            <i class="fa-solid fa-bell"></i>
+                        </a>
                         <div class="dropdown ms-1">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle rounded-1 px-3 py-2 fw-semibold" type="button" data-bs-toggle="dropdown" style="border-color:#cbd5e1; color:#334155;">
                                 <i class="fa-regular fa-circle-user me-1"></i>
@@ -318,6 +321,7 @@
                                 {
                                     <li><a class="dropdown-item py-2" asp-controller="Appointment" asp-action="MyAppointments"><i class="fa-solid fa-calendar-days me-2 text-muted"></i>Lịch hẹn của tôi</a></li>
                                     <li><a class="dropdown-item py-2" asp-controller="Appointment" asp-action="MyAppointments" asp-route-status="Completed"><i class="fa-solid fa-folder-medical me-2 text-muted"></i>Hồ sơ bệnh án</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Appointment" asp-action="Notifications"><i class="fa-solid fa-bell me-2 text-muted"></i>Thông báo & Nhắc lịch</a></li>
                                     <li><a class="dropdown-item py-2" asp-controller="Account" asp-action="Profile"><i class="fa-solid fa-id-card me-2 text-muted"></i>Hồ sơ cá nhân</a></li>
                                 }
                                 <li><hr class="dropdown-divider my-1"></li>

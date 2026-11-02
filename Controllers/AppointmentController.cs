@@ -739,14 +739,32 @@ namespace Healthy_System.Controllers
 
 
 
+            // 1. Không cho phép dời về ngày trong quá khứ
             if (model.NewDate.Date < DateTime.Today)
-
             {
-
-                ModelState.AddModelError("NewDate", "Ngày khám mới không hợp lệ.");
-
+                ModelState.AddModelError("NewDate", "Ngày khám mới không được ở trong quá khứ.");
                 return View(model);
+            }
 
+            // 2. Không cho phép dời về khung giờ đã trôi qua trong ngày hôm nay
+            if (model.NewDate.Date == DateTime.Today && IsSlotInPast(model.NewTimeSlot))
+            {
+                ModelState.AddModelError("NewTimeSlot", $"Khung giờ {model.NewTimeSlot} đã trôi qua trong ngày hôm nay. Vui lòng chọn khung giờ khác.");
+                return View(model);
+            }
+
+            // 3. Không cho phép đặt trùng lịch với bệnh nhân khác của bác sĩ
+            bool isSlotConflict = _context.Appointments.Any(a =>
+                a.Id != appt.Id &&
+                a.DoctorId == appt.DoctorId &&
+                a.AppointmentDate.Date == model.NewDate.Date &&
+                a.TimeSlot == model.NewTimeSlot &&
+                a.Status != "Cancelled");
+
+            if (isSlotConflict)
+            {
+                ModelState.AddModelError("NewTimeSlot", $"Khung giờ {model.NewTimeSlot} ngày {model.NewDate:dd/MM/yyyy} đã có bệnh nhân khác đặt lịch.");
+                return View(model);
             }
 
 

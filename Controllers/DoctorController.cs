@@ -102,18 +102,12 @@ namespace Healthy_System.Controllers
 
 
 
-            // Appointments today
-
+            // Appointments today: Chỉ lấy các ca hợp lệ cần khám hôm nay (loại trừ các ca đã hủy hoặc đã quá hạn)
             var todayAppointments = _context.Appointments
-
                 .Include(a => a.Patient)
-
                 .Include(a => a.Specialty)
-
-                .Where(a => a.DoctorId == doctor.Id && a.AppointmentDate.Date == today)
-
+                .Where(a => a.DoctorId == doctor.Id && a.AppointmentDate.Date == today && a.Status != "Cancelled" && a.Status != "Expired")
                 .OrderBy(a => a.TimeSlot)
-
                 .ToList();
 
 
@@ -175,15 +169,10 @@ namespace Healthy_System.Controllers
             var today = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
 
             var queue = _context.Appointments
-
                 .Include(a => a.Patient)
-
                 .Include(a => a.Specialty)
-
-                .Where(a => a.DoctorId == doctor.Id && a.AppointmentDate.Date == today)
-
+                .Where(a => a.DoctorId == doctor.Id && a.AppointmentDate.Date == today && a.Status != "Cancelled" && a.Status != "Expired")
                 .OrderBy(a => a.TimeSlot)
-
                 .ToList();
 
 
@@ -225,8 +214,7 @@ namespace Healthy_System.Controllers
                 var candidates = query.ToList();
 
                 var today = DateTime.Today;
-
-                var overdue = candidates.Where(a => a.AppointmentDate.Date < today).ToList();
+                var overdue = candidates.Where(a => a.AppointmentDate.Date < today || (a.AppointmentDate.Date == today && IsSlotInPast(a.TimeSlot))).ToList();
 
 
 
@@ -568,14 +556,47 @@ namespace Healthy_System.Controllers
 
 
 
+            // 1. Kiểm tra không dời về ngày trong quá khứ
             if (newDate.Date < DateTime.Today)
-
             {
-
-                TempData["ErrorMessage"] = "Ngày dời lịch mới không thể ở trong quá khứ.";
-
+                TempData["ErrorMessage"] = "Không thể dời lịch về ngày trong quá khứ. Vui lòng chọn ngày từ hôm nay trở đi.";
                 return RedirectToAction(nameof(Queue));
+            }
 
+            // 2. Kiểm tra không dời về khung giờ đã trôi qua trong ngày hôm nay
+            if (newDate.Date == DateTime.Today && IsSlotInPast(newTimeSlot))
+            {
+                TempData["ErrorMessage"] = $"Không thể dời lịch về khung giờ đã trôi qua ({newTimeSlot}) trong ngày hôm nay.";
+                return RedirectToAction(nameof(Queue));
+            }
+
+            var utcDate = DateTime.SpecifyKind(newDate.Date, DateTimeKind.Utc);
+
+            // 3. Kiểm tra không được trùng lịch với bệnh nhân khác của bác sĩ
+            bool isSlotConflict = _context.Appointments.Any(a =>
+                a.Id != appointmentId &&
+                a.DoctorId == doctor.Id &&
+                a.AppointmentDate.Date == utcDate.Date &&
+                a.TimeSlot == newTimeSlot &&
+                a.Status != "Cancelled");
+
+            if (isSlotConflict)
+            {
+                TempData["ErrorMessage"] = $"Khung giờ {newTimeSlot} ngày {newDate:dd/MM/yyyy} đã có bệnh nhân khác đặt lịch. Vui lòng chọn khung giờ hoặc ngày khác.";
+                return RedirectToAction(nameof(Queue));
+            }
+
+            // 4. Kiểm tra lịch trực nếu có cấu hình tắt nhận bệnh
+            bool isUnavailable = _context.DoctorSchedules.Any(s =>
+                s.DoctorId == doctor.Id &&
+                s.WorkDate.Date == utcDate.Date &&
+                s.TimeSlot == newTimeSlot &&
+                !s.IsAvailable);
+
+            if (isUnavailable)
+            {
+                TempData["ErrorMessage"] = $"Khung giờ {newTimeSlot} ngày {newDate:dd/MM/yyyy} hiện đang tạm đóng hoặc không nhận bệnh theo lịch trực.";
+                return RedirectToAction(nameof(Queue));
             }
 
 
@@ -1736,7 +1757,18 @@ namespace Healthy_System.Controllers
 
         }
 
-    }
+    
+        private static bool IsSlotInPast(string timeSlot)
+        {
+            if (string.IsNullOrWhiteSpace(timeSlot)) return false;
+            var parts = timeSlot.Split('-');
+            if (parts.Length > 0 && TimeSpan.TryParse(parts[0].Trim(), out var startTime))
+            {
+                return DateTime.Now.TimeOfDay > startTime;
+            }
+            return false;
+        }
+}
 
 }
 

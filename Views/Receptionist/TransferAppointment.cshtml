@@ -1,0 +1,359 @@
+@model Healthy_System.Models.ViewModels.TransferAppointmentViewModel
+@{
+    Layout = "_ReceptionistLayout";
+    ViewData["Title"] = "Chuyển Đổi Lịch Hẹn";
+    var minDate = DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+<div class="container-fluid px-0">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size:0.8rem;">
+                    <li class="breadcrumb-item"><a asp-action="Dashboard" class="text-decoration-none text-muted">Lễ tân</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Appointments" class="text-decoration-none text-muted">Lịch hẹn</a></li>
+                    <li class="breadcrumb-item active text-slate-800" aria-current="page">Chuyển đổi lịch</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold mb-0 text-slate-900" style="color:#0f172a;">
+                <i class="fa-solid fa-arrows-rotate text-primary me-2"></i>Chuyển Đổi Lịch Hẹn Khám Bệnh
+            </h4>
+            <div class="text-muted small mt-1">US-18: Điều chuyển bác sĩ hoặc dời khung giờ linh hoạt khi có phát sinh thay đổi</div>
+        </div>
+        <div>
+            <a asp-action="Appointments" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold">
+                <i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách
+            </a>
+        </div>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation fs-5"></i>
+                <div class="fw-semibold">Vui lòng kiểm tra lại thông tin chuyển đổi:</div>
+            </div>
+            <div asp-validation-summary="All" class="text-danger small mt-2 mb-0 ps-4"></div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Cột trái: Thông tin lịch hẹn hiện tại -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                <div class="card-header bg-light py-3 px-4 border-bottom">
+                    <span class="text-uppercase fw-bold text-muted" style="font-size:0.75rem; letter-spacing:0.05em;">
+                        <i class="fa-solid fa-file-lines me-1"></i>Lịch Hẹn Hiện Tại
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge font-monospace bg-light text-dark border px-2 py-1 fs-6">
+                            @Model.AppointmentCode
+                        </span>
+                        @switch (Model.CurrentStatus)
+                        {
+                            case "Pending":
+                                <span class="badge px-2 py-1" style="background:#fffbeb; color:#b45309; border:1px solid #fef3c7;">Chờ xác nhận</span>
+                                break;
+                            case "Confirmed":
+                                <span class="badge px-2 py-1" style="background:#f0fdfa; color:#0f766e; border:1px solid #ccfbf1;">Đã xác nhận</span>
+                                break;
+                            default:
+                                <span class="badge bg-light text-muted border px-2 py-1">@Model.CurrentStatus</span>
+                                break;
+                        }
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <div class="text-muted small mb-1 fw-semibold"><i class="fa-solid fa-user me-1 text-primary"></i>Bệnh nhân</div>
+                        <div class="fw-bold text-slate-900" style="font-size:0.95rem;">@Model.PatientName</div>
+                        <div class="text-muted small mt-1"><i class="fa-solid fa-phone me-1"></i>@(Model.PatientPhone ?? "Chưa có SĐT")</div>
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <div class="text-muted small mb-1 fw-semibold"><i class="fa-solid fa-user-doctor me-1 text-teal"></i>Bác sĩ hiện tại</div>
+                        <div class="fw-bold text-slate-900">@Model.CurrentDoctorName</div>
+                        <div class="text-muted small mt-1">
+                            <span class="badge bg-white text-secondary border me-1">@Model.CurrentSpecialtyName</span>
+                            @if (!string.IsNullOrWhiteSpace(Model.CurrentDoctorRoom))
+                            {
+                                <span class="badge bg-white text-secondary border">Phòng @Model.CurrentDoctorRoom</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <div class="text-muted small mb-1 fw-semibold"><i class="fa-solid fa-clock me-1 text-warning"></i>Thời gian khám hiện tại</div>
+                        <div class="fw-bold text-slate-900" style="font-variant-numeric:tabular-nums;">
+                            @Model.CurrentDate.ToString("dd/MM/yyyy")
+                        </div>
+                        <div class="fw-bold text-primary mt-1" style="font-variant-numeric:tabular-nums;">
+                            <i class="fa-regular fa-clock me-1"></i>@Model.CurrentTimeSlot
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ReasonForVisit))
+                    {
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="text-muted small mb-1 fw-semibold"><i class="fa-solid fa-notes-medical me-1"></i>Lý do khám</div>
+                            <div class="small text-secondary" style="white-space:pre-wrap;">@Model.ReasonForVisit</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Form chuyển đổi sang bác sĩ/thời gian mới -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="fw-bold mb-0 text-slate-900" style="font-size:0.95rem;">
+                            <i class="fa-solid fa-pen-to-square text-primary me-2"></i>Thiết Lập Thông Tin Chuyển Đổi
+                        </h6>
+                    </div>
+                    <span class="text-muted small">Tất cả mục có dấu <span class="text-danger">*</span> là bắt buộc</span>
+                </div>
+
+                <div class="card-body p-4">
+                    <form asp-action="TransferAppointment" method="post" id="transferForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="AppointmentId" />
+
+                        <!-- PHẦN 1: BÁC SĨ & CHUYÊN KHOA -->
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                                <span class="badge rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width:24px; height:24px; font-size:0.75rem;">1</span>
+                                <h6 class="fw-bold mb-0 text-slate-800" style="font-size:0.9rem;">Bác Sĩ & Chuyên Khoa Tiếp Nhận</h6>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="NewSpecialtyId" class="form-label fw-semibold small text-slate-700">
+                                        Chuyên khoa khám <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="NewSpecialtyId" class="form-select" id="specialtySelect" asp-items="Model.Specialties">
+                                        <option value="">-- Chọn chuyên khoa --</option>
+                                    </select>
+                                    <span asp-validation-for="NewSpecialtyId" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="NewDoctorId" class="form-label fw-semibold small text-slate-700">
+                                        Bác sĩ điều trị <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="NewDoctorId" class="form-select" id="doctorSelect" asp-items="Model.Doctors">
+                                        <option value="">-- Chọn bác sĩ --</option>
+                                    </select>
+                                    <span asp-validation-for="NewDoctorId" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PHẦN 2: NGÀY & KHUNG GIỜ -->
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                                <span class="badge rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width:24px; height:24px; font-size:0.75rem;">2</span>
+                                <h6 class="fw-bold mb-0 text-slate-800" style="font-size:0.9rem;">Ngày Khám & Khung Giờ Mới</h6>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="NewDate" class="form-label fw-semibold small text-slate-700">
+                                        Ngày khám mới <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted"><i class="fa-regular fa-calendar"></i></span>
+                                        <input asp-for="NewDate" type="date" class="form-control" id="dateInput" min="@minDate"
+                                               value="@Model.NewDate.ToString("yyyy-MM-dd")" />
+                                    </div>
+                                    <span asp-validation-for="NewDate" class="text-danger small"></span>
+                                    <div class="form-text small">Chỉ chọn ngày từ hôm nay trở đi.</div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label asp-for="NewTimeSlot" class="form-label fw-semibold small text-slate-700 mb-0">
+                                            Khung giờ khám mới <span class="text-danger">*</span>
+                                        </label>
+                                        <span id="slotStatus" class="badge bg-light text-muted border small fw-normal">Đang tải...</span>
+                                    </div>
+                                    <select asp-for="NewTimeSlot" class="form-select" id="slotSelect">
+                                        <option value="">-- Chọn khung giờ --</option>
+                                        @if (!string.IsNullOrWhiteSpace(Model.NewTimeSlot))
+                                        {
+                                            <option value="@Model.NewTimeSlot" selected="selected">@Model.NewTimeSlot (Đang chọn)</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="NewTimeSlot" class="text-danger small"></span>
+                                    <div class="form-text small">Hệ thống sẽ lọc tự động các khung giờ trống của bác sĩ.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PHẦN 3: LÝ DO CHUYỂN ĐỔI & THÔNG BÁO -->
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                                <span class="badge rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width:24px; height:24px; font-size:0.75rem;">3</span>
+                                <h6 class="fw-bold mb-0 text-slate-800" style="font-size:0.9rem;">Lý Do Chuyển Đổi & Tùy Chọn Thông Báo</h6>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="TransferReason" class="form-label fw-semibold small text-slate-700">
+                                    Lý do chuyển đổi lịch hẹn <span class="text-danger">*</span>
+                                </label>
+                                <textarea asp-for="TransferReason" class="form-control" rows="3"
+                                          placeholder="Nhập lý do cụ thể (VD: Bác sĩ bận việc đột xuất; Bệnh nhân yêu cầu đổi ngày khác; Chuyển bác sĩ cùng chuyên khoa...)"></textarea>
+                                <span asp-validation-for="TransferReason" class="text-danger small"></span>
+                            </div>
+
+                            <div class="p-3 bg-light rounded-3 border">
+                                <div class="fw-semibold small text-slate-800 mb-2">
+                                    <i class="fa-solid fa-bell text-warning me-1"></i>Tùy chọn gửi thông báo tự động
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" asp-for="NotifyPatient" id="notifyPatientCheck" />
+                                    <label class="form-check-label small" for="notifyPatientCheck">
+                                        Gửi thông báo cập nhật lịch khám đến tài khoản của <strong>Bệnh nhân (@Model.PatientName)</strong>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" asp-for="NotifyDoctors" id="notifyDoctorsCheck" />
+                                    <label class="form-check-label small" for="notifyDoctorsCheck">
+                                        Gửi thông báo điều chuyển đến <strong>Bác sĩ tiếp nhận</strong> và <strong>Bác sĩ ban đầu</strong>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- NÚT THAO TÁC -->
+                        <div class="d-flex gap-2 justify-content-end pt-3 border-top">
+                            <a asp-action="Appointments" class="btn btn-light px-4 fw-semibold border">
+                                Hủy bỏ
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                                <i class="fa-solid fa-arrows-rotate me-1"></i>Xác nhận chuyển đổi lịch
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const specialtySelect = document.getElementById('specialtySelect');
+            const doctorSelect = document.getElementById('doctorSelect');
+            const dateInput = document.getElementById('dateInput');
+            const slotSelect = document.getElementById('slotSelect');
+            const slotStatus = document.getElementById('slotStatus');
+            const currentAppointmentId = '@Model.AppointmentId';
+            const initialSlot = '@Model.NewTimeSlot';
+
+            // Khi thay đổi Chuyên khoa -> lấy danh sách Bác sĩ
+            specialtySelect.addEventListener('change', function () {
+                const specialtyId = this.value;
+                doctorSelect.innerHTML = '<option value="">-- Đang tải bác sĩ... --</option>';
+                slotSelect.innerHTML = '<option value="">-- Chọn khung giờ --</option>';
+                slotStatus.textContent = 'Chờ chọn bác sĩ';
+
+                if (!specialtyId) {
+                    doctorSelect.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+                    return;
+                }
+
+                fetch(`/Appointment/GetDoctorsBySpecialty?specialtyId=${specialtyId}`)
+                    .then(res => res.json())
+                    .then(doctors => {
+                        doctorSelect.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+                        if (doctors && doctors.length > 0) {
+                            doctors.forEach(d => {
+                                const opt = document.createElement('option');
+                                opt.value = d.id;
+                                opt.textContent = `${d.title || 'BS.'} ${d.name} (Phòng ${d.roomNumber || '01'})`;
+                                doctorSelect.appendChild(opt);
+                            });
+                        } else {
+                            doctorSelect.innerHTML = '<option value="">-- Không có bác sĩ nào --</option>';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Lỗi khi tải bác sĩ:', err);
+                        doctorSelect.innerHTML = '<option value="">-- Lỗi khi tải bác sĩ --</option>';
+                    });
+            });
+
+            // Khi thay đổi Bác sĩ hoặc Ngày -> lấy danh sách khung giờ khả dụng
+            function loadAvailableSlots() {
+                const doctorId = doctorSelect.value;
+                const date = dateInput.value;
+
+                if (!doctorId || !date) {
+                    slotSelect.innerHTML = '<option value="">-- Chọn khung giờ --</option>';
+                    slotStatus.textContent = 'Chưa chọn đủ thông tin';
+                    return;
+                }
+
+                slotStatus.textContent = 'Đang kiểm tra...';
+                slotSelect.innerHTML = '<option value="">-- Đang tải khung giờ... --</option>';
+
+                fetch(`/Receptionist/GetAvailableSlotsForTransfer?doctorId=${doctorId}&date=${date}&currentAppointmentId=${currentAppointmentId}`)
+                    .then(res => res.json())
+                    .then(slots => {
+                        slotSelect.innerHTML = '<option value="">-- Chọn khung giờ --</option>';
+                        if (slots && slots.length > 0) {
+                            slotStatus.className = 'badge bg-success-subtle text-success border small fw-normal';
+                            slotStatus.textContent = `${slots.length} khung giờ trống`;
+
+                            let matchedInitial = false;
+                            slots.forEach(s => {
+                                const opt = document.createElement('option');
+                                opt.value = s;
+                                opt.textContent = s;
+                                if (s === initialSlot && date === '@Model.NewDate.ToString("yyyy-MM-dd")') {
+                                    opt.selected = true;
+                                    matchedInitial = true;
+                                }
+                                slotSelect.appendChild(opt);
+                            });
+
+                            // Nếu initialSlot không nằm trong slots khả dụng (ví dụ slot đã bị quá hạn hoặc khác), nhưng là slot hiện tại đang hiển thị
+                            if (!matchedInitial && initialSlot && date === '@Model.NewDate.ToString("yyyy-MM-dd")') {
+                                const currentOpt = document.createElement('option');
+                                currentOpt.value = initialSlot;
+                                currentOpt.textContent = `${initialSlot} (Khung giờ hiện tại)`;
+                                currentOpt.selected = true;
+                                slotSelect.prepend(currentOpt);
+                            }
+                        } else {
+                            slotStatus.className = 'badge bg-danger-subtle text-danger border small fw-normal';
+                            slotStatus.textContent = 'Hết khung giờ trống';
+                            slotSelect.innerHTML = '<option value="">-- Bác sĩ đã kín lịch vào ngày này --</option>';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Lỗi khi tải khung giờ:', err);
+                        slotStatus.textContent = 'Lỗi kiểm tra';
+                        slotSelect.innerHTML = '<option value="">-- Lỗi khi tải khung giờ --</option>';
+                    });
+            }
+
+            doctorSelect.addEventListener('change', loadAvailableSlots);
+            dateInput.addEventListener('change', loadAvailableSlots);
+
+            // Load slots lần đầu nếu đã có bác sĩ và ngày
+            if (doctorSelect.value && dateInput.value) {
+                loadAvailableSlots();
+            }
+        });
+    </script>
+}
