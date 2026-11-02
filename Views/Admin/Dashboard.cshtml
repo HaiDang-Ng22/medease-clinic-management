@@ -1,13 +1,17 @@
-@model List<Healthy_System.Models.User>
+@model Healthy_System.Models.ViewModels.AdminDashboardViewModel
 @{
     ViewData["Title"] = "Bảng Điều Khiển Quản Trị";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
+<!-- Chart.js CDN cho US39 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Header & Quick Actions -->
 <div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div>
-        <h1 class="h4 fw-bold mb-1" style="color:#0f172a; letter-spacing:-0.02em;">Bảng Điều Khiển Quản Trị</h1>
-        <p class="text-muted small mb-0">Giám sát tổng thể tài nguyên hệ thống, phân quyền người dùng và nhân sự phòng khám</p>
+        <h1 class="h4 fw-bold mb-1" style="color:#0f172a; letter-spacing:-0.02em;">Bảng Điều Khiển Quản Trị & Analytics</h1>
+        <p class="text-muted small mb-0">Giám sát tổng thể tài nguyên hệ thống, phân quyền người dùng và chỉ số vận hành thời gian thực</p>
     </div>
     <div class="d-flex align-items-center gap-2">
         <a asp-action="Doctors" class="btn btn-sm btn-outline-secondary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#ffffff; border-color:#cbd5e1; color:#334155;">
@@ -21,13 +25,13 @@
     </div>
 </div>
 
-<!-- Authentic System Metrics (taste-skill app-screens §2.2) -->
+<!-- 1. CÁC CHỈ SỐ KPI TỔNG QUAN (US39 + US35) -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
         <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
             <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Tổng tài khoản hệ thống</div>
             <div class="d-flex align-items-baseline gap-2">
-                <span class="fs-3 fw-bold" style="color:#0f172a; font-variant-numeric:tabular-nums;">@ViewBag.TotalUsers</span>
+                <span class="fs-3 fw-bold" style="color:#0f172a; font-variant-numeric:tabular-nums;">@Model.TotalUsers</span>
                 <span class="small text-muted">users</span>
             </div>
             <div class="small text-muted mt-1" style="font-size:0.75rem;">Người dùng đã kích hoạt</div>
@@ -35,19 +39,9 @@
     </div>
     <div class="col-6 col-lg-3">
         <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
-            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Đội ngũ bác sĩ</div>
-            <div class="d-flex align-items-baseline gap-2">
-                <span class="fs-3 fw-bold" style="color:#0284c7; font-variant-numeric:tabular-nums;">@ViewBag.TotalDoctors</span>
-                <span class="small text-muted">bác sĩ</span>
-            </div>
-            <div class="small text-muted mt-1" style="font-size:0.75rem;">Phục vụ các chuyên khoa</div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
             <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Bệnh nhân đăng ký</div>
             <div class="d-flex align-items-baseline gap-2">
-                <span class="fs-3 fw-bold" style="color:#0f766e; font-variant-numeric:tabular-nums;">@ViewBag.TotalPatients</span>
+                <span class="fs-3 fw-bold" style="color:#0f766e; font-variant-numeric:tabular-nums;">@Model.TotalPatients</span>
                 <span class="small text-muted">hồ sơ</span>
             </div>
             <div class="small text-muted mt-1" style="font-size:0.75rem;">Có lịch sử khám chữa bệnh</div>
@@ -55,25 +49,140 @@
     </div>
     <div class="col-6 col-lg-3">
         <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
-            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Lịch hẹn & Dịch vụ</div>
+            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Ca khám hoàn thành</div>
             <div class="d-flex align-items-baseline gap-2">
-                <span class="fs-3 fw-bold" style="color:#475569; font-variant-numeric:tabular-nums;">@ViewBag.TotalAppointments</span>
-                <span class="small text-muted">lượt hẹn</span>
+                <span class="fs-3 fw-bold" style="color:#0284c7; font-variant-numeric:tabular-nums;">@Model.TotalCompletedAppointments</span>
+                <span class="small text-muted">ca</span>
             </div>
-            <div class="small text-muted mt-1" style="font-size:0.75rem;">@ViewBag.TotalEquipments thiết bị y tế hoạt động</div>
+            <div class="small text-muted mt-1" style="font-size:0.75rem;">Tỷ lệ hủy: <strong class="text-danger">@Model.CancellationRate%</strong></div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
+            <div class="text-muted small mb-1" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Tổng doanh thu viện phí</div>
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="fs-3 fw-bold" style="color:#10b981; font-variant-numeric:tabular-nums;">@Model.TotalRevenue.ToString("N0")</span>
+                <span class="small text-muted">VNĐ</span>
+            </div>
+            <div class="small text-muted mt-1" style="font-size:0.75rem;">Thanh toán thực tế thành công</div>
         </div>
     </div>
 </div>
 
-<!-- Main Table Card: Người Dùng & Phân Quyền -->
+<!-- 2. BIỂU ĐỒ ANALYTICS THỐNG KÊ (US39) -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="bg-white p-3 rounded-2 h-100" style="border:1px solid #e2e8f0;">
+            <div class="fw-bold mb-3" style="color:#0f172a; font-size:0.9375rem;">
+                <i class="fa-solid fa-chart-pie me-2 text-primary"></i>Phân Bổ Lượt Khám Theo Chuyên Khoa
+            </div>
+            <div style="height: 250px;" class="d-flex align-items-center justify-content-center">
+                <canvas id="specialtyChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="bg-white p-3 rounded-2 h-100" style="border:1px solid #e2e8f0;">
+            <div class="fw-bold mb-3" style="color:#0f172a; font-size:0.9375rem;">
+                <i class="fa-solid fa-chart-column me-2 text-success"></i>Top Bác Sĩ Khám Nhiều Nhất
+            </div>
+            <div style="height: 250px;">
+                <canvas id="doctorChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2.5. CẢNH BÁO TÌNH TRẠNG THIẾT BỊ BẢO TRÌ & THUỐC SẮP HẾT (US39) -->
+<div class="row g-3 mb-4">
+    <!-- Cảnh báo Thiết bị -->
+    <div class="col-lg-6">
+        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="fw-bold" style="color:#0f172a; font-size:0.9375rem;">
+                    <i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Thiết Bị Đang Bảo Trì
+                </div>
+                <span class="badge bg-warning text-dark">@Model.MaintenanceEquipments.Count thiết bị</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0" style="font-size:0.875rem;">
+                    <thead>
+                        <tr style="background:#f8fafc; color:#64748b; font-size:0.75rem; text-transform:uppercase;">
+                            <th>Tên thiết bị</th>
+                            <th>Mã Serial</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.MaintenanceEquipments != null && Model.MaintenanceEquipments.Any())
+                        {
+                            foreach (var eq in Model.MaintenanceEquipments)
+                            {
+                                <tr>
+                                    <td class="fw-semibold" style="color:#0f172a;">@eq.Name</td>
+                                    <td class="font-monospace small text-muted">@eq.SerialNumber</td>
+                                    <td><span class="badge px-2 py-1" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">@eq.Status</span></td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-3">Tất cả thiết bị đều hoạt động bình thường</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cảnh báo Thuốc -->
+    <div class="col-lg-6">
+        <div class="bg-white p-3 rounded-2" style="border:1px solid #e2e8f0;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="fw-bold" style="color:#0f172a; font-size:0.9375rem;">
+                    <i class="fa-solid fa-capsules text-danger me-2"></i>Thuốc Sắp Hết Tồn Kho / Hạn Dùng
+                </div>
+                <span class="badge bg-danger">@(Model.LowStockMedicines?.Count ?? 0) mặt hàng</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0" style="font-size:0.875rem;">
+                    <thead>
+                        <tr style="background:#f8fafc; color:#64748b; font-size:0.75rem; text-transform:uppercase;">
+                            <th>Tên thuốc</th>
+                            <th class="text-center">Số lượng còn</th>
+                            <th>Hạn sử dụng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.LowStockMedicines != null && Model.LowStockMedicines.Any())
+                        {
+                            foreach (var med in Model.LowStockMedicines)
+                            {
+                                <tr>
+                                    <td class="fw-semibold" style="color:#0f172a;">@med.Name</td>
+                                    <td class="text-center"><span class="badge bg-danger-subtle text-danger fw-bold">@med.QuantityLeft hộp</span></td>
+                                    <td class="small text-muted">@med.ExpiryDate</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. BẢNG DANH SÁCH NGƯỜI DÙNG & PHÂN QUYỀN VAI TRÒ (US35) -->
 <div class="bg-white rounded-2" style="border:1px solid #e2e8f0;">
     <!-- Toolbar -->
     <div class="p-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3" style="border-color:#e2e8f0 !important;">
         <div class="d-flex align-items-center gap-2">
             <span class="fw-bold" style="color:#0f172a; font-size:0.9375rem;">Danh Sách Người Dùng & Phân Quyền Vai Trò</span>
-            <span class="badge rounded-pill text-bg-light border" style="font-size:0.75rem;">@Model.Count tài khoản</span>
+            <span class="badge rounded-pill text-bg-light border" style="font-size:0.75rem;">@Model.Users.Count tài khoản</span>
         </div>
-        
+
         <!-- Search & Filter Controls -->
         <div class="d-flex align-items-center gap-2 w-100 w-md-auto">
             <div class="input-group input-group-sm" style="max-width:280px;">
@@ -113,7 +222,7 @@
                     var currentUserIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                     int.TryParse(currentUserIdStr, out int currentAdminId);
                 }
-                @foreach (var u in Model)
+                @foreach (var u in Model.Users)
                 {
                     var firstLetter = !string.IsNullOrEmpty(u.FullName) ? u.FullName.Substring(0, 1).ToUpper() : "U";
                     <tr class="user-row" data-search="@(u.FullName?.ToLower()) @(u.Email?.ToLower()) @(u.PhoneNumber)" data-role="@u.Role">
@@ -190,8 +299,14 @@
                                     <select name="newRole" class="form-select form-select-sm" style="font-size:0.75rem; height:28px; padding-top:2px; padding-bottom:2px; border-color:#cbd5e1; max-width:130px;">
                                         @foreach (var r in new[] { "Patient", "Receptionist", "LabTech", "Accountant" })
                                         {
-                                            if (r == u.Role) { <option value="@r" selected>@r</option> }
-                                            else { <option value="@r">@r</option> }
+                                            if (r == u.Role)
+                                            {
+                                                <option value="@r" selected>@r</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@r">@r</option>
+                                            }
                                         }
                                     </select>
                                     <button type="submit" class="btn btn-sm btn-outline-dark px-2 py-0 fw-semibold" style="height:28px; font-size:0.75rem; border-color:#cbd5e1;" title="Lưu phân quyền">
@@ -213,32 +328,60 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // 1. Script Lọc theo Tên/Email/SĐT và Vai trò (US35)
             const filterInput = document.getElementById('userFilterInput');
             const roleSelect = document.getElementById('roleFilterSelect');
-            if (!filterInput || !roleSelect) return;
+            if (filterInput && roleSelect) {
+                function applyFilter() {
+                    const term = filterInput.value.trim().toLowerCase();
+                    const selectedRole = roleSelect.value;
+                    const rows = document.querySelectorAll('.user-row');
 
-            function applyFilter() {
-                const term = filterInput.value.trim().toLowerCase();
-                const selectedRole = roleSelect.value;
-                const rows = document.querySelectorAll('.user-row');
+                    rows.forEach(row => {
+                        const searchData = row.getAttribute('data-search') || '';
+                        const role = row.getAttribute('data-role') || '';
 
-                rows.forEach(row => {
-                    const searchData = row.getAttribute('data-search') || '';
-                    const role = row.getAttribute('data-role') || '';
-                    
-                    const matchesSearch = !term || searchData.includes(term);
-                    const matchesRole = !selectedRole || role === selectedRole;
+                        const matchesSearch = !term || searchData.includes(term);
+                        const matchesRole = !selectedRole || role === selectedRole;
 
-                    if (matchesSearch && matchesRole) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
+                        if (matchesSearch && matchesRole) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                }
+
+                filterInput.addEventListener('input', applyFilter);
+                roleSelect.addEventListener('change', applyFilter);
             }
 
-            filterInput.addEventListener('input', applyFilter);
-            roleSelect.addEventListener('change', applyFilter);
+            // 2. Script Render Biểu đồ Chart.js (US39)
+            const specialtyLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SpecialtyNames));
+            const specialtyCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SpecialtyAppointmentCounts));
+            const doctorLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DoctorNames));
+            const doctorCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DoctorAppointmentCounts));
+
+            new Chart(document.getElementById('specialtyChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: specialtyLabels.length > 0 ? specialtyLabels : ['Chưa có dữ liệu'],
+                    datasets: [{
+                        data: specialtyCounts.length > 0 ? specialtyCounts : [1],
+                        backgroundColor: ['#0284c7', '#0d9488', '#8b5cf6', '#f59e0b', '#ec4899']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            new Chart(document.getElementById('doctorChart'), {
+                type: 'bar',
+                data: {
+                    labels: doctorLabels.length > 0 ? doctorLabels : ['Chưa có dữ liệu'],
+                    datasets: [{ label: 'Số ca khám', data: doctorCounts.length > 0 ? doctorCounts : [0], backgroundColor: '#10b981', borderRadius: 6 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
+            });
         });
     </script>
 }
