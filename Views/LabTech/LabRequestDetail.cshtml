@@ -1,0 +1,201 @@
+@model Healthy_System.Models.Appointment
+@{
+    ViewData["Title"] = $"Phiếu Yêu Cầu XN - {Model.AppointmentCode}";
+    Layout = "_LabTechLayout";
+    var labResult = ViewBag.LabResult as Healthy_System.Models.LabResult;
+    bool hasResult = labResult != null;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-2">
+            <i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách
+        </a>
+        <h4 class="fw-bold mb-1">
+            <i class="fa-solid fa-file-medical text-primary me-2"></i>Chi Tiết Phiếu Yêu Cầu Xét Nghiệm
+        </h4>
+        <p class="text-muted small mb-0">Mã phiếu: <strong class="text-primary">@Model.AppointmentCode</strong> &bull; Ngày hẹn: @Model.AppointmentDate.ToString("dd/MM/yyyy") (@Model.TimeSlot)</p>
+    </div>
+    <div>
+        <a asp-action="EnterResult" asp-route-id="@Model.Id" class="btn @(hasResult ? "btn-outline-primary" : "btn-primary")">
+            <i class="fa-solid @(hasResult ? "fa-pen" : "fa-flask-vial") me-1"></i>@(hasResult ? "Sửa kết quả xét nghiệm" : "Tiến hành nhập kết quả")
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Thông tin bệnh nhân & bác sĩ chỉ định -->
+    <div class="col-lg-5">
+        <!-- Thông tin bệnh nhân -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0 text-primary">
+                    <i class="fa-solid fa-user-injured me-2"></i>Thông Tin Bệnh Nhân
+                </h6>
+            </div>
+            <div class="card-body pt-0">
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item px-0 d-flex justify-content-between">
+                        <span class="text-muted">Họ và tên:</span>
+                        <strong class="text-dark">@Model.Patient?.FullName</strong>
+                    </li>
+                    <li class="list-group-item px-0 d-flex justify-content-between">
+                        <span class="text-muted">Số điện thoại:</span>
+                        <span>@(Model.Patient?.PhoneNumber ?? "Chưa cập nhật")</span>
+                    </li>
+                    <li class="list-group-item px-0 d-flex justify-content-between">
+                        <span class="text-muted">Giới tính:</span>
+                        <span>@(Model.Patient?.Gender ?? "Không rõ")</span>
+                    </li>
+                    <li class="list-group-item px-0 d-flex justify-content-between">
+                        <span class="text-muted">Ngày sinh / Tuổi:</span>
+                        <span>@(Model.Patient?.DateOfBirth.HasValue == true ? Model.Patient.DateOfBirth.Value.ToString("dd/MM/yyyy") : "Chưa có")</span>
+                    </li>
+                    <li class="list-group-item px-0 d-flex justify-content-between">
+                        <span class="text-muted">Địa chỉ:</span>
+                        <span>@(Model.Patient?.Address ?? "Chưa cập nhật")</span>
+                    </li>
+                    <li class="list-group-item px-0">
+                        <span class="text-muted d-block mb-1">Lý do khám / Triệu chứng:</span>
+                        <div class="p-2 bg-light rounded text-dark">
+                            @(string.IsNullOrWhiteSpace(Model.ReasonForVisit) ? "Không ghi nhận" : Model.ReasonForVisit)
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Thông tin bác sĩ chỉ định -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0 text-primary">
+                    <i class="fa-solid fa-user-doctor me-2"></i>Bác Sĩ Chỉ Định
+                </h6>
+            </div>
+            <div class="card-body pt-0">
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item px-0 d-flex justify-content-between">
+                        <span class="text-muted">Bác sĩ:</span>
+                        <strong class="text-dark">@Model.Doctor?.Title @Model.Doctor?.User?.FullName</strong>
+                    </li>
+                    <li class="list-group-item px-0 d-flex justify-content-between">
+                        <span class="text-muted">Chuyên khoa:</span>
+                        <span class="badge bg-light text-primary border">@Model.Specialty?.Name</span>
+                    </li>
+                    <li class="list-group-item px-0 d-flex justify-content-between">
+                        <span class="text-muted">Phòng khám:</span>
+                        <span>@(Model.Doctor?.RoomNumber ?? "Không rõ")</span>
+                    </li>
+                    @if (!string.IsNullOrWhiteSpace(Model.Diagnosis))
+                    {
+                        <li class="list-group-item px-0">
+                            <span class="text-muted d-block mb-1">Chẩn đoán sơ bộ:</span>
+                            <div class="p-2 bg-light rounded text-dark">
+                                @Model.Diagnosis
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nội dung yêu cầu xét nghiệm & Kết quả (nếu có) -->
+    <div class="col-lg-7">
+        <!-- Chi tiết yêu cầu xét nghiệm -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h6 class="fw-bold mb-0 text-danger">
+                    <i class="fa-solid fa-clipboard-question me-2"></i>Nội Dung Chỉ Định Xét Nghiệm (Từ Bác Sĩ)
+                </h6>
+            </div>
+            <div class="card-body pt-0">
+                <div class="mb-3">
+                    <label class="form-label text-danger small fw-semibold">Chỉ định xét nghiệm chi tiết:</label>
+                    <div class="p-3 bg-danger-subtle rounded border border-danger-subtle text-dark fw-semibold" style="white-space: pre-line; line-height: 1.6;">
+                        @Model.LabRequest
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.DoctorNotes))
+                {
+                    <div>
+                        <label class="form-label text-muted small fw-semibold">Ghi chú thêm của Bác sĩ:</label>
+                        <div class="p-2 bg-light rounded text-dark small">
+                            @Model.DoctorNotes
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Trạng thái kết quả -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 @(hasResult ? "text-success" : "text-warning")">
+                    <i class="fa-solid @(hasResult ? "fa-circle-check" : "fa-clock") me-2"></i>
+                    @(hasResult ? "Kết Quả Xét Nghiệm Đã Nhập" : "Trạng Thái: Chưa Có Kết Quả")
+                </h6>
+                @if (hasResult)
+                {
+                    <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">Đã hoàn thành</span>
+                }
+                else
+                {
+                    <span class="badge bg-warning-subtle text-warning px-3 py-1 rounded-pill">Đang chờ thực hiện</span>
+                }
+            </div>
+            <div class="card-body pt-0">
+                @if (hasResult && labResult != null)
+                {
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-semibold">Tóm tắt kết luận:</label>
+                        <div class="p-3 bg-light rounded fw-bold text-dark">
+                            @labResult.ResultSummary
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(labResult.DetailedResult))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-semibold">Kết quả chi tiết / Chỉ số:</label>
+                            <div class="p-3 bg-light rounded text-dark" style="white-space: pre-line;">
+                                @labResult.DetailedResult
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(labResult.ImageFilePath))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-semibold">File / Hình ảnh đính kèm:</label>
+                            <div>
+                                <a href="@labResult.ImageFilePath" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i class="fa-solid fa-paperclip me-1"></i>Xem file đính kèm (@labResult.ImageFileName)
+                                </a>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="text-muted small border-top pt-2 mt-3">
+                        <i class="fa-regular fa-clock me-1"></i>Cập nhật lúc: @labResult.ResultDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                        @if (labResult.LabTech != null)
+                        {
+                            <span> &bull; KTV: @labResult.LabTech.FullName</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa-solid fa-hourglass-start fa-2x mb-2 text-warning"></i>
+                        <p class="mb-3">Bệnh nhân này chưa có kết quả xét nghiệm được ghi nhận.</p>
+                        <a asp-action="EnterResult" asp-route-id="@Model.Id" class="btn btn-primary">
+                            <i class="fa-solid fa-flask-vial me-1"></i>Nhập kết quả xét nghiệm ngay
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,6 +1,6 @@
 @model List<Appointment>
 @{
-    ViewData["Title"] = "Danh Sach Phieu Yeu Cau Xet Nghiem";
+    ViewData["Title"] = "Danh Sách Phiếu Yêu Cầu Xét Nghiệm";
     Layout = "_LabTechLayout";
     var enteredIds = ViewBag.EnteredIds as List<int> ?? new List<int>();
     string? search = ViewBag.Search;
@@ -48,7 +48,7 @@
             </div>
             <div class="col-md-3">
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="fa-solid fa-magnifying-glass me-1"></i>Tìm
+                    <i class="fa-solid fa-magnifying-glass me-1"></i>Tìm kiếm
                 </button>
             </div>
         </form>
@@ -94,9 +94,13 @@
                                 </div>
                             </div>
                             <div class="col-md-2 text-end">
+                                <a asp-action="LabRequestDetail" asp-route-id="@appt.Id"
+                                   class="btn btn-outline-info btn-sm w-100 mb-2">
+                                    <i class="fa-solid fa-eye me-1"></i>Chi tiết phiếu
+                                </a>
                                 @if (isDone)
                                 {
-                                    <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill d-block mb-2">
+                                    <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill d-block mb-1">
                                         <i class="fa-solid fa-check me-1"></i>Đã nhập
                                     </span>
                                     <a asp-action="EnterResult" asp-route-id="@appt.Id"
