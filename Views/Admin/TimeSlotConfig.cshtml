@@ -1,0 +1,220 @@
+@model List<Healthy_System.Models.TimeSlotConfig>
+@{
+    ViewData["Title"] = "Cấu Hình Ca Làm Việc & Khung Giờ";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-clock text-primary me-2"></i>Cấu Hình Ca Làm Việc & Khung Giờ</h4>
+        <p class="text-muted small mb-0">Thiết lập các ca khám bệnh, thời lượng mỗi khung giờ và số bệnh nhân tối đa</p>
+    </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createShiftModal">
+        <i class="fa-solid fa-plus me-1"></i>Thêm ca làm việc mới
+    </button>
+</div>
+
+<!-- Thẻ thống kê tổng quan -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Tổng Số Ca Cấu Hình</div>
+                    <div class="fs-3 fw-bold text-primary mt-1">@Model.Count</div>
+                </div>
+                <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+                    <i class="fa-solid fa-business-time fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Đang Áp Dụng</div>
+                    <div class="fs-3 fw-bold text-success mt-1">@Model.Count(m => m.IsActive)</div>
+                </div>
+                <div class="bg-success-subtle text-success p-3 rounded-circle">
+                    <i class="fa-solid fa-circle-check fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-secondary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Đang Tạm Dừng</div>
+                    <div class="fs-3 fw-bold text-secondary mt-1">@Model.Count(m => !m.IsActive)</div>
+                </div>
+                <div class="bg-secondary-subtle text-secondary p-3 rounded-circle">
+                    <i class="fa-solid fa-circle-pause fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bảng danh sách cấu hình ca -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3">
+        <h6 class="fw-bold mb-0"><i class="fa-solid fa-list-check text-primary me-2"></i>Danh Sách Ca Làm Việc & Khung Giờ</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Tên ca làm việc</th>
+                        <th>Khung giờ làm việc</th>
+                        <th class="text-center">Thời lượng / slot</th>
+                        <th class="text-center">Tối đa BN / slot</th>
+                        <th>Ghi chú</th>
+                        <th class="text-center">Trạng thái</th>
+                        <th class="text-end" style="width: 180px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        int idx = 1;
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-muted">@idx</td>
+                                <td class="fw-bold text-dark">
+                                    <i class="fa-regular fa-clock text-primary me-1"></i>@item.ShiftName
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-primary border px-2 py-1 fs-6">
+                                        @item.StartTime - @item.EndTime
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-info-subtle text-info border">
+                                        @item.SlotDurationMinutes phút
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-warning-subtle text-warning border">
+                                        @item.MaxPatientsPerSlot người
+                                    </span>
+                                </td>
+                                <td class="text-muted small">
+                                    @(string.IsNullOrWhiteSpace(item.Notes) ? "—" : item.Notes)
+                                </td>
+                                <td class="text-center">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
+                                            <i class="fa-solid fa-circle-check me-1"></i>Đang hoạt động
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill">
+                                            <i class="fa-solid fa-circle-pause me-1"></i>Tạm dừng
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <form asp-action="ToggleTimeSlot" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm @(item.IsActive ? "btn-outline-warning" : "btn-outline-success")"
+                                                    title="@(item.IsActive ? "Tạm dừng ca này" : "Kích hoạt ca này")">
+                                                <i class="fa-solid @(item.IsActive ? "fa-pause" : "fa-play")"></i>
+                                            </button>
+                                        </form>
+
+                                        <form asp-action="DeleteTimeSlot" method="post" class="d-inline"
+                                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa cấu hình ca @item.ShiftName?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa ca">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            idx++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="fa-regular fa-calendar-xmark fa-3x mb-3 text-secondary"></i>
+                                <h6>Chưa có cấu hình ca làm việc nào</h6>
+                                <p class="small mb-0">Bấm nút "Thêm ca làm việc mới" ở trên để thiết lập ca khám.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm ca làm việc mới -->
+<div class="modal fade" id="createShiftModal" tabindex="-1" aria-labelledby="createShiftModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form asp-action="CreateTimeSlot" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="createShiftModalLabel">
+                        <i class="fa-solid fa-plus-circle me-1"></i>Thêm Ca Làm Việc Mới
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên ca làm việc <span class="text-danger">*</span></label>
+                        <input type="text" name="shiftName" class="form-control" placeholder="Ví dụ: Ca Sáng, Ca Chiều, Ca Tối..." required />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Giờ bắt đầu <span class="text-danger">*</span></label>
+                            <input type="time" name="startTime" class="form-control" value="08:00" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Giờ kết thúc <span class="text-danger">*</span></label>
+                            <input type="time" name="endTime" class="form-control" value="12:00" required />
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Thời lượng 1 slot (phút)</label>
+                            <input type="number" name="slotDurationMinutes" class="form-control" value="30" min="10" max="120" step="5" required />
+                            <div class="form-text small">Thời gian khám cho mỗi bệnh nhân</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">BN tối đa / slot</label>
+                            <input type="number" name="maxPatientsPerSlot" class="form-control" value="1" min="1" max="10" required />
+                            <div class="form-text small">Số người được đặt cùng khung giờ</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ghi chú thêm</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Ví dụ: Khám các ngày Thứ 2 đến Thứ 6..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-check me-1"></i>Lưu cấu hình
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
