@@ -1,4 +1,4 @@
-using Healthy_System.Models;
+﻿using Healthy_System.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Healthy_System.Data
@@ -19,6 +19,7 @@ namespace Healthy_System.Data
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
         public DbSet<LabResult> LabResults => Set<LabResult>(); // US29 & US30
+        public DbSet<TimeSlotConfig> TimeSlotConfigs => Set<TimeSlotConfig>(); // US40
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

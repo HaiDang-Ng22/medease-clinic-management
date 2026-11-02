@@ -437,5 +437,69 @@ namespace Healthy_System.Controllers
             }
             return RedirectToAction(nameof(Equipments));
         }
+
+        // ==========================================
+        // US-40: Cấu hình ca làm việc & khung giờ
+        // ==========================================
+        public IActionResult TimeSlotConfig()
+        {
+            var configs = _context.TimeSlotConfigs.OrderBy(t => t.StartTime).ToList();
+            return View(configs);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CreateTimeSlot(string shiftName, string startTime, string endTime,
+            int slotDurationMinutes, int maxPatientsPerSlot, string? notes)
+        {
+            if (string.IsNullOrWhiteSpace(shiftName) || string.IsNullOrWhiteSpace(startTime) || string.IsNullOrWhiteSpace(endTime))
+            {
+                TempData["ErrorMessage"] = "Vui lòng điền đầy đủ thông tin ca làm việc.";
+                return RedirectToAction(nameof(TimeSlotConfig));
+            }
+            var config = new TimeSlotConfig
+            {
+                ShiftName = shiftName.Trim(),
+                StartTime = startTime,
+                EndTime = endTime,
+                SlotDurationMinutes = slotDurationMinutes > 0 ? slotDurationMinutes : 30,
+                MaxPatientsPerSlot = maxPatientsPerSlot > 0 ? maxPatientsPerSlot : 1,
+                Notes = notes?.Trim(),
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.TimeSlotConfigs.Add(config);
+            _context.SaveChanges();
+            TempData["SuccessMessage"] = $"Đã thêm ca làm việc: {shiftName} ({startTime} - {endTime}) thành công!";
+            return RedirectToAction(nameof(TimeSlotConfig));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ToggleTimeSlot(int id)
+        {
+            var config = _context.TimeSlotConfigs.Find(id);
+            if (config == null) return NotFound();
+            config.IsActive = !config.IsActive;
+            config.UpdatedAt = DateTime.UtcNow;
+            _context.SaveChanges();
+            TempData["SuccessMessage"] = $"Đã {(config.IsActive ? "kích hoạt" : "vô hiệu hóa")} ca: {config.ShiftName}";
+            return RedirectToAction(nameof(TimeSlotConfig));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteTimeSlot(int id)
+        {
+            var config = _context.TimeSlotConfigs.Find(id);
+            if (config != null)
+            {
+                var shiftName = config.ShiftName;
+                _context.TimeSlotConfigs.Remove(config);
+                _context.SaveChanges();
+                TempData["SuccessMessage"] = $"Đã xóa ca: {shiftName}";
+            }
+            return RedirectToAction(nameof(TimeSlotConfig));
+        }
     }
 }

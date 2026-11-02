@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -534,6 +534,15 @@
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Trang Thiết Bị Y Tế">
                     <i class="fa-solid fa-microscope nav-icon"></i>
                     <span class="sidebar-nav-label">Thiết Bị Phòng Khám</span>
+                </a>
+
+                <div class="sidebar-section-label mt-3">Cấu hình lịch & Ca khám</div>
+
+                <a asp-controller="Admin" asp-action="TimeSlotConfig" 
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "TimeSlotConfig" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Cấu Hình Ca Khám">
+                    <i class="fa-solid fa-clock nav-icon"></i>
+                    <span class="sidebar-nav-label">Cấu Hình Ca Khám</span>
                 </a>
             </nav>
 
