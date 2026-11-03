@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BCrypt.Net;
@@ -51,6 +51,8 @@ namespace Healthy_System.Data
                 ("Rating",        "INTEGER"),
                 ("ReviewComment", "TEXT"),
                 ("ReviewedAt",    "TEXT"),
+                ("PaymentMethod", "TEXT"),
+                ("CashierName",   "TEXT"),
             };
 
             try
