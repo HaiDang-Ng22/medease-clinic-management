@@ -281,25 +281,25 @@
                 <a asp-controller="Accountant" asp-action="PatientCosts"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "PatientCosts" || ViewContext.RouteData.Values["Action"]?.ToString() == "Calculate" || ViewContext.RouteData.Values["Action"]?.ToString() == "CostSheet" ? "active" : "")">
                     <i class="fa-solid fa-calculator nav-icon"></i>
-                    <span>US31: Tính Chi Phí Khám</span>
+                    <span>Tính Chi Phí Khám</span>
                 </a>
 
                 <a asp-controller="Accountant" asp-action="Invoices"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Invoices" || ViewContext.RouteData.Values["Action"]?.ToString() == "ProcessPayment" || ViewContext.RouteData.Values["Action"]?.ToString() == "InvoiceReceipt" ? "active" : "")">
                     <i class="fa-solid fa-file-invoice-dollar nav-icon"></i>
-                    <span>US32: Hóa Đơn & Thu Phí</span>
+                    <span>Hóa Đơn & Thu Phí</span>
                 </a>
 
                 <a asp-controller="Payroll" asp-action="Index"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Payroll" ? "active" : "")">
                     <i class="fa-solid fa-money-bill-wave nav-icon"></i>
-                    <span>US33: Tính Lương Nhân Sự</span>
+                    <span>Tính Lương Nhân Sự</span>
                 </a>
 
                 <a asp-controller="Accountant" asp-action="RevenueReport"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "RevenueReport" ? "active" : "")">
                     <i class="fa-solid fa-chart-line nav-icon"></i>
-                    <span>US34: Báo Cáo Doanh Thu</span>
+                    <span>Báo Cáo Doanh Thu</span>
                 </a>
 
                 <div class="sidebar-section-label mt-3">Hệ thống & Bảng giá</div>

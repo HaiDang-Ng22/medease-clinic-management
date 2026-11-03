@@ -335,17 +335,19 @@
                                     <li><a class="dropdown-item py-2" asp-controller="Cashier" asp-action="Index"><i class="fa-solid fa-cash-register me-2 text-muted"></i>Quản lý thu ngân</a></li>
                                 }
                                 else if (User.IsInRole("Accountant"))
-                    {
-                        <a asp-controller="Accountant" asp-action="Dashboard" class="btn btn-sm btn-success rounded-1 px-3 py-2 fw-semibold" style="background:#047857; border-color:#047857;">
-                            <i class="fa-solid fa-calculator me-1"></i>Cổng Kế Toán
-                        </a>
-                    }
-                    else if (User.IsInRole("Admin"))
-                    {
-                        <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-sm btn-danger rounded-1 px-3 py-2 fw-semibold">
-                            <i class="fa-solid fa-shield-halved me-1"></i>Quản Trị
-                        </a>
-                    }
+                                {
+                                    <li><a class="dropdown-item py-2" asp-controller="Accountant" asp-action="Dashboard"><i class="fa-solid fa-chart-pie me-2 text-muted"></i>Bàn làm việc Kế toán</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Accountant" asp-action="PatientCosts"><i class="fa-solid fa-calculator me-2 text-muted"></i>Tính chi phí khám</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Accountant" asp-action="Invoices"><i class="fa-solid fa-file-invoice-dollar me-2 text-muted"></i>Hóa đơn & Thu viện phí</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Payroll" asp-action="Index"><i class="fa-solid fa-money-bill-wave me-2 text-muted"></i>Tính lương nhân sự</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Accountant" asp-action="RevenueReport"><i class="fa-solid fa-chart-line me-2 text-muted"></i>Báo cáo doanh thu</a></li>
+                                }
+                                else if (User.IsInRole("Admin"))
+                                {
+                                    <li><a class="dropdown-item py-2" asp-controller="Admin" asp-action="Dashboard"><i class="fa-solid fa-shield-halved me-2 text-muted"></i>Trang quản trị</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Accountant" asp-action="Dashboard"><i class="fa-solid fa-chart-pie me-2 text-muted"></i>Phân hệ Kế toán</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="Payroll" asp-action="Index"><i class="fa-solid fa-money-bill-wave me-2 text-muted"></i>Tính lương nhân sự</a></li>
+                                }
                                 else
                                 {
                                     <li><a class="dropdown-item py-2" asp-controller="Appointment" asp-action="MyAppointments"><i class="fa-solid fa-calendar-days me-2 text-muted"></i>Lịch hẹn của tôi</a></li>
