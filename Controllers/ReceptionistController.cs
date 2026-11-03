@@ -804,5 +804,64 @@ namespace Healthy_System.Controllers
             TempData["SuccessMessage"] = $"Đã xóa yêu cầu liên hệ của \"{contact.FullName}\"!";
             return RedirectToAction(nameof(ContactRequests), new { status = returnStatus, search = returnSearch });
         }
-}
+        // =====================================================================
+        // US20: Le tan gui thong bao cho benh nhan
+        // =====================================================================
+
+        [HttpGet]
+        public IActionResult SendNotification(int appointmentId)
+        {
+            var appointment = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor).ThenInclude(d => d.User)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == appointmentId);
+
+            if (appointment == null)
+            {
+                TempData["ErrorMessage"] = "Khong tim thay lich hen.";
+                return RedirectToAction(nameof(Appointments));
+            }
+
+            return View(appointment);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SendNotification(int appointmentId, string notificationType, string notificationTitle, string notificationMessage)
+        {
+            var appointment = _context.Appointments
+                .Include(a => a.Patient)
+                .FirstOrDefault(a => a.Id == appointmentId);
+
+            if (appointment == null)
+            {
+                TempData["ErrorMessage"] = "Khong tim thay lich hen.";
+                return RedirectToAction(nameof(Appointments));
+            }
+
+            if (string.IsNullOrWhiteSpace(notificationMessage))
+            {
+                TempData["ErrorMessage"] = "Vui long nhap noi dung thong bao.";
+                return RedirectToAction(nameof(SendNotification), new { appointmentId });
+            }
+
+            _context.Notifications.Add(new Notification
+            {
+                UserId = appointment.PatientId,
+                Title = string.IsNullOrWhiteSpace(notificationTitle)
+                    ? "Thong bao tu Le tan"
+                    : notificationTitle.Trim(),
+                Message = "[Le tan]: " + notificationMessage.Trim(),
+                Type = notificationType ?? "General",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = "Da gui thong bao thanh cong den benh nhan " + (appointment.Patient != null ? appointment.Patient.FullName : "") + "!";
+            return RedirectToAction(nameof(Appointments));
+        }
+    }
 }
