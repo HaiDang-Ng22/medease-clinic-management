@@ -1,16 +1,17 @@
+@using Healthy_System.Models
 @{
     Layout = "_ReceptionistLayout";
     ViewData["Title"] = "Đặt Lịch Khám Tại Quầy / Qua Điện Thoại";
     var specialties = ViewBag.Specialties as List<Specialty> ?? new List<Specialty>();
-    var doctors = ViewBag.Doctors as List<Doctor> ?? new List<Doctor>();
 }
 
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-9">
         <div class="card card-reception p-4 p-md-5">
-            <h3 class="fw-bold mb-4 pb-3 border-bottom text-success">
+            <h3 class="fw-bold mb-1 text-success">
                 <i class="fa-solid fa-user-plus me-2"></i>Tiếp Nhận Bệnh Nhân &amp; Đặt Lịch
             </h3>
+            <p class="text-muted mb-4">Điền thông tin bệnh nhân và chọn khung giờ còn trống để xác nhận lịch hẹn.</p>
 
             @if (TempData["SuccessMessage"] != null)
             {
@@ -19,12 +20,19 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-circle-xmark me-2"></i>@TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
 
-            <form asp-action="CreateAppointment" method="post">
+            <form asp-action="CreateAppointment" method="post" id="createApptForm">
                 @Html.AntiForgeryToken()
                 <div class="row g-3">
 
-                    @* US-15: Booking type selection *@
+                    @* Hình thức tiếp nhận *@
                     <div class="col-12">
                         <label class="form-label fw-bold">Hình thức tiếp nhận <span class="text-danger">*</span></label>
                         <div class="d-flex gap-3">
@@ -43,6 +51,7 @@
                         </div>
                     </div>
 
+                    @* Thông tin bệnh nhân *@
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Họ và tên bệnh nhân <span class="text-danger">*</span></label>
                         <input type="text" name="patientName" class="form-control" required placeholder="Nguyễn Văn A" value="@ViewBag.PrefillPatientName" />
@@ -53,9 +62,11 @@
                                pattern="[0-9]{9,11}" title="Số điện thoại gồm 9–11 chữ số" />
                         <div class="form-text text-muted">Nếu đã có tài khoản, thông tin sẽ được tìm theo SĐT.</div>
                     </div>
+
+                    @* Chuyên khoa *@
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Chuyên khoa khám <span class="text-danger">*</span></label>
-                        <select name="specialtyId" class="form-select" required>
+                        <select id="specialtySelect" name="specialtyId" class="form-select" required>
                             <option value="">-- Chọn chuyên khoa --</option>
                             @foreach (var s in specialties)
                             {
@@ -63,49 +74,218 @@
                             }
                         </select>
                     </div>
+
+                    @* Bác sĩ - lọc động theo khoa *@
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Bác sĩ khám <span class="text-danger">*</span></label>
-                        <select name="doctorId" class="form-select" required>
-                            <option value="">-- Chọn bác sĩ --</option>
-                            @foreach (var d in doctors)
-                            {
-                                <option value="@d.Id">@d.Title @d.User?.FullName (@d.RoomNumber)</option>
-                            }
+                        <select id="doctorSelect" name="doctorId" class="form-select" required disabled>
+                            <option value="">-- Chọn chuyên khoa trước --</option>
                         </select>
+                        <div id="doctorLoading" class="form-text text-muted d-none">
+                            <i class="fa-solid fa-spinner fa-spin me-1"></i>Đang tải danh sách bác sĩ...
+                        </div>
                     </div>
+
+                    @* Ngày khám *@
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Ngày khám <span class="text-danger">*</span></label>
-                        <input type="date" name="appointmentDate" class="form-control"
+                        <input type="date" id="appointmentDate" name="appointmentDate" class="form-control"
                                value="@DateTime.Today.ToString("yyyy-MM-dd")"
                                min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
                     </div>
+
+                    @* Khung giờ - lọc động theo bác sĩ + ngày *@
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Khung giờ khám <span class="text-danger">*</span></label>
-                        <select name="timeSlot" class="form-select" required>
-                            <option value="08:00 - 08:30">08:00 - 08:30</option>
-                            <option value="08:30 - 09:00">08:30 - 09:00</option>
-                            <option value="09:00 - 09:30">09:00 - 09:30</option>
-                            <option value="09:30 - 10:00">09:30 - 10:00</option>
-                            <option value="10:00 - 10:30">10:00 - 10:30</option>
-                            <option value="13:30 - 14:00">13:30 - 14:00</option>
-                            <option value="14:00 - 14:30">14:00 - 14:30</option>
-                            <option value="14:30 - 15:00">14:30 - 15:00</option>
-                            <option value="15:00 - 15:30">15:00 - 15:30</option>
+                        <select id="timeSlotSelect" name="timeSlot" class="form-select" required disabled>
+                            <option value="">-- Chọn bác sĩ và ngày trước --</option>
                         </select>
+                        <div id="slotLoading" class="form-text text-muted d-none">
+                            <i class="fa-solid fa-spinner fa-spin me-1"></i>Đang kiểm tra lịch bác sĩ...
+                        </div>
+                        <div id="slotHint" class="form-text d-none mt-1">
+                            <span class="text-success fw-semibold">✓ Còn trống</span>
+                            &nbsp;·&nbsp;
+                            <span class="text-danger fw-semibold">✗ Đã đặt</span>
+                            &nbsp;·&nbsp;
+                            <span class="text-muted">⊘ Đã qua</span>
+                        </div>
+                        <div id="noSlotsMsg" class="alert alert-warning mt-2 py-2 d-none">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                            <span id="noSlotsMsgText">Không còn khung giờ nào trống cho bác sĩ này trong ngày đã chọn.</span>
+                        </div>
                     </div>
+
+                    @* Lý do khám *@
                     <div class="col-12">
                         <label class="form-label fw-bold">Lý do khám / Triệu chứng</label>
                         <textarea name="reason" rows="2" class="form-control"
                                   placeholder="Mô tả triệu chứng bệnh nhân khai báo..."></textarea>
                     </div>
+
                     <div class="col-12 mt-4 text-end">
                         <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-4 me-2">Hủy</a>
-                        <button type="submit" class="btn btn-success rounded-pill px-5 fw-bold">
+                        <button type="submit" id="submitBtn" class="btn btn-success rounded-pill px-5 fw-bold" disabled>
                             <i class="fa-solid fa-calendar-check me-1"></i>Xác Nhận Đặt Lịch
                         </button>
                     </div>
+
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+(function () {
+    'use strict';
+
+    const specialtyEl   = document.getElementById('specialtySelect');
+    const doctorEl      = document.getElementById('doctorSelect');
+    const dateEl        = document.getElementById('appointmentDate');
+    const slotEl        = document.getElementById('timeSlotSelect');
+    const submitBtn     = document.getElementById('submitBtn');
+    const doctorLoading = document.getElementById('doctorLoading');
+    const slotLoading   = document.getElementById('slotLoading');
+    const slotHint      = document.getElementById('slotHint');
+    const noSlotsMsg    = document.getElementById('noSlotsMsg');
+    const noSlotsMsgTxt = document.getElementById('noSlotsMsgText');
+
+    /* ════════════════════════════════════════════════
+       1. Chọn chuyên khoa → load bác sĩ thuộc khoa
+    ════════════════════════════════════════════════ */
+    specialtyEl.addEventListener('change', function () {
+        const specId = this.value;
+        resetDoctor();
+        resetSlot();
+        if (!specId) return;
+
+        doctorLoading.classList.remove('d-none');
+        fetch('/Receptionist/GetDoctorsBySpecialty?specialtyId=' + specId)
+            .then(r => r.json())
+            .then(function (list) {
+                doctorEl.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+                if (list.length === 0) {
+                    doctorEl.innerHTML += '<option value="" disabled>Không có bác sĩ trong khoa này</option>';
+                } else {
+                    list.forEach(function (d) {
+                        var opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = d.name;
+                        doctorEl.appendChild(opt);
+                    });
+                    doctorEl.disabled = false;
+                }
+            })
+            .catch(function () {
+                doctorEl.innerHTML = '<option value="">Lỗi tải danh sách</option>';
+            })
+            .finally(function () {
+                doctorLoading.classList.add('d-none');
+            });
+    });
+
+    /* ════════════════════════════════════════════════
+       2. Chọn bác sĩ hoặc đổi ngày → load khung giờ
+    ════════════════════════════════════════════════ */
+    doctorEl.addEventListener('change', loadSlots);
+    dateEl.addEventListener('change', loadSlots);
+
+    function loadSlots() {
+        var doctorId = doctorEl.value;
+        var date     = dateEl.value;
+        resetSlot();
+        if (!doctorId || !date) return;
+
+        slotLoading.classList.remove('d-none');
+        fetch('/Receptionist/GetAvailableSlotsNew?doctorId=' + doctorId + '&date=' + date)
+            .then(r => r.json())
+            .then(function (slots) { renderSlots(slots, date); })
+            .catch(function () {
+                slotEl.innerHTML = '<option value="">Lỗi tải lịch, thử lại</option>';
+            })
+            .finally(function () {
+                slotLoading.classList.add('d-none');
+            });
+    }
+
+    /* ════════════════════════════════════════════════
+       3. Render danh sách slot với trạng thái
+    ════════════════════════════════════════════════ */
+    function renderSlots(slots, date) {
+        var today        = new Date().toISOString().split('T')[0];
+        var isToday      = (date === today);
+        var availableCount = 0;
+        var firstAvail   = null;
+
+        slotEl.innerHTML = '<option value="">-- Chọn khung giờ --</option>';
+
+        slots.forEach(function (s) {
+            var opt = document.createElement('option');
+            opt.value = s.slot;
+
+            if (s.past) {
+                opt.textContent = s.slot + '   ⊘ Đã qua';
+                opt.disabled = true;
+                opt.style.color = '#9ca3af';
+            } else if (s.booked) {
+                opt.textContent = s.slot + '   ✗ Đã có người đặt';
+                opt.disabled = true;
+                opt.style.color = '#dc2626';
+            } else {
+                opt.textContent = s.slot + '   ✓ Còn trống';
+                opt.style.color = '#16a34a';
+                opt.style.fontWeight = '600';
+                availableCount++;
+                if (!firstAvail) firstAvail = s.slot;
+            }
+            slotEl.appendChild(opt);
+        });
+
+        if (availableCount === 0) {
+            noSlotsMsgTxt.textContent = isToday
+                ? 'Tất cả khung giờ hôm nay đã đặt hoặc đã qua. Vui lòng chọn ngày khác.'
+                : 'Không còn khung giờ nào trống cho bác sĩ này trong ngày đã chọn.';
+            noSlotsMsg.classList.remove('d-none');
+            slotEl.disabled = true;
+            submitBtn.disabled = true;
+        } else {
+            noSlotsMsg.classList.add('d-none');
+            slotEl.disabled = false;
+            slotHint.classList.remove('d-none');
+            if (firstAvail) slotEl.value = firstAvail;
+            checkSubmit();
+        }
+    }
+
+    /* ════════════════════════════════════════════════
+       4. Kích hoạt nút Submit
+    ════════════════════════════════════════════════ */
+    slotEl.addEventListener('change', checkSubmit);
+
+    function checkSubmit() {
+        var selectedOpt = slotEl.options[slotEl.selectedIndex];
+        var slotOk = slotEl.value && selectedOpt && !selectedOpt.disabled;
+        submitBtn.disabled = !(doctorEl.value && dateEl.value && slotOk);
+    }
+
+    /* ════════════════════════════════════════════════
+       Helpers: reset về trạng thái ban đầu
+    ════════════════════════════════════════════════ */
+    function resetDoctor() {
+        doctorEl.innerHTML = '<option value="">-- Chọn chuyên khoa trước --</option>';
+        doctorEl.disabled = true;
+        submitBtn.disabled = true;
+    }
+
+    function resetSlot() {
+        slotEl.innerHTML = '<option value="">-- Chọn bác sĩ và ngày trước --</option>';
+        slotEl.disabled = true;
+        slotHint.classList.add('d-none');
+        noSlotsMsg.classList.add('d-none');
+        submitBtn.disabled = true;
+    }
+})();
+</script>
+}
