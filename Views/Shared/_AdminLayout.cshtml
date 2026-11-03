@@ -513,11 +513,18 @@
 
                 <div class="sidebar-section-label mt-3">Nhân sự & Chuyên môn</div>
 
+                <a asp-controller="Admin" asp-action="Specialties"
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Specialties" || ViewContext.RouteData.Values["Action"]?.ToString() == "CreateSpecialty" || ViewContext.RouteData.Values["Action"]?.ToString() == "EditSpecialty" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Danh Mục Chuyên Khoa">
+                    <i class="fa-solid fa-shapes nav-icon"></i>
+                    <span class="sidebar-nav-label">Danh Mục Chuyên Khoa</span>
+                </a>
+
                 <a asp-controller="Admin" asp-action="Doctors"
-                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Doctors" ? "active" : "")"
-                   data-bs-toggle="tooltip" data-bs-placement="right" title="Bác Sĩ & Chuyên Khoa">
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Doctors" || ViewContext.RouteData.Values["Action"]?.ToString() == "CreateDoctor" || ViewContext.RouteData.Values["Action"]?.ToString() == "EditDoctor" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Đội Ngũ Bác Sĩ">
                     <i class="fa-solid fa-user-doctor nav-icon"></i>
-                    <span class="sidebar-nav-label">Bác Sĩ & Chuyên Khoa</span>
+                    <span class="sidebar-nav-label">Đội Ngũ Bác Sĩ</span>
                 </a>
 
                 <a asp-controller="Payroll" asp-action="Index"
