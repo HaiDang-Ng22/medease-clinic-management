@@ -594,6 +594,62 @@ namespace Healthy_System.Controllers
             return RedirectToAction(nameof(Appointments));
         }
 
+
+        // API: Lấy bác sĩ theo chuyên khoa
+        [HttpGet]
+        public IActionResult GetDoctorsBySpecialty(int specialtyId)
+        {
+            var doctors = _context.Doctors
+                .Include(d => d.User)
+                .Where(d => d.SpecialtyId == specialtyId)
+                .Select(d => new {
+                    id = d.Id,
+                    name = (d.Title ?? "") + " " + (d.User != null ? d.User.FullName : "") + " (" + (d.RoomNumber ?? "") + ")"
+                })
+                .ToList();
+            return Json(doctors);
+        }
+
+        // API: Lấy khung giờ còn trống khi đặt lịch mới
+        [HttpGet]
+        public IActionResult GetAvailableSlotsNew(int doctorId, string date)
+        {
+            if (!DateTime.TryParse(date, out DateTime parsedDate))
+                return BadRequest("Ngày không hợp lệ");
+
+            var defaultSlots = new List<string>
+            {
+                "08:00 - 08:30", "08:30 - 09:00",
+                "09:00 - 09:30", "09:30 - 10:00",
+                "10:00 - 10:30", "10:30 - 11:00",
+                "13:30 - 14:00", "14:00 - 14:30",
+                "14:30 - 15:00", "15:00 - 15:30",
+                "15:30 - 16:00", "16:00 - 16:30"
+            };
+
+            var bookedSlots = _context.Appointments
+                .Where(a => a.DoctorId == doctorId && a.AppointmentDate.Date == parsedDate.Date && a.Status != "Cancelled")
+                .Select(a => a.TimeSlot)
+                .ToHashSet();
+
+            var unavailableSlots = _context.DoctorSchedules
+                .Where(s => s.DoctorId == doctorId && s.WorkDate.Date == parsedDate.Date && !s.IsAvailable)
+                .Select(s => s.TimeSlot)
+                .ToHashSet();
+
+            bookedSlots.UnionWith(unavailableSlots);
+
+            // Trả về trạng thái từng slot để FE hiển thị đã đặt / đã qua / còn trống
+            var result = defaultSlots.Select(s => new {
+                slot = s,
+                available = !bookedSlots.Contains(s) && !(parsedDate.Date == DateTime.Today && IsSlotInPast(s)),
+                booked = bookedSlots.Contains(s),
+                past = parsedDate.Date == DateTime.Today && IsSlotInPast(s)
+            }).ToList();
+
+            return Json(result);
+        }
+
         [HttpGet]
         public IActionResult GetAvailableSlotsForTransfer(int doctorId, string date, int? currentAppointmentId)
         {
