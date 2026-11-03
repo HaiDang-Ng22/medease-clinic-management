@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Healthy_System.Controllers
 {
-    [Authorize(Roles = "Cashier,Admin,Receptionist")]
+    [Authorize(Roles = "Accountant,Cashier,Admin,Receptionist")]
     public class CashierController : Controller
     {
         private readonly AppDbContext _context;
@@ -66,17 +66,20 @@ namespace Healthy_System.Controllers
 
             if (appt == null) return NotFound();
 
+            var cost = await _context.PatientCosts.FirstOrDefaultAsync(c => c.AppointmentId == id);
+            decimal total = cost != null ? cost.TotalAmount : (appt.Doctor?.ConsultationFee ?? 200000m);
+
             var vm = new PaymentViewModel
             {
                 AppointmentId = appt.Id,
                 AppointmentCode = appt.AppointmentCode,
-                InvoiceCode = appt.InvoiceCode ?? $"INV-{DateTime.Now:yyyyMMdd}-{appt.Id:D4}",
+                InvoiceCode = appt.InvoiceCode ?? $"HD-{DateTime.Now:yyyyMMdd}-{appt.Id:D4}",
                 PatientName = appt.Patient?.FullName ?? "Chưa rõ",
                 PatientPhone = appt.Patient?.PhoneNumber ?? "Chưa có SĐT",
                 DoctorName = $"{appt.Doctor?.Title} {appt.Doctor?.User?.FullName}".Trim(),
                 SpecialtyName = appt.Specialty?.Name ?? "",
-                ConsultationFee = appt.Doctor?.ConsultationFee ?? 0,
-                TotalAmount = appt.Doctor?.ConsultationFee ?? 0,
+                ConsultationFee = cost?.ConsultationFee ?? (appt.Doctor?.ConsultationFee ?? 200000m),
+                TotalAmount = total,
                 CashierName = User.Identity?.Name ?? "Thu ngân trực ca"
             };
 
@@ -94,10 +97,20 @@ namespace Healthy_System.Controllers
 
             if (appt == null) return NotFound();
 
+            var cost = await _context.PatientCosts.FirstOrDefaultAsync(c => c.AppointmentId == model.AppointmentId);
+            decimal total = model.TotalAmount > 0 ? model.TotalAmount : (cost != null ? cost.TotalAmount : (appt.Doctor?.ConsultationFee ?? 200000m));
+
             appt.PaymentStatus = "Paid";
             appt.PaymentMethod = model.PaymentMethod;
-            appt.PaidAmount = appt.Doctor?.ConsultationFee ?? 0;
+            appt.PaidAmount = total;
             appt.PaidAt = DateTime.UtcNow;
+
+            if (cost != null)
+            {
+                cost.PaymentStatus = "Paid";
+                cost.PaymentMethod = model.PaymentMethod;
+                cost.PaidAt = DateTime.UtcNow;
+            }
             appt.CashierName = User.Identity?.Name ?? "Thu ngân";
             appt.InvoiceCode = string.IsNullOrEmpty(appt.InvoiceCode) ? $"INV-{DateTime.Now:yyyyMMdd}-{appt.Id:D4}" : appt.InvoiceCode;
 

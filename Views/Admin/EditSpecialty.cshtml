@@ -1,0 +1,169 @@
+@model Healthy_System.Models.Specialty
+@{
+    ViewData["Title"] = "Chỉnh Sửa Chuyên Khoa";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="h4 fw-bold mb-1" style="color:#0f172a; letter-spacing:-0.02em;">Chỉnh Sửa Chuyên Khoa: @Model.Name</h1>
+        <p class="text-muted small mb-0">Cập nhật thông tin nhận diện, cấu hình đóng/mở và xem danh sách nhân sự phụ trách</p>
+    </div>
+    <a asp-action="Specialties" class="btn btn-sm btn-outline-secondary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" style="background:#ffffff; border-color:#cbd5e1; color:#334155;">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Quay lại Danh mục</span>
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="bg-white rounded-2 p-4 p-md-5" style="border: 1px solid #e2e8f0;">
+            <form asp-action="EditSpecialty" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 px-3 mb-4 rounded-2 small" style="background:#fef2f2; border-color:#fecaca; color:#991b1b;"></div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label asp-for="Name" class="form-label small fw-semibold text-slate-800" style="color:#334155;">
+                            Tên Chuyên Khoa <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Name" class="form-control" style="border-color:#cbd5e1; font-size:0.875rem;" required />
+                        <span asp-validation-for="Name" class="text-danger small mt-1 d-block"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Code" class="form-label small fw-semibold text-slate-800" style="color:#334155;">
+                            Mã Chuyên Khoa
+                        </label>
+                        <input asp-for="Code" class="form-control" style="border-color:#cbd5e1; font-size:0.875rem; text-transform:uppercase;" />
+                        <span asp-validation-for="Code" class="text-danger small mt-1 d-block"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Icon" class="form-label small fw-semibold text-slate-800" style="color:#334155;">
+                            Biểu tượng FontAwesome
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted border-end-0" id="iconPreview" style="border-color:#cbd5e1; width:44px; justify-content:center;">
+                                <i class="fa-solid @(string.IsNullOrWhiteSpace(Model.Icon) ? "fa-stethoscope" : Model.Icon)" id="previewIconTag"></i>
+                            </span>
+                            <input asp-for="Icon" id="iconInput" class="form-control border-start-0 ps-0" placeholder="fa-stethoscope" style="border-color:#cbd5e1; font-size:0.875rem;" />
+                        </div>
+                        <span asp-validation-for="Icon" class="text-danger small mt-1 d-block"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="ImageUrl" class="form-label small fw-semibold text-slate-800" style="color:#334155;">
+                            URL Hình Ảnh Minh Họa
+                        </label>
+                        <input asp-for="ImageUrl" class="form-control" placeholder="https://..." style="border-color:#cbd5e1; font-size:0.875rem;" />
+                        <span asp-validation-for="ImageUrl" class="text-danger small mt-1 d-block"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label small fw-semibold text-slate-800" style="color:#334155;">
+                        Mô Tả Chức Năng Khám Chữa Bệnh
+                    </label>
+                    <textarea asp-for="Description" rows="4" class="form-control" style="border-color:#cbd5e1; font-size:0.875rem;"></textarea>
+                    <span asp-validation-for="Description" class="text-danger small mt-1 d-block"></span>
+                </div>
+
+                <div class="mb-4 p-3 rounded-2" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                    <div class="form-check form-switch mb-0">
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch" />
+                        <label class="form-check-label fw-semibold text-dark small" for="isActiveSwitch">
+                            Trạng thái hoạt động (Đang mở tiếp nhận lịch khám)
+                        </label>
+                    </div>
+                    <div class="text-muted small mt-1 ps-4" style="font-size:0.75rem;">
+                        Tắt mục này tương đương với thao tác <b>Đóng chuyên khoa</b>. Bệnh nhân sẽ không thể chọn chuyên khoa này khi đặt lịch mới.
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top" style="border-color:#f1f5f9 !important;">
+                    <a asp-action="Specialties" class="btn btn-sm btn-outline-secondary px-3 py-2 fw-semibold" style="border-color:#cbd5e1; color:#334155;">
+                        Hủy Bỏ
+                    </a>
+                    <button type="submit" class="btn btn-sm btn-primary px-4 py-2 fw-semibold" style="background:#0284c7; border-color:#0284c7;">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Lưu Thay Đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Current Doctors & Linked Data -->
+    <div class="col-lg-4">
+        <div class="bg-white rounded-2 p-4 mb-4" style="border: 1px solid #e2e8f0;">
+            <div class="fw-bold mb-3 pb-2 border-bottom" style="color:#0f172a; font-size:0.9375rem; border-color:#e2e8f0 !important;">
+                <i class="fa-solid fa-user-doctor me-2 text-primary" style="color:#0284c7 !important;"></i>Bác Sĩ Thuộc Chuyên Khoa
+            </div>
+
+            @if (Model.Doctors != null && Model.Doctors.Any())
+            {
+                <div class="d-flex flex-column gap-2 mb-3">
+                    @foreach (var doc in Model.Doctors)
+                    {
+                        <div class="p-2 rounded-2 border d-flex justify-content-between align-items-center" style="background:#f8fafc; border-color:#e2e8f0 !important;">
+                            <div>
+                                <div class="fw-semibold text-dark small">@(doc.User?.FullName ?? "Bác sĩ #" + doc.Id)</div>
+                                <div class="text-muted small" style="font-size:0.75rem;">Phòng @doc.RoomNumber • @doc.ExperienceYears năm KN</div>
+                            </div>
+                            <span class="badge bg-light text-secondary border">@doc.Title</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="p-3 rounded-2 text-center text-muted mb-3" style="background:#f8fafc; border:1px dashed #cbd5e1; font-size:0.8125rem;">
+                    Chưa có bác sĩ nào được phân bổ vào chuyên khoa này.
+                </div>
+            }
+
+            <a asp-action="Specialties" class="btn btn-sm btn-outline-primary w-100 fw-semibold" style="font-size:0.8125rem;">
+                <i class="fa-solid fa-arrows-split-up-and-left me-1"></i>Vào phân bổ bác sĩ
+            </a>
+        </div>
+
+        <div class="bg-white rounded-2 p-4" style="border: 1px solid #e2e8f0;">
+            <div class="fw-bold mb-3 pb-2 border-bottom" style="color:#0f172a; font-size:0.9375rem; border-color:#e2e8f0 !important;">
+                <i class="fa-solid fa-database me-2 text-teal" style="color:#0f766e !important;"></i>Dữ Liệu Liên Quan
+            </div>
+            <ul class="list-unstyled mb-0 small" style="font-size:0.8125rem;">
+                <li class="d-flex justify-content-between py-2 border-bottom" style="border-color:#f1f5f9 !important;">
+                    <span class="text-muted">Mã ID hệ thống:</span>
+                    <span class="fw-bold font-monospace">#@Model.Id</span>
+                </li>
+                <li class="d-flex justify-content-between py-2 border-bottom" style="border-color:#f1f5f9 !important;">
+                    <span class="text-muted">Số dịch vụ y tế:</span>
+                    <span class="fw-semibold">@(Model.Services?.Count ?? 0) dịch vụ</span>
+                </li>
+                <li class="d-flex justify-content-between py-2">
+                    <span class="text-muted">Trạng thái tiếp nhận:</span>
+                    <span class="fw-bold @(Model.IsActive ? "text-success" : "text-secondary")">
+                        @(Model.IsActive ? "Đang mở khám" : "Tạm đóng")
+                    </span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const iconInput = document.getElementById('iconInput');
+        const previewIconTag = document.getElementById('previewIconTag');
+
+        if (iconInput && previewIconTag) {
+            iconInput.addEventListener('input', function() {
+                previewIconTag.className = 'fa-solid ' + this.value.trim();
+            });
+        }
+    </script>
+}

@@ -1,0 +1,209 @@
+@model List<Healthy_System.Models.Appointment>
+@{
+    Layout = "_AccountantLayout";
+    ViewData["Title"] = "Bàn Làm Việc Kế Toán";
+    var costs = ViewBag.Costs as Dictionary<int, Healthy_System.Models.PatientCost> ?? new();
+    decimal totalRevenue = ViewBag.TotalRevenue != null ? (decimal)ViewBag.TotalRevenue : 0;
+    int totalCompleted = ViewBag.TotalCompleted != null ? (int)ViewBag.TotalCompleted : 0;
+    int totalCalculated = ViewBag.TotalCalculated != null ? (int)ViewBag.TotalCalculated : 0;
+    int totalPaid = ViewBag.TotalPaid != null ? (int)ViewBag.TotalPaid : 0;
+    int uncalculatedCount = Math.Max(0, totalCompleted - totalCalculated - totalPaid);
+}
+
+<div class="container-fluid px-0">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h4 class="fw-bold mb-1 text-slate-900" style="color:#0f172a;">
+                <i class="fa-solid fa-chart-pie text-success me-2"></i>Bàn Làm Việc Kế Toán Viện Phí
+            </h4>
+            <div class="text-muted small">Tính toán chi phí khám bệnh từng bệnh nhân (dịch vụ, thuốc, xét nghiệm)</div>
+        </div>
+        <div>
+            <a asp-action="PatientCosts" class="btn btn-sm btn-primary px-3 py-2 fw-semibold" style="background:#059669; border-color:#059669;">
+                <i class="fa-solid fa-list-check me-1"></i>Xem tất cả ca khám bệnh
+            </a>
+        </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold">Tổng Ca Đã Khám</span>
+                    <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center" style="width:38px; height:38px;">
+                        <i class="fa-solid fa-hospital-user"></i>
+                    </div>
+                </div>
+                <div class="fs-3 fw-bold text-slate-900" style="font-variant-numeric:tabular-nums;">@totalCompleted</div>
+                <div class="small text-muted mt-1">Đã hoàn thành chẩn đoán</div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold">Chưa Lập Chi Phí</span>
+                    <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center" style="width:38px; height:38px;">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                </div>
+                <div class="fs-3 fw-bold text-warning" style="font-variant-numeric:tabular-nums;">@uncalculatedCount</div>
+                <div class="small text-muted mt-1">Cần tính chi phí cho bệnh nhân</div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold">Đã Lập Bảng Phí</span>
+                    <div class="rounded-circle bg-info bg-opacity-10 text-info d-flex align-items-center justify-content-center" style="width:38px; height:38px;">
+                        <i class="fa-solid fa-file-invoice"></i>
+                    </div>
+                </div>
+                <div class="fs-3 fw-bold text-info" style="font-variant-numeric:tabular-nums;">@totalCalculated</div>
+                <div class="small text-muted mt-1">Chờ bệnh nhân thanh toán</div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small fw-semibold">Doanh Thu Đã Thu</span>
+                    <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center" style="width:38px; height:38px;">
+                        <i class="fa-solid fa-money-bill-wave"></i>
+                    </div>
+                </div>
+                <div class="fs-4 fw-bold text-success" style="font-variant-numeric:tabular-nums;">@totalRevenue.ToString("N0") đ</div>
+                <div class="small text-muted mt-1">@totalPaid ca đã thanh toán hoàn tất</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Completed Appointments Table -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+            <div>
+                <h6 class="fw-bold mb-0 text-slate-900" style="font-size:0.95rem;">
+                    <i class="fa-solid fa-clipboard-check text-success me-2"></i>Ca Khám Mới Hoàn Thành Cần Xử Lý Chi Phí
+                </h6>
+            </div>
+            <span class="text-muted small">Cập nhật theo thời gian thực</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size:0.875rem;">
+                <thead class="bg-light text-muted" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">
+                    <tr>
+                        <th class="ps-4 py-2" style="width:120px;">Mã hẹn</th>
+                        <th class="py-2">Bệnh nhân</th>
+                        <th class="py-2">Bác sĩ phụ trách</th>
+                        <th class="py-2" style="width:110px;">Ngày khám</th>
+                        <th class="py-2 text-end" style="width:140px;">Tổng chi phí</th>
+                        <th class="py-2 text-center" style="width:140px;">Trạng thái phí</th>
+                        <th class="pe-4 py-2 text-end" style="width:160px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var appt in Model)
+                        {
+                            var hasCost = costs.TryGetValue(appt.Id, out var cost);
+                            var patientName = appt.Patient?.FullName ?? "Chưa rõ";
+                            var firstLetter = !string.IsNullOrEmpty(patientName) ? patientName.Substring(0, 1).ToUpper() : "P";
+                            <tr>
+                                <td class="ps-4 py-3">
+                                    <span class="badge font-monospace bg-light text-dark border px-2 py-1">@appt.AppointmentCode</span>
+                                </td>
+                                <td class="py-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="width:28px; height:28px; border-radius:6px; background:#ecfdf5; color:#065f46; font-weight:700; font-size:0.75rem; display:flex; align-items:center; justify-content:center; border:1px solid #a7f3d0; flex-shrink:0;">
+                                            @firstLetter
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold text-slate-900" style="color:#0f172a;">@patientName</div>
+                                            <small class="text-muted" style="font-size:0.75rem;">@(appt.Patient?.PhoneNumber ?? "—")</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <span class="text-slate-800">@(appt.Doctor?.Title ?? "BS.") @(appt.Doctor?.User?.FullName ?? "Chưa rõ")</span>
+                                    <small class="d-block text-muted" style="font-size:0.75rem;">@appt.Specialty?.Name</small>
+                                </td>
+                                <td class="py-3 text-muted" style="font-variant-numeric:tabular-nums;">
+                                    @appt.AppointmentDate.ToString("dd/MM/yyyy")
+                                </td>
+                                <td class="py-3 text-end fw-bold" style="font-variant-numeric:tabular-nums;">
+                                    @if (hasCost && cost != null)
+                                    {
+                                        <span class="text-slate-900">@cost.TotalAmount.ToString("N0") đ</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted fw-normal fst-italic">Chưa tính</span>
+                                    }
+                                </td>
+                                <td class="py-3 text-center">
+                                    @if (hasCost && cost != null)
+                                    {
+                                        if (cost.PaymentStatus == "Paid")
+                                        {
+                                            <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill fw-semibold">
+                                                <i class="fa-solid fa-check me-1"></i>Đã thanh toán
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning-subtle text-dark px-2 py-1 rounded-pill fw-semibold">
+                                                <i class="fa-solid fa-clock me-1"></i>Chờ thanh toán
+                                            </span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill fw-normal">
+                                            Chưa tính phí
+                                        </span>
+                                    }
+                                </td>
+                                <td class="pe-4 py-3 text-end">
+                                    @if (!hasCost)
+                                    {
+                                        <a asp-action="Calculate" asp-route-id="@appt.Id"
+                                           class="btn btn-sm btn-primary px-3 py-1 fw-semibold rounded-pill" style="background:#059669; border-color:#059669; font-size:0.785rem;">
+                                            <i class="fa-solid fa-calculator me-1"></i>Tính phí
+                                        </a>
+                                    }
+                                    else if (cost != null)
+                                    {
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            <a asp-action="CostSheet" asp-route-id="@cost.Id"
+                                               class="btn btn-sm btn-outline-success px-2 py-1 fw-semibold rounded-pill" style="font-size:0.75rem;" title="Xem bảng chi phí">
+                                                <i class="fa-solid fa-file-lines me-1"></i>Bảng phí
+                                            </a>
+                                            <a asp-action="Calculate" asp-route-id="@appt.Id"
+                                               class="btn btn-sm btn-outline-secondary px-2 py-1 fw-semibold rounded-pill" style="font-size:0.75rem;" title="Sửa chi phí">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </a>
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fa-regular fa-folder-open fs-2 mb-2 d-block opacity-50"></i>
+                                <div>Chưa có ca khám hoàn thành nào cần xử lý chi phí</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

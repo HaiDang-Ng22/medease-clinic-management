@@ -778,5 +778,285 @@ namespace Healthy_System.Controllers
 
             return View(logs);
         }
-    }
+    
+        // =====================================================================
+        // US36: Quản lý danh mục chuyên khoa và phân bổ bác sĩ
+        // =====================================================================
+        public IActionResult Specialties(string? search, string? status)
+        {
+            var query = _context.Specialties
+                .Include(s => s.Doctors)
+                    .ThenInclude(d => d.User)
+                .Include(s => s.Services)
+                .Include(s => s.Appointments)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var sTerm = search.Trim().ToLower();
+                query = query.Where(s => s.Name.ToLower().Contains(sTerm) || (s.Code != null && s.Code.ToLower().Contains(sTerm)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                if (status == "active") query = query.Where(s => s.IsActive);
+                else if (status == "closed") query = query.Where(s => !s.IsActive);
+            }
+
+            var list = query.OrderByDescending(s => s.IsActive).ThenBy(s => s.Name).ToList();
+
+            var allSpecialties = _context.Specialties.ToList();
+            ViewBag.TotalSpecialties = allSpecialties.Count;
+            ViewBag.ActiveSpecialties = allSpecialties.Count(s => s.IsActive);
+            ViewBag.ClosedSpecialties = allSpecialties.Count(s => !s.IsActive);
+            ViewBag.TotalDoctorsAllocated = _context.Doctors.Count(d => d.SpecialtyId > 0);
+
+            // Danh sách toàn bộ bác sĩ kèm chuyên khoa hiện tại để phục vụ modal phân bổ nhanh
+            ViewBag.AllDoctors = _context.Doctors
+                .Include(d => d.User)
+                .Include(d => d.Specialty)
+                .OrderBy(d => d.User != null ? d.User.FullName : "")
+                .ToList();
+
+            ViewBag.Search = search;
+            ViewBag.Status = status ?? "all";
+
+            return View(list);
+        }
+
+        [HttpGet]
+        public IActionResult CreateSpecialty()
+        {
+            return View(new Specialty { IsActive = true, Icon = "fa-stethoscope" });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CreateSpecialty(Specialty model)
+        {
+            if (string.IsNullOrWhiteSpace(model.Name))
+            {
+                ModelState.AddModelError("Name", "Tên chuyên khoa không được để trống.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Code))
+            {
+                model.Code = "CK-" + (DateTime.UtcNow.Ticks % 10000).ToString("D4");
+            }
+            else
+            {
+                model.Code = model.Code.Trim().ToUpper();
+                if (_context.Specialties.Any(s => s.Code.ToUpper() == model.Code))
+                {
+                    ModelState.AddModelError("Code", $"Mã chuyên khoa '{model.Code}' đã tồn tại trong hệ thống.");
+                }
+            }
+
+            if (_context.Specialties.Any(s => s.Name.ToLower() == model.Name.Trim().ToLower()))
+            {
+                ModelState.AddModelError("Name", $"Tên chuyên khoa '{model.Name}' đã tồn tại.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                model.Name = model.Name.Trim();
+                model.Description = model.Description?.Trim() ?? string.Empty;
+                model.Icon = string.IsNullOrWhiteSpace(model.Icon) ? "fa-stethoscope" : model.Icon.Trim();
+
+                _context.Specialties.Add(model);
+                _context.SaveChanges();
+
+                RecordAudit("Create", "Specialty", model.Id.ToString(), $"Thêm mới chuyên khoa: {model.Name} (Mã: {model.Code})");
+
+                TempData["SuccessMessage"] = $"Đã thêm mới chuyên khoa '{model.Name}' thành công!";
+                return RedirectToAction(nameof(Specialties));
+            }
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult EditSpecialty(int id)
+        {
+            var specialty = _context.Specialties
+                .Include(s => s.Doctors).ThenInclude(d => d.User)
+                .Include(s => s.Services)
+                .FirstOrDefault(s => s.Id == id);
+
+            if (specialty == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy chuyên khoa yêu cầu.";
+                return RedirectToAction(nameof(Specialties));
+            }
+
+            return View(specialty);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditSpecialty(int id, Specialty model)
+        {
+            var existing = _context.Specialties.Find(id);
+            if (existing == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy chuyên khoa yêu cầu.";
+                return RedirectToAction(nameof(Specialties));
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Name))
+            {
+                ModelState.AddModelError("Name", "Tên chuyên khoa không được để trống.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.Code))
+            {
+                var cleanCode = model.Code.Trim().ToUpper();
+                if (_context.Specialties.Any(s => s.Id != id && s.Code.ToUpper() == cleanCode))
+                {
+                    ModelState.AddModelError("Code", $"Mã chuyên khoa '{cleanCode}' đã được sử dụng bởi chuyên khoa khác.");
+                }
+                existing.Code = cleanCode;
+            }
+
+            if (_context.Specialties.Any(s => s.Id != id && s.Name.ToLower() == model.Name.Trim().ToLower()))
+            {
+                ModelState.AddModelError("Name", $"Tên chuyên khoa '{model.Name}' đã tồn tại.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                existing.Name = model.Name.Trim();
+                existing.Description = model.Description?.Trim() ?? string.Empty;
+                existing.Icon = string.IsNullOrWhiteSpace(model.Icon) ? "fa-stethoscope" : model.Icon.Trim();
+                existing.ImageUrl = model.ImageUrl?.Trim();
+                existing.IsActive = model.IsActive;
+
+                _context.SaveChanges();
+
+                RecordAudit("Update", "Specialty", existing.Id.ToString(), $"Cập nhật chuyên khoa {existing.Name}: Trạng thái {(existing.IsActive ? "Hoạt động" : "Tạm đóng")}");
+
+                TempData["SuccessMessage"] = $"Đã cập nhật thông tin chuyên khoa '{existing.Name}' thành công!";
+                return RedirectToAction(nameof(Specialties));
+            }
+
+            model.Doctors = _context.Doctors.Include(d => d.User).Where(d => d.SpecialtyId == id).ToList();
+            model.Services = _context.Services.Where(s => s.SpecialtyId == id).ToList();
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ToggleSpecialtyStatus(int id)
+        {
+            var specialty = _context.Specialties.Find(id);
+            if (specialty == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy chuyên khoa.";
+                return RedirectToAction(nameof(Specialties));
+            }
+
+            specialty.IsActive = !specialty.IsActive;
+            _context.SaveChanges();
+
+            var statusText = specialty.IsActive ? "Mở hoạt động" : "Tạm đóng";
+            var actionDetail = specialty.IsActive 
+                ? $"Đã mở lại hoạt động cho chuyên khoa '{specialty.Name}'. Bệnh nhân có thể tiếp tục đặt lịch khám trực tuyến."
+                : $"Đã tạm đóng chuyên khoa '{specialty.Name}'. Hệ thống tạm ngưng nhận lịch đặt mới cho chuyên khoa này.";
+
+            RecordAudit("Update", "Specialty", specialty.Id.ToString(), $"{statusText} chuyên khoa {specialty.Name}");
+
+            TempData["SuccessMessage"] = actionDetail;
+            return RedirectToAction(nameof(Specialties));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteSpecialty(int id)
+        {
+            var specialty = _context.Specialties
+                .Include(s => s.Doctors).ThenInclude(d => d.User)
+                .Include(s => s.Appointments)
+                .Include(s => s.Services)
+                .FirstOrDefault(s => s.Id == id);
+
+            if (specialty == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy chuyên khoa cần xóa.";
+                return RedirectToAction(nameof(Specialties));
+            }
+
+            if (specialty.Doctors.Any())
+            {
+                TempData["ErrorMessage"] = $"Không thể xóa chuyên khoa '{specialty.Name}' vì đang có {specialty.Doctors.Count} bác sĩ phụ trách. Hãy điều chuyển bác sĩ sang chuyên khoa khác trước hoặc dùng tính năng 'Đóng chuyên khoa'.";
+                return RedirectToAction(nameof(Specialties));
+            }
+
+            if (specialty.Appointments.Any())
+            {
+                TempData["ErrorMessage"] = $"Không thể xóa chuyên khoa '{specialty.Name}' vì đã có {specialty.Appointments.Count} ca khám trong lịch sử. Vui lòng chuyển trạng thái sang 'Đóng chuyên khoa' để đảm bảo toàn vẹn hồ sơ bệnh án.";
+                return RedirectToAction(nameof(Specialties));
+            }
+
+            if (specialty.Services.Any())
+            {
+                TempData["ErrorMessage"] = $"Không thể xóa chuyên khoa '{specialty.Name}' vì đang có {specialty.Services.Count} dịch vụ trực thuộc. Vui lòng điều chuyển dịch vụ trước.";
+                return RedirectToAction(nameof(Specialties));
+            }
+
+            _context.Specialties.Remove(specialty);
+            _context.SaveChanges();
+
+            RecordAudit("Delete", "Specialty", id.ToString(), $"Xóa vĩnh viễn chuyên khoa: {specialty.Name}");
+
+            TempData["SuccessMessage"] = $"Đã xóa thành công chuyên khoa '{specialty.Name}'.";
+            return RedirectToAction(nameof(Specialties));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AllocateDoctor(int doctorId, int targetSpecialtyId)
+        {
+            var doctor = _context.Doctors.Include(d => d.User).Include(d => d.Specialty).FirstOrDefault(d => d.Id == doctorId);
+            if (doctor == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy thông tin bác sĩ.";
+                return RedirectToAction(nameof(Specialties));
+            }
+
+            var targetSpecialty = _context.Specialties.Find(targetSpecialtyId);
+            if (targetSpecialty == null)
+            {
+                TempData["ErrorMessage"] = "Chuyên khoa mục tiêu không tồn tại.";
+                return RedirectToAction(nameof(Specialties));
+            }
+
+            var oldSpecialtyName = doctor.Specialty?.Name ?? "Chưa phân bổ";
+            doctor.SpecialtyId = targetSpecialtyId;
+            _context.SaveChanges();
+
+            RecordAudit("Update", "DoctorAllocation", doctor.Id.ToString(), 
+                $"Điều chuyển bác sĩ {doctor.User?.FullName} từ chuyên khoa '{oldSpecialtyName}' sang '{targetSpecialty.Name}'");
+
+            TempData["SuccessMessage"] = $"Đã điều chuyển bác sĩ {doctor.User?.FullName} sang chuyên khoa '{targetSpecialty.Name}' thành công!";
+            return RedirectToAction(nameof(Specialties));
+        }
+
+        private void RecordAudit(string action, string entityName, string entityId, string description)
+        {
+            var actorIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int? actorId = int.TryParse(actorIdStr, out var uid) ? uid : null;
+            _context.AuditLogs.Add(new AuditLog
+            {
+                UserId = actorId,
+                ActorName = User.Identity?.Name ?? "Admin",
+                ActorRole = "Admin",
+                Action = action,
+                EntityName = entityName,
+                EntityId = entityId,
+                Description = description,
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+        }
+}
 }
