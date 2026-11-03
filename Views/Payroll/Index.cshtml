@@ -1,0 +1,98 @@
+﻿@model List<Healthy_System.Models.ViewModels.PayrollDetailViewModel>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = $"Bảng Lương Tháng {ViewBag.SelectedMonth}/{ViewBag.SelectedYear}";
+}
+
+<div class="container-fluid py-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fa-solid fa-calculator text-primary me-2"></i>Bảng Tính Lương Nhân Sự</h2>
+            <p class="text-muted mb-0">US33: Tự động tổng hợp số ca khám, ca trực và tính lương thực nhận hàng tháng.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Config" class="btn btn-outline-secondary rounded-pill px-3 fw-bold">
+                <i class="fa-solid fa-gear me-1"></i>Cấu Hình Mức Lương
+            </a>
+            <a asp-action="ExportExcel" asp-route-month="@ViewBag.SelectedMonth" asp-route-year="@ViewBag.SelectedYear" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">
+                <i class="fa-solid fa-file-excel me-1"></i>Xuất File Excel
+            </a>
+        </div>
+    </div>
+
+    <!-- Thanh lọc Tháng/Năm -->
+    <div class="card card-custom p-3 mb-4 shadow-sm">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Chọn Tháng:</label>
+                <select name="month" class="form-select">
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        <option value="@m" selected="@(m == ViewBag.SelectedMonth)">Tháng @m</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Chọn Năm:</label>
+                <select name="year" class="form-select">
+                    @for (int y = 2024; y <= 2028; y++)
+                    {
+                        <option value="@y" selected="@(y == ViewBag.SelectedYear)">Năm @y</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 align-self-end">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">Xem Bảng Lương</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bảng hiển thị tính lương -->
+    <div class="card card-custom p-3 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nhân sự</th>
+                        <th>Vai trò</th>
+                        <th class="text-center">Số ca khám</th>
+                        <th class="text-center">Số ca trực</th>
+                        <th class="text-end">Lương cứng</th>
+                        <th class="text-end">Lương hiệu suất</th>
+                        <th class="text-end">Phụ cấp</th>
+                        <th class="text-end text-success">Thực nhận (VNĐ)</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">@item.FullName</div>
+                                    <small class="text-muted">@item.Email</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-dark border">@item.Role</span>
+                                </td>
+                                <td class="text-center fw-bold">@item.TotalExams</td>
+                                <td class="text-center fw-bold">@item.TotalShifts</td>
+                                <td class="text-end">@item.BaseSalary.ToString("N0") đ</td>
+                                <td class="text-end text-primary fw-semibold">+@item.PerformanceSalary.ToString("N0") đ</td>
+                                <td class="text-end text-info fw-semibold">+@item.Allowance.ToString("N0") đ</td>
+                                <td class="text-end fw-bold text-success fs-6">@item.NetSalary.ToString("N0") đ</td>
+                                <td class="text-center">
+                                    <a asp-action="Detail" asp-route-userId="@item.UserId" asp-route-month="@item.Month" asp-route-year="@item.Year" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                        <i class="fa-solid fa-print me-1"></i>In Phiếu
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

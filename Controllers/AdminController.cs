@@ -9,6 +9,7 @@ using Healthy_System.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace Healthy_System.Controllers
 {
@@ -22,17 +23,75 @@ namespace Healthy_System.Controllers
             _context = context;
         }
 
-        // US35 — Quản lý tài khoản & phân quyền
-        public IActionResult Dashboard()
+        // US35 + US39: Dashboard Analytics & Quản lý phân quyền tài khoản
+        public async Task<IActionResult> Dashboard()
         {
-            ViewBag.TotalUsers = _context.Users.Count();
-            ViewBag.TotalPatients = _context.Users.Count(u => u.Role == "Patient");
-            ViewBag.TotalDoctors = _context.Doctors.Count();
-            ViewBag.TotalAppointments = _context.Appointments.Count();
-            ViewBag.TotalEquipments = _context.Equipments.Count();
+            var viewModel = new AdminDashboardViewModel();
 
-            var users = _context.Users.OrderByDescending(u => u.CreatedAt).ToList();
-            return View(users);
+            // 1. Dữ liệu US35: Danh sách người dùng & tổng số tài khoản
+            viewModel.Users = await _context.Users.OrderByDescending(u => u.CreatedAt).ToListAsync();
+            viewModel.TotalUsers = viewModel.Users.Count;
+
+            // 2. Dữ liệu US39: KPIs Analytics
+            viewModel.TotalPatients = viewModel.Users.Count(u => u.Role == "Patient");
+
+            var allAppointments = await _context.Appointments.ToListAsync();
+            int totalAppointments = allAppointments.Count;
+
+            viewModel.TotalCompletedAppointments = allAppointments.Count(a => a.Status == "Completed");
+            int cancelledCount = allAppointments.Count(a => a.Status == "Cancelled");
+
+            viewModel.CancellationRate = totalAppointments > 0
+                ? Math.Round((double)cancelledCount / totalAppointments * 100, 1)
+                : 0.0;
+
+            viewModel.TotalRevenue = allAppointments
+                .Where(a => a.PaymentStatus == "Paid")
+                .Sum(a => a.PaidAmount);
+
+            // 3. Biểu đồ công suất Chuyên khoa
+            var specialtyData = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Specialty)
+                .Where(a => a.Doctor != null && a.Doctor.Specialty != null)
+                .GroupBy(a => a.Doctor!.Specialty!.Name)
+                .Select(g => new { SpecialtyName = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            viewModel.SpecialtyNames = specialtyData.Select(x => x.SpecialtyName).ToList();
+            viewModel.SpecialtyAppointmentCounts = specialtyData.Select(x => x.Count).ToList();
+
+            // 4. Biểu đồ Bác sĩ (Top 5)
+            var doctorData = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.User)
+                .Where(a => a.Doctor != null && a.Doctor.User != null)
+                .GroupBy(a => a.Doctor!.User!.FullName)
+                .Select(g => new { DoctorName = g.Key, Count = g.Count() })
+                .OrderByDescending(x => x.Count)
+                .Take(5)
+                .ToListAsync();
+
+            viewModel.DoctorNames = doctorData.Select(x => x.DoctorName).ToList();
+            viewModel.DoctorAppointmentCounts = doctorData.Select(x => x.Count).ToList();
+
+            // 5. Cảnh báo thiết bị & Thuốc
+            viewModel.MaintenanceEquipments = await _context.Equipments
+                .Where(e => e.Status == "Maintenance" || e.Status == "Đang bảo trì")
+                .Select(e => new EquipmentWarningItem
+                {
+                    Name = e.Name,
+                    SerialNumber = "EQ-" + e.Id.ToString("D4"),
+                    Status = "Đang bảo trì"
+                }).ToListAsync();
+
+            viewModel.LowStockMedicines = new List<MedicineWarningItem>
+    {
+        new MedicineWarningItem { Name = "Paracetamol 500mg", QuantityLeft = 12, ExpiryDate = "15/12/2026" },
+        new MedicineWarningItem { Name = "Amoxicillin 500mg", QuantityLeft = 5, ExpiryDate = "01/11/2026" }
+    };
+
+            return View(viewModel);
         }
 
         [HttpPost]
