@@ -684,12 +684,18 @@ namespace Healthy_System.Controllers
         // ==========================================
         // US-41: Nhật ký hoạt động hệ thống (Audit Log)
         // ==========================================
-        public IActionResult AuditLog(string? search, string? action, string? role,
+        public IActionResult AuditLog(string? search, string? actionType, string? role,
             string? dateFrom, string? dateTo, int page = 1)
         {
             if (!_context.AuditLogs.Any())
             {
                 SeedInitialAuditLogs();
+            }
+
+            // Lấy từ QueryString, tránh xung đột với RouteData["action"] = "AuditLog"
+            if (string.IsNullOrWhiteSpace(actionType))
+            {
+                actionType = Request.Query["action"].FirstOrDefault();
             }
 
             var query = _context.AuditLogs.Include(a => a.User).AsQueryable();
@@ -703,9 +709,9 @@ namespace Healthy_System.Controllers
                     a.EntityName.ToLower().Contains(term));
             }
 
-            if (!string.IsNullOrWhiteSpace(action))
+            if (!string.IsNullOrWhiteSpace(actionType))
             {
-                query = query.Where(a => a.Action == action);
+                query = query.Where(a => a.Action == actionType);
             }
 
             if (!string.IsNullOrWhiteSpace(role))
@@ -736,7 +742,7 @@ namespace Healthy_System.Controllers
                 .ToList();
 
             ViewBag.Search = search;
-            ViewBag.SelectedAction = action;
+            ViewBag.SelectedAction = actionType;
             ViewBag.SelectedRole = role;
             ViewBag.DateFrom = dateFrom;
             ViewBag.DateTo = dateTo;

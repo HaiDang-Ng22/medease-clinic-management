@@ -35,7 +35,7 @@
 
             <div class="col-md-2">
                 <label class="form-label small fw-bold">Hành động</label>
-                <select name="action" class="form-select">
+                <select name="actionType" class="form-select">
                     <option value="" selected="@(string.IsNullOrEmpty(selectedAction))">Tất cả hành động</option>
                     <option value="Create" selected="@(selectedAction == "Create")">Tạo mới (Create)</option>
                     <option value="Update" selected="@(selectedAction == "Update")">Cập nhật (Update)</option>
@@ -199,7 +199,7 @@
                         <a class="page-link" asp-action="AuditLog"
                            asp-route-page="@(currentPage - 1)"
                            asp-route-search="@search"
-                           asp-route-action="@selectedAction"
+                           asp-route-actionType="@selectedAction"
                            asp-route-role="@selectedRole"
                            asp-route-dateFrom="@dateFrom"
                            asp-route-dateTo="@dateTo">
@@ -215,7 +215,7 @@
                                 <a class="page-link" asp-action="AuditLog"
                                    asp-route-page="@i"
                                    asp-route-search="@search"
-                                   asp-route-action="@selectedAction"
+                                   asp-route-actionType="@selectedAction"
                                    asp-route-role="@selectedRole"
                                    asp-route-dateFrom="@dateFrom"
                                    asp-route-dateTo="@dateTo">@i</a>
@@ -231,7 +231,7 @@
                         <a class="page-link" asp-action="AuditLog"
                            asp-route-page="@(currentPage + 1)"
                            asp-route-search="@search"
-                           asp-route-action="@selectedAction"
+                           asp-route-actionType="@selectedAction"
                            asp-route-role="@selectedRole"
                            asp-route-dateFrom="@dateFrom"
                            asp-route-dateTo="@dateTo">
