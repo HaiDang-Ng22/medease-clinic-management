@@ -172,6 +172,34 @@ namespace Healthy_System.Data
                     );
                     CREATE INDEX IF NOT EXISTS ""IX_Payrolls_UserId"" ON ""Payrolls"" (""UserId"");
                 ");
+
+                // Tự động tạo bảng PatientCosts nếu chưa có (US31: Kế toán tính chi phí)
+                context.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS ""PatientCosts"" (
+                        ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_PatientCosts"" PRIMARY KEY AUTOINCREMENT,
+                        ""AppointmentId"" INTEGER NOT NULL,
+                        ""AccountantId"" INTEGER NULL,
+                        ""ConsultationFee"" TEXT NOT NULL,
+                        ""ServiceFee"" TEXT NOT NULL,
+                        ""ServiceDetails"" TEXT NULL,
+                        ""LabFee"" TEXT NOT NULL,
+                        ""LabDetails"" TEXT NULL,
+                        ""PrescriptionFee"" TEXT NOT NULL,
+                        ""PrescriptionDetails"" TEXT NULL,
+                        ""HealthInsuranceCoveragePercent"" INTEGER NOT NULL DEFAULT 0,
+                        ""DiscountAmount"" TEXT NOT NULL,
+                        ""TotalAmount"" TEXT NOT NULL,
+                        ""PaymentStatus"" TEXT NOT NULL,
+                        ""PaymentMethod"" TEXT NULL,
+                        ""Notes"" TEXT NULL,
+                        ""CreatedAt"" TEXT NOT NULL,
+                        ""PaidAt"" TEXT NULL,
+                        CONSTRAINT ""FK_PatientCosts_Appointments_AppointmentId"" FOREIGN KEY (""AppointmentId"") REFERENCES ""Appointments"" (""Id"") ON DELETE CASCADE,
+                        CONSTRAINT ""FK_PatientCosts_Users_AccountantId"" FOREIGN KEY (""AccountantId"") REFERENCES ""Users"" (""Id"") ON DELETE RESTRICT
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_PatientCosts_AppointmentId"" ON ""PatientCosts"" (""AppointmentId"");
+                    CREATE INDEX IF NOT EXISTS ""IX_PatientCosts_AccountantId"" ON ""PatientCosts"" (""AccountantId"");
+                ");
             }
             catch
             {
@@ -181,6 +209,22 @@ namespace Healthy_System.Data
 
         public static void SeedData(AppDbContext context)
         {
+            // Đảm bảo luôn có tài khoản Kế toán để test US31
+            if (!context.Users.Any(u => u.Role == "Accountant"))
+            {
+                var hashedPass = BCrypt.Net.BCrypt.HashPassword("123456");
+                context.Users.Add(new User
+                {
+                    FullName = "Lê Thị Mai (Kế Toán)",
+                    Email = "ketoan@healthysystem.vn",
+                    PasswordHash = hashedPass,
+                    PhoneNumber = "0903456789",
+                    Role = "Accountant",
+                    Gender = "Nữ",
+                    Address = "Quận 1, TP.HCM"
+                });
+                context.SaveChanges();
+            }
             // Seed Specialties
             if (!context.Specialties.Any())
             {
@@ -314,7 +358,18 @@ namespace Healthy_System.Data
                     Address = "Quan Binh Thanh, TP.HCM"
                 };
 
-                context.Users.AddRange(admin, receptionist, patient, labTech);
+                var accountant = new User
+                {
+                    FullName = "Lê Thị Mai (Kế Toán)",
+                    Email = "ketoan@healthysystem.vn",
+                    PasswordHash = hashedPass,
+                    PhoneNumber = "0903456789",
+                    Role = "Accountant",
+                    Gender = "Nữ",
+                    Address = "Quận 1, TP.HCM"
+                };
+
+                context.Users.AddRange(admin, receptionist, patient, labTech, accountant);
                 context.SaveChanges();
 
                 // Add Doctor Users

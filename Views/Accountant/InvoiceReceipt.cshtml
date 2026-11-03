@@ -1,0 +1,255 @@
+@model Healthy_System.Models.Appointment
+@{
+    Layout = "_AccountantLayout";
+    ViewData["Title"] = "Phiếu Thu Viện Phí - " + (Model.InvoiceCode ?? Model.AppointmentCode);
+    var cost = ViewBag.Cost as Healthy_System.Models.PatientCost;
+    decimal finalPaid = Model.PaidAmount > 0 ? Model.PaidAmount : (cost != null ? cost.TotalAmount : (Model.Doctor?.ConsultationFee ?? 200000m));
+    string invCode = Model.InvoiceCode ?? $"HD-{Model.AppointmentDate:yyyyMMdd}-{Model.Id:D4}";
+    DateTime paidDate = Model.PaidAt?.ToLocalTime() ?? (cost?.PaidAt?.ToLocalTime() ?? DateTime.Now);
+}
+
+<style>
+    @@media print {
+        body { background: #ffffff !important; font-size: 13px !important; }
+        .no-print, .app-sidebar, .app-topbar, footer { display: none !important; }
+        .app-main-wrapper { margin-left: 0 !important; }
+        .app-content-body { padding: 0 !important; }
+        .invoice-card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+    }
+    .invoice-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .paid-stamp {
+        border: 3px dashed #10b981;
+        color: #10b981;
+        font-weight: 800;
+        text-transform: uppercase;
+        font-size: 1.1rem;
+        padding: 6px 16px;
+        border-radius: 8px;
+        display: inline-block;
+        transform: rotate(-5deg);
+    }
+</style>
+
+<div class="container py-3 no-print">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a asp-action="Invoices" class="btn btn-outline-secondary rounded-pill px-3">
+            <i class="fa-solid fa-arrow-left me-1"></i>Về danh sách hóa đơn
+        </a>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-primary rounded-pill px-4 fw-semibold shadow-sm">
+                <i class="fa-solid fa-print me-1"></i>In Phiếu Thu
+            </button>
+            <button onclick="downloadInvoicePDF()" class="btn btn-success rounded-pill px-4 fw-semibold shadow-sm">
+                <i class="fa-solid fa-file-pdf me-1"></i>Tải Hóa Đơn PDF
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="container py-2" id="invoicePrintArea">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="invoice-card p-4 p-md-5">
+                <!-- Header Đơn vị khám -->
+                <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="p-2 bg-success text-white rounded-3 fw-bold fs-5">
+                                <i class="fa-solid fa-hospital"></i>
+                            </div>
+                            <div>
+                                <h4 class="fw-bold text-dark mb-0">PHÒNG KHÁM ĐA KHOA HEALTHY SYSTEM</h4>
+                                <small class="text-muted">Trung tâm Y tế Kỹ thuật cao & Chăm sóc Sức khỏe Toàn diện</small>
+                            </div>
+                        </div>
+                        <div class="small text-muted">
+                            <div><i class="fa-solid fa-location-dot me-1"></i>123 Nguyễn Trãi, Phường 2, Quận 5, TP. Hồ Chí Minh</div>
+                            <div><i class="fa-solid fa-phone me-1"></i>Hotline: 1900 6868 | Website: healthysystem.vn</div>
+                            <div><i class="fa-solid fa-barcode me-1"></i>Mã số thuế: 0316889988</div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-muted small">MÃ HÓA ĐƠN</div>
+                        <div class="fw-bold font-monospace fs-5 text-dark">@invCode</div>
+                        <div class="text-muted small mt-1">Ngày lập: @paidDate.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="mt-2">
+                            <span class="paid-stamp">
+                                <i class="fa-solid fa-check-double me-1"></i>ĐÃ THANH TOÁN
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tiêu đề hóa đơn -->
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold text-dark mb-1">PHIẾU THU TIỀN VIỆN PHÍ & DỊCH VỤ</h3>
+                    <p class="text-muted small mb-0">(Bản lưu hành điện tử có giá trị thanh toán minh bạch)</p>
+                </div>
+
+                <!-- Thông tin bệnh nhân -->
+                <div class="p-3 bg-light rounded-3 border mb-4 small">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <strong>Họ và tên bệnh nhân:</strong> <span class="text-dark fw-bold">@(Model.Patient?.FullName ?? "Chưa rõ")</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Mã lịch hẹn:</strong> <span class="font-monospace text-dark">@Model.AppointmentCode</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Số điện thoại:</strong> <span>@(Model.Patient?.PhoneNumber ?? "—")</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Bác sĩ phụ trách:</strong> <span>@(Model.Doctor?.Title) @(Model.Doctor?.User?.FullName)</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Chuyên khoa:</strong> <span>@(Model.Specialty?.Name ?? "Đa khoa")</span> (Phòng @(Model.Doctor?.RoomNumber ?? "201"))
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Hình thức thanh toán:</strong> <span class="badge bg-success-subtle text-success border border-success-subtle">@(Model.PaymentMethod ?? cost?.PaymentMethod ?? "Tiền mặt")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bảng chi tiết dịch vụ -->
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light small">
+                            <tr>
+                                <th class="text-center" style="width: 50px;">STT</th>
+                                <th>Danh mục khoản thu viện phí</th>
+                                <th class="text-center" style="width: 90px;">ĐVT</th>
+                                <th class="text-center" style="width: 70px;">SL</th>
+                                <th class="text-end" style="width: 140px;">Đơn giá (VNĐ)</th>
+                                <th class="text-end" style="width: 150px;">Thành tiền (VNĐ)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            @{ int stt = 1; }
+                            <!-- 1. Tiền công khám -->
+                            <tr>
+                                <td class="text-center">@(stt++)</td>
+                                <td>
+                                    <strong>Tiền khám chuyên khoa:</strong> @(Model.Specialty?.Name)<br />
+                                    <small class="text-muted">Bác sĩ: @(Model.Doctor?.Title) @(Model.Doctor?.User?.FullName)</small>
+                                </td>
+                                <td class="text-center">Lượt</td>
+                                <td class="text-center">1</td>
+                                <td class="text-end">@((cost?.ConsultationFee ?? Model.Doctor?.ConsultationFee ?? 200000m).ToString("N0"))</td>
+                                <td class="text-end fw-semibold">@((cost?.ConsultationFee ?? Model.Doctor?.ConsultationFee ?? 200000m).ToString("N0"))</td>
+                            </tr>
+
+                            <!-- 2. Dịch vụ kỹ thuật -->
+                            @if (cost != null && cost.ServiceFee > 0)
+                            {
+                                <tr>
+                                    <td class="text-center">@(stt++)</td>
+                                    <td>
+                                        <strong>Dịch vụ kỹ thuật / Thủ thuật:</strong><br />
+                                        <small class="text-muted">@cost.ServiceDetails</small>
+                                    </td>
+                                    <td class="text-center">Lần</td>
+                                    <td class="text-center">1</td>
+                                    <td class="text-end">@cost.ServiceFee.ToString("N0")</td>
+                                    <td class="text-end fw-semibold">@cost.ServiceFee.ToString("N0")</td>
+                                </tr>
+                            }
+
+                            <!-- 3. Xét nghiệm cận lâm sàng -->
+                            @if (cost != null && cost.LabFee > 0)
+                            {
+                                <tr>
+                                    <td class="text-center">@(stt++)</td>
+                                    <td>
+                                        <strong>Xét nghiệm / Chẩn đoán hình ảnh:</strong><br />
+                                        <small class="text-muted">@cost.LabDetails</small>
+                                    </td>
+                                    <td class="text-center">Chỉ định</td>
+                                    <td class="text-center">1</td>
+                                    <td class="text-end">@cost.LabFee.ToString("N0")</td>
+                                    <td class="text-end fw-semibold">@cost.LabFee.ToString("N0")</td>
+                                </tr>
+                            }
+
+                            <!-- 4. Tiền thuốc theo đơn -->
+                            @if (cost != null && cost.PrescriptionFee > 0)
+                            {
+                                <tr>
+                                    <td class="text-center">@(stt++)</td>
+                                    <td>
+                                        <strong>Thuốc & Vật tư y tế theo toa:</strong><br />
+                                        <small class="text-muted">@cost.PrescriptionDetails</small>
+                                    </td>
+                                    <td class="text-center">Đơn</td>
+                                    <td class="text-center">1</td>
+                                    <td class="text-end">@cost.PrescriptionFee.ToString("N0")</td>
+                                    <td class="text-end fw-semibold">@cost.PrescriptionFee.ToString("N0")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            @if (cost != null && cost.DiscountAmount > 0)
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-end text-muted small">Cộng chi phí trước giảm:</td>
+                                    <td class="text-end text-muted small">@((cost.ConsultationFee + cost.ServiceFee + cost.LabFee + cost.PrescriptionFee).ToString("N0")) đ</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="text-end text-success small">Bảo hiểm y tế chi trả / Khấu trừ (@cost.HealthInsuranceCoveragePercent%):</td>
+                                    <td class="text-end text-success small fw-bold">-@cost.DiscountAmount.ToString("N0") đ</td>
+                                </tr>
+                            }
+                            <tr>
+                                <td colspan="5" class="text-end fw-bold fs-6 text-dark">TỔNG CỘNG TIỀN THANH TOÁN:</td>
+                                <td class="text-end fw-bold fs-5 text-success">@finalPaid.ToString("N0") đ</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Chữ ký xác nhận -->
+                <div class="row pt-4 mt-2 text-center">
+                    <div class="col-6">
+                        <div class="text-muted small fw-bold">NGƯỜI NỘP TIỀN</div>
+                        <small class="text-muted fst-italic">(Ký và ghi rõ họ tên)</small>
+                        <div style="height: 60px;"></div>
+                        <div class="fw-bold text-dark">@(Model.Patient?.FullName)</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted small fw-bold">NGƯỜI THU TIỀN / KẾ TOÁN</div>
+                        <small class="text-muted fst-italic">(Ký, đóng dấu xác nhận)</small>
+                        <div style="height: 60px;" class="d-flex align-items-center justify-content-center">
+                            <span class="badge bg-light text-success border border-success px-2 py-1 small">Đã ký điện tử</span>
+                        </div>
+                        <div class="fw-bold text-dark">@(Model.CashierName ?? "Kế toán viện phí")</div>
+                    </div>
+                </div>
+
+                <div class="text-center text-muted small pt-4 mt-4 border-top">
+                    Cảm ơn Quý khách đã tin tưởng và sử dụng dịch vụ y tế tại Healthy System. Kính chúc Quý khách nhiều sức khỏe!
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        function downloadInvoicePDF() {
+            const element = document.getElementById('invoicePrintArea');
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     'PhieuThu_@Model.AppointmentCode' + '.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+}

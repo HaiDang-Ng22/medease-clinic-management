@@ -129,7 +129,9 @@ namespace Healthy_System.Controllers
                 "Doctor" => RedirectToAction("Dashboard", "Doctor"),
                 "Receptionist" => RedirectToAction("Dashboard", "Receptionist"),
                 "Admin" => RedirectToAction("Dashboard", "Admin"),
-                "LabTech"      => RedirectToAction("Index", "LabTech"),
+                "LabTech" => RedirectToAction("Index", "LabTech"),
+                "Accountant" => RedirectToAction("Dashboard", "Accountant"),
+                "Cashier" => RedirectToAction("Dashboard", "Accountant"),
                 _ => RedirectToAction("Index", "Home")
             };
         }
@@ -152,6 +154,7 @@ namespace Healthy_System.Controllers
             if (User.IsInRole("Doctor")) return RedirectToAction("Profile", "Doctor");
             if (User.IsInRole("Admin")) return RedirectToAction("Dashboard", "Admin");
             if (User.IsInRole("Receptionist")) return RedirectToAction("Dashboard", "Receptionist");
+            if (User.IsInRole("Accountant")) return RedirectToAction("Dashboard", "Accountant");
 
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId))

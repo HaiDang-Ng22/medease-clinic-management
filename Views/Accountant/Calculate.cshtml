@@ -1,0 +1,445 @@
+@model Healthy_System.Models.ViewModels.CalculateCostViewModel
+@{
+    Layout = "_AccountantLayout";
+    ViewData["Title"] = "Tính Chi Phí Khám Bệnh";
+}
+
+<div class="container-fluid px-0">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1" style="font-size:0.8rem;">
+                    <li class="breadcrumb-item"><a asp-action="Dashboard" class="text-decoration-none text-muted">Kế toán</a></li>
+                    <li class="breadcrumb-item"><a asp-action="PatientCosts" class="text-decoration-none text-muted">Chi phí bệnh nhân</a></li>
+                    <li class="breadcrumb-item active text-slate-800" aria-current="page">Lập bảng tính chi phí</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold mb-0 text-slate-900" style="color:#0f172a;">
+                <i class="fa-solid fa-calculator text-success me-2"></i>Lập Bảng Tính Chi Phí Khám Bệnh
+            </h4>
+            <div class="text-muted small mt-1">US-31: Kế toán tính toán chi phí (dịch vụ, thuốc, xét nghiệm) để xuất bảng chi phí chính xác và minh bạch</div>
+        </div>
+        <div>
+            <a asp-action="PatientCosts" class="btn btn-outline-secondary btn-sm px-3 py-2 fw-semibold">
+                <i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách
+            </a>
+        </div>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation fs-5"></i>
+                <div class="fw-semibold">Vui lòng kiểm tra lại thông tin chi phí:</div>
+            </div>
+            <div asp-validation-summary="All" class="text-danger small mt-2 mb-0 ps-4"></div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Cột trái: Hồ sơ chẩn đoán của bác sĩ -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-3 mb-4 overflow-hidden">
+                <div class="card-header bg-light py-3 px-4 border-bottom">
+                    <span class="text-uppercase fw-bold text-muted" style="font-size:0.75rem; letter-spacing:0.05em;">
+                        <i class="fa-solid fa-id-card-clip me-1 text-primary"></i>Thông Tin Ca Khám
+                    </span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge font-monospace bg-light text-dark border px-2 py-1 fs-6">
+                            @Model.AppointmentCode
+                        </span>
+                        <span class="badge bg-success-subtle text-success px-2 py-1">Đã khám xong</span>
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <div class="text-muted small fw-semibold mb-1"><i class="fa-solid fa-user me-1 text-primary"></i>Bệnh nhân</div>
+                        <div class="fw-bold text-slate-900 fs-6">@Model.PatientName</div>
+                        <div class="small text-muted mt-1">
+                            <span>SĐT: @(Model.PatientPhone ?? "—")</span>
+                            <span class="mx-1">|</span>
+                            <span>@(Model.PatientGender ?? "—")</span>
+                            @if (Model.PatientDob.HasValue)
+                            {
+                                <span class="mx-1">|</span>
+                                <span>@Model.PatientDob.Value.ToString("dd/MM/yyyy")</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <div class="text-muted small fw-semibold mb-1"><i class="fa-solid fa-user-doctor me-1 text-teal"></i>Bác sĩ điều trị</div>
+                        <div class="fw-bold text-slate-900">@Model.DoctorName</div>
+                        <div class="small text-muted">@Model.SpecialtyName</div>
+                        <div class="small text-muted mt-1"><i class="fa-regular fa-calendar me-1"></i>Ngày khám: @Model.AppointmentDate.ToString("dd/MM/yyyy") (@Model.TimeSlot)</div>
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded-3 border">
+                        <div class="text-muted small fw-semibold mb-1"><i class="fa-solid fa-stethoscope me-1 text-danger"></i>Chẩn đoán xác định</div>
+                        <div class="fw-semibold text-primary">@(string.IsNullOrWhiteSpace(Model.Diagnosis) ? "Chưa ghi nhận chẩn đoán" : Model.Diagnosis)</div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.LabRequest))
+                    {
+                        <div class="mb-3 p-3 bg-light rounded-3 border">
+                            <div class="text-muted small fw-semibold mb-1"><i class="fa-solid fa-flask-vial me-1 text-info"></i>Chỉ định Cận lâm sàng / Xét nghiệm</div>
+                            <div class="small text-slate-800 fw-semibold">@Model.LabRequest</div>
+                            @if (!string.IsNullOrWhiteSpace(Model.LabResultSummary))
+                            {
+                                <div class="mt-2 pt-2 border-top small text-muted">
+                                    <span class="text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i>KQ:</span> @Model.LabResultSummary
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Prescription))
+                    {
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="text-muted small fw-semibold mb-1"><i class="fa-solid fa-pills me-1 text-warning"></i>Đơn thuốc bác sĩ kê</div>
+                            <div class="small font-monospace bg-white p-2 rounded border" style="white-space:pre-wrap;">@Model.Prescription</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Form nhập các khoản chi phí -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="fw-bold mb-0 text-slate-900" style="font-size:0.95rem;">
+                            <i class="fa-solid fa-file-pen text-success me-2"></i>Bảng Kê Chi Tiết Các Khoản Viện Phí
+                        </h6>
+                    </div>
+                    <span class="badge bg-light text-muted border">Đơn vị: VNĐ</span>
+                </div>
+
+                <div class="card-body p-4">
+                    <form asp-action="Calculate" method="post" id="calcCostForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="AppointmentId" />
+
+                        <!-- 1. Tiền công khám bệnh -->
+                        <div class="mb-4 pb-3 border-bottom">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" style="width:24px; height:24px; font-size:0.75rem;">1</span>
+                                <h6 class="fw-bold mb-0 text-slate-800" style="font-size:0.9rem;">Tiền Công Khám & Tư Vấn Bác Sĩ Chuyên Khoa</h6>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-7">
+                                    <label class="form-label small text-muted mb-1">Mức phí theo quy định của Bác sĩ</label>
+                                    <div class="input-group">
+                                        <input asp-for="ConsultationFee" type="number" step="1000" min="0" class="form-control cost-input fw-bold fs-6" id="consultationFeeInput" />
+                                        <span class="input-group-text bg-light text-muted">VNĐ</span>
+                                    </div>
+                                    <span asp-validation-for="ConsultationFee" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-5 d-flex align-items-end">
+                                    <small class="text-muted fst-italic">Bao gồm khám lâm sàng tổng quát và kết luận chẩn đoán.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Chi phí Dịch vụ kỹ thuật -->
+                        <div class="mb-4 pb-3 border-bottom">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" style="width:24px; height:24px; font-size:0.75rem;">2</span>
+                                    <h6 class="fw-bold mb-0 text-slate-800" style="font-size:0.9rem;">Chi Phí Dịch Vụ Kỹ Thuật / Thủ Thuật Y Tế</h6>
+                                </div>
+                                @if (Model.AvailableServices.Any())
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2" id="btnAddServiceModal" data-bs-toggle="modal" data-bs-target="#serviceSelectModal">
+                                        <i class="fa-solid fa-plus me-1"></i>Chọn dịch vụ có sẵn
+                                    </button>
+                                }
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-7">
+                                    <label class="form-label small text-muted mb-1">Tổng tiền dịch vụ thủ thuật</label>
+                                    <div class="input-group">
+                                        <input asp-for="ServiceFee" type="number" step="1000" min="0" class="form-control cost-input fw-bold fs-6" id="serviceFeeInput" />
+                                        <span class="input-group-text bg-light text-muted">VNĐ</span>
+                                    </div>
+                                    <span asp-validation-for="ServiceFee" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label small text-muted mb-1">Chi tiết tên các dịch vụ kỹ thuật đã thực hiện</label>
+                                    <input asp-for="ServiceDetails" class="form-control" id="serviceDetailsInput" placeholder="Ví dụ: Đo điện tim (ECG), Nội soi tai mũi họng, Rửa vết thương..." />
+                                    <span asp-validation-for="ServiceDetails" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Chi phí Xét nghiệm / Cận lâm sàng -->
+                        <div class="mb-4 pb-3 border-bottom">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" style="width:24px; height:24px; font-size:0.75rem;">3</span>
+                                <h6 class="fw-bold mb-0 text-slate-800" style="font-size:0.9rem;">Chi Phí Xét Nghiệm / Chẩn Đoán Hình Ảnh (X-Quang, Siêu Âm)</h6>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-7">
+                                    <label class="form-label small text-muted mb-1">Tổng tiền xét nghiệm cận lâm sàng</label>
+                                    <div class="input-group">
+                                        <input asp-for="LabFee" type="number" step="1000" min="0" class="form-control cost-input fw-bold fs-6" id="labFeeInput" />
+                                        <span class="input-group-text bg-light text-muted">VNĐ</span>
+                                    </div>
+                                    <span asp-validation-for="LabFee" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label small text-muted mb-1">Chi tiết các chỉ số / xét nghiệm thực hiện</label>
+                                    <input asp-for="LabDetails" class="form-control" id="labDetailsInput" placeholder="Ví dụ: Xét nghiệm CTM (Công thức máu), Sinh hóa máu, Chụp X-quang tim phổi..." />
+                                    <span asp-validation-for="LabDetails" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. Chi phí Tiền thuốc theo đơn -->
+                        <div class="mb-4 pb-3 border-bottom">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" style="width:24px; height:24px; font-size:0.75rem;">4</span>
+                                <h6 class="fw-bold mb-0 text-slate-800" style="font-size:0.9rem;">Chi Phí Thuốc Điều Trị Theo Đơn (e-Prescription)</h6>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-7">
+                                    <label class="form-label small text-muted mb-1">Tổng tiền thuốc bệnh nhân mua</label>
+                                    <div class="input-group">
+                                        <input asp-for="PrescriptionFee" type="number" step="1000" min="0" class="form-control cost-input fw-bold fs-6" id="prescriptionFeeInput" />
+                                        <span class="input-group-text bg-light text-muted">VNĐ</span>
+                                    </div>
+                                    <span asp-validation-for="PrescriptionFee" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label small text-muted mb-1">Chi tiết thuốc kê đơn</label>
+                                    <textarea asp-for="PrescriptionDetails" rows="2" class="form-control small font-monospace" placeholder="Chi tiết thuốc, số lượng, quy cách đóng gói..."></textarea>
+                                    <span asp-validation-for="PrescriptionDetails" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. BHYT & Giảm trừ viện phí -->
+                        <div class="mb-4 p-3 bg-light rounded-3 border">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <i class="fa-solid fa-shield-heart text-danger fs-5"></i>
+                                <h6 class="fw-bold mb-0 text-slate-800" style="font-size:0.9rem;">Khấu Trừ Bảo Hiểm Y Tế (BHYT) & Miễn Giảm</h6>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small text-muted mb-1">Mức hưởng BHYT</label>
+                                    <select asp-for="HealthInsuranceCoveragePercent" class="form-select" id="insurancePercentSelect">
+                                        <option value="0">0% (Không áp dụng BHYT)</option>
+                                        <option value="20">20% (BHYT tự chi trả 80%)</option>
+                                        <option value="80">80% (BHYT chi trả 80%)</option>
+                                        <option value="100">100% (BHYT chi trả toàn bộ)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label small text-muted mb-1">Số tiền BHYT chi trả / Miễn giảm</label>
+                                    <div class="input-group">
+                                        <input asp-for="DiscountAmount" type="number" step="1000" min="0" class="form-control fw-bold text-danger fs-6" id="discountAmountInput" />
+                                        <span class="input-group-text bg-light text-muted">VNĐ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 6. Tổng cộng thanh toán -->
+                        <div class="mb-4 p-4 rounded-3 border text-white" style="background:#064e3b;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="text-uppercase small fw-bold tracking-wide" style="color:#a7f3d0;">TỔNG TIỀN BỆNH NHÂN THANH TOÁN</span>
+                                    <div class="small opacity-75 mt-1">(Đã bao gồm tiền khám, dịch vụ, thuốc và khấu trừ BHYT)</div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fs-2 fw-bold text-white font-monospace" id="totalAmountDisplay">0 đ</span>
+                                    <input type="hidden" asp-for="TotalAmount" id="totalAmountHidden" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 7. Trạng thái & Phương thức thanh toán -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3 text-slate-800" style="font-size:0.9rem;"><i class="fa-solid fa-receipt me-1 text-success"></i>Trạng Thái Thu Tiền & Phương Thức</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small text-muted mb-1">Trạng thái thanh toán <span class="text-danger">*</span></label>
+                                    <select asp-for="PaymentStatus" class="form-select fw-semibold" id="paymentStatusSelect">
+                                        <option value="Calculated">Chờ thanh toán (Chỉ xuất bảng tính chi phí)</option>
+                                        <option value="Paid">Đã thanh toán (Thu tiền & Xuất hóa đơn ngay)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-muted mb-1">Hình thức thanh toán</label>
+                                    <select asp-for="PaymentMethod" class="form-select" id="paymentMethodSelect">
+                                        <option value="Tiền mặt">Tiền mặt tại quầy viện phí</option>
+                                        <option value="Chuyển khoản / Quét mã QR">Chuyển khoản ngân hàng / Quét mã QR</option>
+                                        <option value="Thẻ ATM / Thẻ tín dụng Visa">Thẻ ATM / Thẻ tín dụng Visa</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label small text-muted mb-1">Ghi chú kế toán (nếu có)</label>
+                                    <input asp-for="Notes" class="form-control" placeholder="Ghi chú thêm về chứng từ hoặc lý do miễn giảm..." />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thông báo tự động -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" asp-for="NotifyPatient" id="notifyCheck" />
+                            <label class="form-check-label small" for="notifyCheck">
+                                Tự động gửi thông báo bảng chi phí đến tài khoản Bệnh nhân (@Model.PatientName)
+                            </label>
+                        </div>
+
+                        <!-- Nút lưu -->
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a asp-action="PatientCosts" class="btn btn-light px-4 border fw-semibold">
+                                Hủy bỏ
+                            </a>
+                            <button type="submit" class="btn btn-success px-4 fw-semibold" style="background:#059669; border-color:#059669;">
+                                <i class="fa-solid fa-floppy-disk me-1"></i>Lưu & Xuất Bảng Chi Phí
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal chọn nhanh dịch vụ kỹ thuật có sẵn -->
+@if (Model.AvailableServices.Any())
+{
+    <div class="modal fade" id="serviceSelectModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold" style="font-size:1rem;">
+                        <i class="fa-solid fa-list-check me-2 text-success"></i>Chọn Dịch Vụ Kỹ Thuật Có Sẵn Trong Biểu Giá
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-hover align-middle mb-0" style="font-size:0.85rem;">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th class="ps-3 py-2">Tên dịch vụ</th>
+                                    <th class="py-2">Nhóm</th>
+                                    <th class="py-2 text-end">Đơn giá</th>
+                                    <th class="pe-3 py-2 text-center" style="width:100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in Model.AvailableServices)
+                                {
+                                    <tr>
+                                        <td class="ps-3 fw-semibold">@s.Name</td>
+                                        <td><span class="badge bg-light text-secondary border">@s.Category</span></td>
+                                        <td class="text-end fw-bold">@s.Price.ToString("N0") đ</td>
+                                        <td class="pe-3 text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 btn-add-svc"
+                                                    data-name="@s.Name" data-price="@s.Price">
+                                                + Thêm
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const consultationInput = document.getElementById('consultationFeeInput');
+            const serviceInput = document.getElementById('serviceFeeInput');
+            const serviceDetailsInput = document.getElementById('serviceDetailsInput');
+            const labInput = document.getElementById('labFeeInput');
+            const prescriptionInput = document.getElementById('prescriptionFeeInput');
+            const insuranceSelect = document.getElementById('insurancePercentSelect');
+            const discountInput = document.getElementById('discountAmountInput');
+            const totalDisplay = document.getElementById('totalAmountDisplay');
+            const totalHidden = document.getElementById('totalAmountHidden');
+
+            function calculateTotal() {
+                const conFee = parseFloat(consultationInput.value) || 0;
+                const svcFee = parseFloat(serviceInput.value) || 0;
+                const labFee = parseFloat(labInput.value) || 0;
+                const rxFee = parseFloat(prescriptionInput.value) || 0;
+
+                const subTotal = conFee + svcFee + labFee + rxFee;
+                const percent = parseInt(insuranceSelect.value) || 0;
+
+                let discount = parseFloat(discountInput.value) || 0;
+                if (percent > 0) {
+                    discount = Math.round(subTotal * percent / 100);
+                    discountInput.value = discount;
+                }
+
+                const total = Math.max(0, subTotal - discount);
+                totalHidden.value = total;
+                totalDisplay.textContent = total.toLocaleString('vi-VN') + ' đ';
+            }
+
+            // Gắn event tính toán
+            [consultationInput, serviceInput, labInput, prescriptionInput].forEach(inp => {
+                inp.addEventListener('input', calculateTotal);
+            });
+
+            insuranceSelect.addEventListener('change', calculateTotal);
+            discountInput.addEventListener('input', function () {
+                // Nếu người dùng nhập tay discount thì bỏ chọn BHYT %
+                insuranceSelect.value = '0';
+                calculateTotal();
+            });
+
+            // Nút thêm dịch vụ từ modal
+            document.querySelectorAll('.btn-add-svc').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const name = this.getAttribute('data-name');
+                    const price = parseFloat(this.getAttribute('data-price')) || 0;
+
+                    const curSvcFee = parseFloat(serviceInput.value) || 0;
+                    serviceInput.value = curSvcFee + price;
+
+                    const curDetails = serviceDetailsInput.value.trim();
+                    if (curDetails) {
+                        serviceDetailsInput.value = curDetails + ', ' + name;
+                    } else {
+                        serviceDetailsInput.value = name;
+                    }
+
+                    calculateTotal();
+
+                    // Hiệu ứng nút đã thêm
+                    this.textContent = '✓ Đã thêm';
+                    this.className = 'btn btn-sm btn-success rounded-pill px-3 py-1';
+                    setTimeout(() => {
+                        this.textContent = '+ Thêm';
+                        this.className = 'btn btn-sm btn-outline-success rounded-pill px-3 py-1 btn-add-svc';
+                    }, 1200);
+                });
+            });
+
+            // Tính lần đầu khi mở form
+            calculateTotal();
+        });
+    </script>
+}

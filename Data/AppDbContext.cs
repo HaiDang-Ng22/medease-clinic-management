@@ -23,6 +23,7 @@ namespace Healthy_System.Data
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>(); // US41
         public DbSet<PayrollConfig> PayrollConfigs { get; set; } // US33
         public DbSet<Payroll> Payrolls { get; set; } // US33
+        public DbSet<PatientCost> PatientCosts => Set<PatientCost>(); // US31
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

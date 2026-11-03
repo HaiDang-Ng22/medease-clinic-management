@@ -1,0 +1,187 @@
+@model Healthy_System.Models.ViewModels.PaymentViewModel
+@{
+    Layout = "_AccountantLayout";
+    ViewData["Title"] = "Thu Viện Phí & Xuất Hóa Đơn - " + Model.AppointmentCode;
+    var cost = ViewBag.Cost as Healthy_System.Models.PatientCost;
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">
+                    <i class="fa-solid fa-cash-register text-success me-2"></i>Thu Viện Phí & Xuất Hóa Đơn
+                </h3>
+                <p class="text-muted mb-0 small">Hoàn tất quy trình thanh toán cho ca khám: <strong class="text-dark">@Model.AppointmentCode</strong></p>
+            </div>
+            <a asp-action="Invoices" class="btn btn-outline-secondary rounded-pill px-3">
+                <i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách
+            </a>
+        </div>
+
+        <form method="post" asp-action="ProcessPayment">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="AppointmentId" />
+            <input type="hidden" asp-for="AppointmentCode" />
+
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <!-- Thông tin bệnh nhân & ca khám -->
+                        <div class="col-md-6 border-end pe-md-4">
+                            <h6 class="fw-bold text-dark text-uppercase small border-bottom pb-2 mb-3">
+                                <i class="fa-solid fa-user me-2 text-success"></i>Thông tin bệnh nhân
+                            </h6>
+                            <div class="mb-2">
+                                <span class="text-muted small">Họ và tên:</span>
+                                <div class="fw-bold fs-6 text-dark">@Model.PatientName</div>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted small">Số điện thoại:</span>
+                                <div class="fw-medium text-dark">@Model.PatientPhone</div>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-muted small">Bác sĩ phụ trách:</span>
+                                <div class="fw-medium text-dark">@Model.DoctorName (@Model.SpecialtyName)</div>
+                            </div>
+                            <div class="mb-3">
+                                <span class="text-muted small">Mã hóa đơn / Phiếu thu:</span>
+                                <input type="text" asp-for="InvoiceCode" class="form-control form-control-sm font-monospace fw-bold mt-1" required />
+                            </div>
+                        </div>
+
+                        <!-- Bóc tách chi phí viện phí -->
+                        <div class="col-md-6 ps-md-4">
+                            <h6 class="fw-bold text-dark text-uppercase small border-bottom pb-2 mb-3">
+                                <i class="fa-solid fa-list-check me-2 text-success"></i>Bóc tách chi phí viện phí
+                            </h6>
+
+                            @if (cost != null)
+                            {
+                                <div class="d-flex justify-content-between py-1 small">
+                                    <span class="text-muted">1. Tiền khám chuyên khoa:</span>
+                                    <span class="fw-medium">@cost.ConsultationFee.ToString("N0") đ</span>
+                                </div>
+                                <div class="d-flex justify-content-between py-1 small">
+                                    <span class="text-muted">2. Dịch vụ kỹ thuật:</span>
+                                    <span class="fw-medium">@cost.ServiceFee.ToString("N0") đ</span>
+                                </div>
+                                <div class="d-flex justify-content-between py-1 small">
+                                    <span class="text-muted">3. Xét nghiệm cận lâm sàng:</span>
+                                    <span class="fw-medium">@cost.LabFee.ToString("N0") đ</span>
+                                </div>
+                                <div class="d-flex justify-content-between py-1 small">
+                                    <span class="text-muted">4. Thuốc theo toa:</span>
+                                    <span class="fw-medium">@cost.PrescriptionFee.ToString("N0") đ</span>
+                                </div>
+                                @if (cost.DiscountAmount > 0)
+                                {
+                                    <div class="d-flex justify-content-between py-1 small text-success">
+                                        <span>BHYT / Khấu trừ (@cost.HealthInsuranceCoveragePercent%):</span>
+                                        <span class="fw-medium">-@cost.DiscountAmount.ToString("N0") đ</span>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="alert alert-info py-2 px-3 small rounded-2 mb-3">
+                                    <i class="fa-solid fa-circle-info me-1"></i>Chưa lập bảng tính chi tiết. Số tiền tạm thu theo phí khám bác sĩ.
+                                </div>
+                                <div class="d-flex justify-content-between py-1 small">
+                                    <span class="text-muted">Phí khám chuyên khoa:</span>
+                                    <span class="fw-medium">@Model.ConsultationFee.ToString("N0") đ</span>
+                                </div>
+                            }
+
+                            <hr class="my-2" />
+                            <div class="d-flex justify-content-between align-items-center pt-2">
+                                <span class="fw-bold fs-6 text-dark">TỔNG SỐ TIỀN THỰC THU:</span>
+                                <span class="fw-bold fs-4 text-success" id="displayTotal">@Model.TotalAmount.ToString("N0") đ</span>
+                            </div>
+                            <input type="hidden" asp-for="TotalAmount" id="inputTotalAmount" value="@Model.TotalAmount" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phương thức thanh toán & Thu ngân -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-dark text-uppercase small border-bottom pb-2 mb-3">
+                        <i class="fa-solid fa-credit-card me-2 text-success"></i>Phương thức thanh toán & Giao dịch
+                    </h6>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Hình thức thanh toán</label>
+                            <select asp-for="PaymentMethod" class="form-select" id="selectPaymentMethod" required>
+                                <option value="Tiền mặt">💵 Tiền mặt (Cash)</option>
+                                <option value="Chuyển khoản">📱 Chuyển khoản QR Ngân hàng (Bank Transfer)</option>
+                                <option value="Thẻ">💳 Quẹt thẻ ATM / Visa / Master (POS)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Kế toán / Thu ngân tiếp nhận</label>
+                            <input type="text" asp-for="CashierName" class="form-control" readonly />
+                        </div>
+                        <div class="col-md-6" id="cashCalculationGroup">
+                            <label class="form-label small fw-semibold">Số tiền khách đưa (VNĐ)</label>
+                            <input type="number" id="inputCustomerMoney" class="form-control font-monospace" placeholder="Nhập số tiền khách đưa..." />
+                        </div>
+                        <div class="col-md-6" id="cashChangeGroup">
+                            <label class="form-label small fw-semibold">Tiền thừa trả khách</label>
+                            <input type="text" id="displayChange" class="form-control font-monospace fw-bold text-primary bg-light" readonly value="0 đ" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nút xác nhận -->
+            <div class="d-flex justify-content-end gap-2 mb-5">
+                <a asp-action="Invoices" class="btn btn-light border rounded-pill px-4">Hủy bỏ</a>
+                <button type="submit" class="btn btn-success rounded-pill px-5 py-2 fw-bold shadow">
+                    <i class="fa-solid fa-circle-check me-2"></i>XÁC NHẬN THU TIỀN & XUẤT HÓA ĐƠN
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const totalAmount = parseFloat('@Model.TotalAmount') || 0;
+        const customerMoneyInput = document.getElementById('inputCustomerMoney');
+        const changeDisplay = document.getElementById('displayChange');
+        const paymentSelect = document.getElementById('selectPaymentMethod');
+        const cashCalcGroup = document.getElementById('cashCalculationGroup');
+        const cashChangeGroup = document.getElementById('cashChangeGroup');
+
+        function updateChange() {
+            const customerMoney = parseFloat(customerMoneyInput.value) || 0;
+            const change = customerMoney - totalAmount;
+            if (change >= 0) {
+                changeDisplay.value = change.toLocaleString('vi-VN') + ' đ';
+                changeDisplay.className = 'form-control font-monospace fw-bold text-success bg-light';
+            } else {
+                changeDisplay.value = 'Còn thiếu ' + Math.abs(change).toLocaleString('vi-VN') + ' đ';
+                changeDisplay.className = 'form-control font-monospace fw-bold text-danger bg-light';
+            }
+        }
+
+        if (customerMoneyInput) {
+            customerMoneyInput.addEventListener('input', updateChange);
+        }
+
+        if (paymentSelect) {
+            paymentSelect.addEventListener('change', function() {
+                if (this.value === 'Tiền mặt') {
+                    cashCalcGroup.style.display = 'block';
+                    cashChangeGroup.style.display = 'block';
+                } else {
+                    cashCalcGroup.style.display = 'none';
+                    cashChangeGroup.style.display = 'none';
+                }
+            });
+        }
+    </script>
+}

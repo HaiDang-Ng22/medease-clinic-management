@@ -98,48 +98,32 @@ namespace Healthy_System.Controllers
 
 
 
-            var today = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
+            var today = DateTime.Today;
 
-
-
-            // Appointments today: Chỉ lấy các ca hợp lệ cần khám hôm nay (loại trừ các ca đã hủy hoặc đã quá hạn)
-            var todayAppointments = _context.Appointments
+            // Appointments today: Lọc bộ nhớ để tương thích hoàn toàn với SQLite (loại trừ ca đã hủy, ca quá hạn, khung giờ đã trôi qua)
+            var candidateAppointments = _context.Appointments
                 .Include(a => a.Patient)
                 .Include(a => a.Specialty)
-                .Where(a => a.DoctorId == doctor.Id && a.AppointmentDate.Date == today && a.Status != "Cancelled" && a.Status != "Expired")
+                .Where(a => a.DoctorId == doctor.Id && a.Status != "Cancelled" && a.Status != "Expired")
+                .ToList();
+
+            var todayAppointments = candidateAppointments
+                .Where(a => a.AppointmentDate.Date == today && !IsSlotInPast(a.TimeSlot))
                 .OrderBy(a => a.TimeSlot)
                 .ToList();
 
-
-
             ViewBag.Doctor = doctor;
-
             ViewBag.TodayAppointments = todayAppointments;
-
             ViewBag.TotalToday = todayAppointments.Count;
-
             ViewBag.WaitingCount = todayAppointments.Count(a => a.Status == "Pending" || a.Status == "Confirmed");
-
-            ViewBag.CompletedCount = todayAppointments.Count(a => a.Status == "Completed");
-
-
+            ViewBag.CompletedCount = candidateAppointments.Count(a => a.AppointmentDate.Date == today && a.Status == "Completed");
 
             // Upcoming appointments
-
-            ViewBag.UpcomingAppointments = _context.Appointments
-
-                .Include(a => a.Patient)
-
-                .Include(a => a.Specialty)
-
-                .Where(a => a.DoctorId == doctor.Id && a.AppointmentDate.Date > today && a.Status != "Cancelled")
-
+            ViewBag.UpcomingAppointments = candidateAppointments
+                .Where(a => a.AppointmentDate.Date > today)
                 .OrderBy(a => a.AppointmentDate)
-
                 .ThenBy(a => a.TimeSlot)
-
                 .Take(10)
-
                 .ToList();
 
 
@@ -153,25 +137,19 @@ namespace Healthy_System.Controllers
         // US-30: View Patient Queue for today
 
         public IActionResult Queue()
-
         {
-
             var doctor = GetCurrentDoctor();
-
             if (doctor == null) return RedirectToAction(nameof(Unconfigured));
-
-
 
             AutoUpdateOverdueAppointments(doctor.Id);
 
-
-
-            var today = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Utc);
-
+            var today = DateTime.Today;
             var queue = _context.Appointments
                 .Include(a => a.Patient)
                 .Include(a => a.Specialty)
-                .Where(a => a.DoctorId == doctor.Id && a.AppointmentDate.Date == today && a.Status != "Cancelled" && a.Status != "Expired")
+                .Where(a => a.DoctorId == doctor.Id && a.Status != "Cancelled" && a.Status != "Expired")
+                .ToList()
+                .Where(a => a.AppointmentDate.Date == today && !IsSlotInPast(a.TimeSlot))
                 .OrderBy(a => a.TimeSlot)
                 .ToList();
 
