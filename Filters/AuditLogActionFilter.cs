@@ -35,10 +35,9 @@ namespace Healthy_System.Filters
                 var controllerName = context.RouteData.Values["controller"]?.ToString() ?? "";
                 var actionName = context.RouteData.Values["action"]?.ToString() ?? "";
 
-                // Không ghi log đăng nhập / đăng ký (chứa mật khẩu) và các action đã log thủ công
+                // Không ghi log đăng nhập / đăng ký (chứa mật khẩu) và AdminController (đã tự ghi chi tiết)
                 if (controllerName.Equals("Account", StringComparison.OrdinalIgnoreCase)) return;
-                if (controllerName.Equals("Admin", StringComparison.OrdinalIgnoreCase) &&
-                    AlreadyLoggedAdminActions.Contains(actionName, StringComparer.OrdinalIgnoreCase)) return;
+                if (controllerName.Equals("Admin", StringComparison.OrdinalIgnoreCase)) return;
 
                 // Thao tác thành công trong hệ thống này luôn kết thúc bằng redirect
                 // (nếu validate lỗi thì trả lại View -> không ghi log)

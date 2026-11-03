@@ -768,6 +768,90 @@ namespace Healthy_System.Data
                 );
                 context.SaveChanges();
             }
+
+            // Seed AuditLogs (US41)
+            if (!context.AuditLogs.Any())
+            {
+                var adminUser = context.Users.FirstOrDefault(u => u.Role == "Admin");
+                int? adminId = adminUser?.Id;
+                string adminName = adminUser?.FullName ?? "Quản Trị Viên";
+
+                context.AuditLogs.AddRange(
+                    new AuditLog
+                    {
+                        UserId = adminId,
+                        ActorName = adminName,
+                        ActorRole = "Admin",
+                        Action = "Login",
+                        EntityName = "Hệ thống",
+                        EntityId = "AUTH",
+                        Description = "Đăng nhập thành công vào bảng điều khiển quản trị",
+                        IpAddress = "127.0.0.1",
+                        CreatedAt = DateTime.UtcNow.AddHours(-4)
+                    },
+                    new AuditLog
+                    {
+                        UserId = adminId,
+                        ActorName = adminName,
+                        ActorRole = "Admin",
+                        Action = "Create",
+                        EntityName = "Specialty",
+                        EntityId = "1",
+                        Description = "Khởi tạo danh mục chuyên khoa: Tim mạch",
+                        IpAddress = "127.0.0.1",
+                        CreatedAt = DateTime.UtcNow.AddHours(-3).AddMinutes(15)
+                    },
+                    new AuditLog
+                    {
+                        UserId = adminId,
+                        ActorName = adminName,
+                        ActorRole = "Admin",
+                        Action = "Create",
+                        EntityName = "TimeSlotConfig",
+                        EntityId = "1",
+                        Description = "Cấu hình ca làm việc mới: Ca Sáng (08:00 - 12:00)",
+                        IpAddress = "127.0.0.1",
+                        CreatedAt = DateTime.UtcNow.AddHours(-2).AddMinutes(30)
+                    },
+                    new AuditLog
+                    {
+                        UserId = adminId,
+                        ActorName = adminName,
+                        ActorRole = "Admin",
+                        Action = "Create",
+                        EntityName = "TimeSlotConfig",
+                        EntityId = "2",
+                        Description = "Cấu hình ca làm việc mới: Ca Chiều (13:30 - 17:30)",
+                        IpAddress = "127.0.0.1",
+                        CreatedAt = DateTime.UtcNow.AddHours(-2).AddMinutes(20)
+                    },
+                    new AuditLog
+                    {
+                        UserId = adminId,
+                        ActorName = adminName,
+                        ActorRole = "Admin",
+                        Action = "Update",
+                        EntityName = "User",
+                        EntityId = "2",
+                        Description = "Phân quyền và kích hoạt tài khoản nhân sự y tế",
+                        IpAddress = "127.0.0.1",
+                        CreatedAt = DateTime.UtcNow.AddHours(-1).AddMinutes(45)
+                    },
+                    new AuditLog
+                    {
+                        UserId = adminId,
+                        ActorName = adminName,
+                        ActorRole = "Admin",
+                        Action = "Create",
+                        EntityName = "Equipment",
+                        EntityId = "1",
+                        Description = "Tiếp nhận và nghiệm thu trang thiết bị y tế mới",
+                        IpAddress = "127.0.0.1",
+                        CreatedAt = DateTime.UtcNow.AddMinutes(-30)
+                    }
+                );
+                context.SaveChanges();
+            }
         }
     }
 }
