@@ -286,6 +286,12 @@
                             <i class="fa-solid fa-calculator me-1"></i>Cổng Kế Toán
                         </a>
                     }
+                    else if (User.IsInRole("LabTech"))
+                    {
+                        <a asp-controller="LabTech" asp-action="Dashboard" class="btn btn-sm btn-primary rounded-1 px-3 py-2 fw-semibold" style="background:#0284c7; border-color:#0284c7;">
+                            <i class="fa-solid fa-flask-vial me-1"></i>Cổng Kỹ Thuật Viên
+                        </a>
+                    }
                     else if (User.IsInRole("Admin"))
                     {
                         <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-sm btn-danger rounded-1 px-3 py-2 fw-semibold">
@@ -314,7 +320,7 @@
                                     <div class="px-3 py-2 border-bottom" style="border-color:#e2e8f0 !important;">
                                         <div class="fw-bold text-dark">@User.Identity.Name</div>
                                         <small class="text-muted">
-@(User.IsInRole("Doctor") ? "Bác sĩ Chuyên khoa" : (User.IsInRole("Receptionist") ? "Nhân viên Lễ tân" : (User.IsInRole("Accountant") ? "Kế toán viên" : (User.IsInRole("Admin") ? "Quản trị viên" : "Bệnh nhân"))))
+@(User.IsInRole("Doctor") ? "Bác sĩ Chuyên khoa" : (User.IsInRole("Receptionist") ? "Nhân viên Lễ tân" : (User.IsInRole("Accountant") ? "Kế toán viên" : (User.IsInRole("LabTech") ? "Kỹ thuật viên Xét nghiệm" : (User.IsInRole("Admin") ? "Quản trị viên" : "Bệnh nhân")))))
                                         </small>
                                     </div>
                                 </li>
@@ -341,6 +347,11 @@
                                     <li><a class="dropdown-item py-2" asp-controller="Accountant" asp-action="Invoices"><i class="fa-solid fa-file-invoice-dollar me-2 text-muted"></i>Hóa đơn & Thu viện phí</a></li>
                                     <li><a class="dropdown-item py-2" asp-controller="Payroll" asp-action="Index"><i class="fa-solid fa-money-bill-wave me-2 text-muted"></i>Tính lương nhân sự</a></li>
                                     <li><a class="dropdown-item py-2" asp-controller="Accountant" asp-action="RevenueReport"><i class="fa-solid fa-chart-line me-2 text-muted"></i>Báo cáo doanh thu</a></li>
+                                }
+                                else if (User.IsInRole("LabTech"))
+                                {
+                                    <li><a class="dropdown-item py-2" asp-controller="LabTech" asp-action="Dashboard"><i class="fa-solid fa-gauge-high me-2 text-muted"></i>Bàn làm việc KTV</a></li>
+                                    <li><a class="dropdown-item py-2" asp-controller="LabTech" asp-action="Index"><i class="fa-solid fa-flask-vial me-2 text-muted"></i>Yêu cầu xét nghiệm</a></li>
                                 }
                                 else if (User.IsInRole("Admin"))
                                 {

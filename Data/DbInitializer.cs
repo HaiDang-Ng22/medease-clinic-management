@@ -225,6 +225,24 @@ namespace Healthy_System.Data
                 });
                 context.SaveChanges();
             }
+
+            // Đảm bảo luôn có tài khoản Kỹ thuật viên xét nghiệm để test US28, US29, US30
+            if (!context.Users.Any(u => u.Role == "LabTech"))
+            {
+                var hashedPass = BCrypt.Net.BCrypt.HashPassword("123456");
+                context.Users.Add(new User
+                {
+                    FullName = "Trần Minh Khoa (KTV Xét Nghiệm)",
+                    Email = "ktv@healthysystem.vn",
+                    PasswordHash = hashedPass,
+                    PhoneNumber = "0933445566",
+                    Role = "LabTech",
+                    Gender = "Nam",
+                    Address = "Quận Bình Thạnh, TP.HCM",
+                    CreatedAt = DateTime.UtcNow
+                });
+                context.SaveChanges();
+            }
             // Seed Specialties
             if (!context.Specialties.Any())
             {
