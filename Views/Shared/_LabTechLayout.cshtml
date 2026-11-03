@@ -61,6 +61,10 @@
             <div class="small fw-normal opacity-75 mt-1">Kỹ Thuật Viên XN</div>
         </div>
         <nav class="flex-grow-1 py-2">
+            <a asp-controller="LabTech" asp-action="Dashboard"
+               class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")">
+                <i class="fa-solid fa-gauge me-2"></i>Tổng Quan (Dashboard)
+            </a>
             <a asp-controller="LabTech" asp-action="Index"
                class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
                 <i class="fa-solid fa-list-ul me-2"></i>Phiếu Yêu Cầu XN

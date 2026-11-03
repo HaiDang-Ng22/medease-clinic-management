@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using BCrypt.Net;
@@ -69,8 +70,26 @@ namespace Healthy_System.Controllers
                 return RedirectToAction(nameof(Dashboard));
             }
 
+            var oldRole = user.Role;
             user.Role = newRole;
             _context.SaveChanges();
+
+            // US41: Ghi Audit Log khi thay đổi quyền người dùng
+            var actorIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int? actorId = int.TryParse(actorIdStr, out var uid) ? uid : null;
+            _context.AuditLogs.Add(new AuditLog
+            {
+                UserId = actorId,
+                ActorName = User.Identity?.Name ?? "Admin",
+                ActorRole = "Admin",
+                Action = "Update",
+                EntityName = "User",
+                EntityId = user.Id.ToString(),
+                Description = $"Thay đổi vai trò người dùng {user.FullName} từ '{oldRole}' sang '{newRole}'",
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+
             TempData["SuccessMessage"] = $"Đã cập nhật vai trò của {user.FullName} thành: {newRole}";
             return RedirectToAction(nameof(Dashboard));
         }
@@ -436,6 +455,269 @@ namespace Healthy_System.Controllers
                 TempData["SuccessMessage"] = $"Đã chuyển trạng thái thiết bị {equipment.Name} sang: {equipment.Status}";
             }
             return RedirectToAction(nameof(Equipments));
+        }
+
+        // ==========================================
+        // US-34: Báo cáo doanh thu theo ngày / tháng
+        // ==========================================
+        public IActionResult RevenueReport(string? period, int? year, int? month)
+        {
+            period ??= "month";
+            year ??= DateTime.Now.Year;
+            month ??= DateTime.Now.Month;
+
+            var completedAppts = _context.Appointments
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .Include(a => a.Specialty)
+                .Where(a => a.Status == "Completed")
+                .AsQueryable();
+
+            completedAppts = completedAppts.Where(a => a.AppointmentDate.Year == year);
+
+            var labels = new List<string>();
+            var revenueData = new List<decimal>();
+            var countData = new List<int>();
+            decimal totalRevenue = 0;
+            int totalAppointments = 0;
+
+            if (period == "day" && month.HasValue)
+            {
+                var filtered = completedAppts.Where(a => a.AppointmentDate.Month == month).ToList();
+                int daysInMonth = DateTime.DaysInMonth(year.Value, month.Value);
+                for (int d = 1; d <= daysInMonth; d++)
+                {
+                    var dayAppts = filtered.Where(a => a.AppointmentDate.Day == d).ToList();
+                    labels.Add($"Ngày {d:D2}");
+                    decimal rev = dayAppts.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0);
+                    revenueData.Add(rev);
+                    countData.Add(dayAppts.Count);
+                }
+                totalRevenue = filtered.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0);
+                totalAppointments = filtered.Count;
+            }
+            else
+            {
+                var allYear = completedAppts.ToList();
+                for (int m = 1; m <= 12; m++)
+                {
+                    var monthAppts = allYear.Where(a => a.AppointmentDate.Month == m).ToList();
+                    labels.Add($"Tháng {m}");
+                    decimal rev = monthAppts.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0);
+                    revenueData.Add(rev);
+                    countData.Add(monthAppts.Count);
+                }
+                totalRevenue = allYear.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0);
+                totalAppointments = allYear.Count;
+            }
+
+            var topDoctors = _context.Appointments
+                .Include(a => a.Doctor).ThenInclude(d => d!.User)
+                .Where(a => a.Status == "Completed" && a.AppointmentDate.Year == year).ToList()
+                .GroupBy(a => a.DoctorId)
+                .Select(g => new {
+                    DoctorName = g.First().Doctor != null && g.First().Doctor!.User != null ? g.First().Doctor!.User!.FullName : "Không rõ",
+                    Count = g.Count(),
+                    Revenue = g.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0)
+                })
+                .OrderByDescending(x => x.Revenue).Take(5).ToList();
+
+            var topSpecialties = _context.Appointments
+                .Include(a => a.Specialty).Include(a => a.Doctor)
+                .Where(a => a.Status == "Completed" && a.AppointmentDate.Year == year).ToList()
+                .GroupBy(a => a.SpecialtyId)
+                .Select(g => new {
+                    SpecialtyName = g.First().Specialty != null ? g.First().Specialty!.Name : "Không rõ",
+                    Count = g.Count(),
+                    Revenue = g.Sum(a => a.Doctor != null ? a.Doctor.ConsultationFee : 0)
+                })
+                .OrderByDescending(x => x.Revenue).Take(5).ToList();
+
+            ViewBag.Period = period;
+            ViewBag.Year = year;
+            ViewBag.Month = month;
+            ViewBag.ChartLabels = labels;
+            ViewBag.ChartRevenue = revenueData;
+            ViewBag.ChartCount = countData;
+            ViewBag.TotalRevenue = totalRevenue;
+            ViewBag.TotalAppointments = totalAppointments;
+            ViewBag.TopDoctors = topDoctors;
+            ViewBag.TopSpecialties = topSpecialties;
+            ViewBag.AvgRevenue = totalAppointments > 0 ? totalRevenue / totalAppointments : 0;
+
+            return View();
+        }
+
+        // ==========================================
+        // US-40: Cấu hình ca làm việc & khung giờ
+        // ==========================================
+        public IActionResult TimeSlotConfig()
+        {
+            var configs = _context.TimeSlotConfigs.OrderBy(t => t.StartTime).ToList();
+            return View(configs);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CreateTimeSlot(string shiftName, string startTime, string endTime,
+            int slotDurationMinutes, int maxPatientsPerSlot, string? notes)
+        {
+            if (string.IsNullOrWhiteSpace(shiftName) || string.IsNullOrWhiteSpace(startTime) || string.IsNullOrWhiteSpace(endTime))
+            {
+                TempData["ErrorMessage"] = "Vui lòng điền đầy đủ thông tin ca làm việc.";
+                return RedirectToAction(nameof(TimeSlotConfig));
+            }
+            var config = new TimeSlotConfig
+            {
+                ShiftName = shiftName.Trim(),
+                StartTime = startTime,
+                EndTime = endTime,
+                SlotDurationMinutes = slotDurationMinutes > 0 ? slotDurationMinutes : 30,
+                MaxPatientsPerSlot = maxPatientsPerSlot > 0 ? maxPatientsPerSlot : 1,
+                Notes = notes?.Trim(),
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.TimeSlotConfigs.Add(config);
+            _context.SaveChanges();
+
+            var actorIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int? actorId = int.TryParse(actorIdStr, out var uid) ? uid : null;
+            _context.AuditLogs.Add(new AuditLog
+            {
+                UserId = actorId,
+                ActorName = User.Identity?.Name ?? "Admin",
+                ActorRole = "Admin",
+                Action = "Create",
+                EntityName = "TimeSlotConfig",
+                EntityId = config.Id.ToString(),
+                Description = $"Tạo ca làm việc mới: {shiftName} ({startTime} - {endTime})",
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã thêm ca làm việc: {shiftName} ({startTime} - {endTime}) thành công!";
+            return RedirectToAction(nameof(TimeSlotConfig));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ToggleTimeSlot(int id)
+        {
+            var config = _context.TimeSlotConfigs.Find(id);
+            if (config == null) return NotFound();
+            config.IsActive = !config.IsActive;
+            config.UpdatedAt = DateTime.UtcNow;
+            _context.SaveChanges();
+
+            var actorIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int? actorId = int.TryParse(actorIdStr, out var uid) ? uid : null;
+            _context.AuditLogs.Add(new AuditLog
+            {
+                UserId = actorId,
+                ActorName = User.Identity?.Name ?? "Admin",
+                ActorRole = "Admin",
+                Action = "Update",
+                EntityName = "TimeSlotConfig",
+                EntityId = config.Id.ToString(),
+                Description = $"{(config.IsActive ? "Kích hoạt" : "Vô hiệu hóa")} ca làm việc: {config.ShiftName}",
+                CreatedAt = DateTime.UtcNow
+            });
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã {(config.IsActive ? "kích hoạt" : "vô hiệu hóa")} ca: {config.ShiftName}";
+            return RedirectToAction(nameof(TimeSlotConfig));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteTimeSlot(int id)
+        {
+            var config = _context.TimeSlotConfigs.Find(id);
+            if (config != null)
+            {
+                var shiftName = config.ShiftName;
+                _context.TimeSlotConfigs.Remove(config);
+                _context.SaveChanges();
+
+                var actorIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                int? actorId = int.TryParse(actorIdStr, out var uid) ? uid : null;
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    UserId = actorId,
+                    ActorName = User.Identity?.Name ?? "Admin",
+                    ActorRole = "Admin",
+                    Action = "Delete",
+                    EntityName = "TimeSlotConfig",
+                    EntityId = id.ToString(),
+                    Description = $"Xóa ca làm việc: {shiftName}",
+                    CreatedAt = DateTime.UtcNow
+                });
+                _context.SaveChanges();
+
+                TempData["SuccessMessage"] = $"Đã xóa ca: {shiftName}";
+            }
+            return RedirectToAction(nameof(TimeSlotConfig));
+        }
+
+        // ==========================================
+        // US-41: Nhật ký hoạt động hệ thống (Audit Log)
+        // ==========================================
+        public IActionResult AuditLog(string? search, string? action, string? role,
+            string? dateFrom, string? dateTo, int page = 1)
+        {
+            var query = _context.AuditLogs.Include(a => a.User).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLower();
+                query = query.Where(a =>
+                    a.ActorName.ToLower().Contains(term) ||
+                    a.Description.ToLower().Contains(term) ||
+                    a.EntityName.ToLower().Contains(term));
+            }
+
+            if (!string.IsNullOrWhiteSpace(action))
+            {
+                query = query.Where(a => a.Action == action);
+            }
+
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                query = query.Where(a => a.ActorRole == role);
+            }
+
+            if (!string.IsNullOrWhiteSpace(dateFrom) && DateTime.TryParse(dateFrom, out var from))
+            {
+                var fromUtc = DateTime.SpecifyKind(from.Date, DateTimeKind.Utc);
+                query = query.Where(a => a.CreatedAt >= fromUtc);
+            }
+
+            if (!string.IsNullOrWhiteSpace(dateTo) && DateTime.TryParse(dateTo, out var to))
+            {
+                var toUtc = DateTime.SpecifyKind(to.Date.AddDays(1), DateTimeKind.Utc);
+                query = query.Where(a => a.CreatedAt < toUtc);
+            }
+
+            int pageSize = 20;
+            int total = query.Count();
+            int totalPages = (int)Math.Ceiling(total / (double)pageSize);
+            page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
+
+            var logs = query.OrderByDescending(a => a.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            ViewBag.Search = search;
+            ViewBag.SelectedAction = action;
+            ViewBag.SelectedRole = role;
+            ViewBag.DateFrom = dateFrom;
+            ViewBag.DateTo = dateTo;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalLogs = total;
+
+            return View(logs);
         }
     }
 }

@@ -1,0 +1,183 @@
+@{
+    ViewData["Title"] = "Tổng Quan Kỹ Thuật Viên";
+    Layout = "_LabTechLayout";
+
+    int totalRequests = ViewBag.TotalRequests ?? 0;
+    int todayRequests = ViewBag.TodayRequests ?? 0;
+    int totalPending = ViewBag.TotalPending ?? 0;
+    int totalDone = ViewBag.TotalDone ?? 0;
+
+    var recentRequests = ViewBag.RecentRequests as List<Appointment> ?? new List<Appointment>();
+    var enteredIds = ViewBag.EnteredIds as List<int> ?? new List<int>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-gauge-high text-primary me-2"></i>Bảng Điều Khiển Xét Nghiệm</h4>
+        <p class="text-muted small mb-0">Theo dõi tổng quan tiến độ tiếp nhận và thực hiện các phiếu xét nghiệm cận lâm sàng</p>
+    </div>
+    <a asp-action="Index" class="btn btn-primary">
+        <i class="fa-solid fa-list-check me-1"></i>Xem tất cả phiếu yêu cầu
+    </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Tổng Phiếu Yêu Cầu</div>
+                    <div class="fs-3 fw-bold text-primary mt-1">@totalRequests</div>
+                    <div class="text-muted small mt-1">Tất cả thời gian</div>
+                </div>
+                <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+                    <i class="fa-solid fa-flask-vial fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Yêu Cầu Hôm Nay</div>
+                    <div class="fs-3 fw-bold text-info mt-1">@todayRequests</div>
+                    <div class="text-muted small mt-1">@DateTime.Now.ToString("dd/MM/yyyy")</div>
+                </div>
+                <div class="bg-info-subtle text-info p-3 rounded-circle">
+                    <i class="fa-solid fa-calendar-day fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Chờ Xử Lý</div>
+                    <div class="fs-3 fw-bold text-warning mt-1">@totalPending</div>
+                    <div class="text-muted small mt-1">Chưa nhập kết quả</div>
+                </div>
+                <div class="bg-warning-subtle text-warning p-3 rounded-circle">
+                    <i class="fa-solid fa-hourglass-half fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm p-3 border-start border-4 border-success">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase">Đã Hoàn Thành</div>
+                    <div class="fs-3 fw-bold text-success mt-1">@totalDone</div>
+                    <div class="text-muted small mt-1">Đã có kết quả</div>
+                </div>
+                <div class="bg-success-subtle text-success p-3 rounded-circle">
+                    <i class="fa-solid fa-circle-check fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách phiếu yêu cầu mới nhất -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0">
+            <i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Phiếu Yêu Cầu Xét Nghiệm Mới Nhất
+        </h6>
+        <a asp-action="Index" class="btn btn-sm btn-outline-primary">
+            Xem tất cả <i class="fa-solid fa-arrow-right ms-1"></i>
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã lịch</th>
+                        <th>Bệnh nhân</th>
+                        <th>Bác sĩ chỉ định</th>
+                        <th>Chỉ định xét nghiệm</th>
+                        <th>Ngày khám</th>
+                        <th class="text-center">Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (recentRequests.Any())
+                    {
+                        foreach (var appt in recentRequests)
+                        {
+                            bool isDone = enteredIds.Contains(appt.Id);
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-primary border">@appt.AppointmentCode</span>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@appt.Patient?.FullName</div>
+                                    <div class="small text-muted">@appt.Patient?.PhoneNumber</div>
+                                </td>
+                                <td>
+                                    <div class="small fw-semibold">@appt.Doctor?.Title @appt.Doctor?.User?.FullName</div>
+                                    <div class="small text-muted">@appt.Specialty?.Name</div>
+                                </td>
+                                <td>
+                                    <div class="small bg-light p-2 rounded" style="max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        @appt.LabRequest
+                                    </div>
+                                </td>
+                                <td class="small text-muted">
+                                    @appt.AppointmentDate.ToString("dd/MM/yyyy") - @appt.TimeSlot
+                                </td>
+                                <td class="text-center">
+                                    @if (isDone)
+                                    {
+                                        <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">
+                                            <i class="fa-solid fa-check me-1"></i>Đã nhập KQ
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning px-3 py-1 rounded-pill">
+                                            <i class="fa-solid fa-clock me-1"></i>Chờ thực hiện
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <a asp-action="LabRequestDetail" asp-route-id="@appt.Id" class="btn btn-sm btn-outline-info" title="Xem chi tiết phiếu yêu cầu">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </a>
+                                        @if (isDone)
+                                        {
+                                            <a asp-action="EnterResult" asp-route-id="@appt.Id" class="btn btn-sm btn-outline-secondary" title="Sửa kết quả">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-action="EnterResult" asp-route-id="@appt.Id" class="btn btn-sm btn-primary" title="Nhập kết quả">
+                                                <i class="fa-solid fa-flask-vial"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fa-solid fa-flask text-secondary fa-3x mb-3"></i>
+                                <h6>Chưa có phiếu yêu cầu xét nghiệm nào</h6>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
