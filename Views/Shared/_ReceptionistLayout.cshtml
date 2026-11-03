@@ -525,37 +525,44 @@
             <nav class="sidebar-menu-wrapper">
                 <div class="sidebar-section-label">Nghiệp vụ tiếp đón</div>
 
-                <a asp-controller="Receptionist" asp-action="Dashboard" 
+                <a asp-controller="Receptionist" asp-action="Dashboard"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")"
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Bàn Tiếp Đón Hôm Nay">
                     <i class="fa-solid fa-clipboard-user nav-icon"></i>
                     <span class="sidebar-nav-label">Bàn Tiếp Đón Hôm Nay</span>
                 </a>
 
-                <a asp-controller="Receptionist" asp-action="Appointments" 
+                <a asp-controller="Receptionist" asp-action="Appointments"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Appointments" ? "active" : "")"
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Toàn Bộ Lịch Hẹn">
                     <i class="fa-solid fa-calendar-check nav-icon"></i>
                     <span class="sidebar-nav-label">Toàn Bộ Lịch Hẹn</span>
                 </a>
 
-                <a asp-controller="Receptionist" asp-action="CreateAppointment" 
+                <a asp-controller="Receptionist" asp-action="CreateAppointment"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "CreateAppointment" ? "active" : "")"
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Đặt Lịch Tại Quầy">
                     <i class="fa-solid fa-user-plus nav-icon"></i>
                     <span class="sidebar-nav-label">Đặt Lịch Tại Quầy</span>
                 </a>
 
+                <a asp-controller="Cashier" asp-action="Index"
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Cashier" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Quản Lý Thu Ngân">
+                    <i class="fa-solid fa-cash-register nav-icon text-success"></i>
+                    <span class="sidebar-nav-label">Quản Lý Thu Ngân</span>
+                </a>
+
                 <div class="sidebar-section-label mt-3">Tra cứu & Lịch trực</div>
 
-                <a asp-controller="Receptionist" asp-action="SearchPatient" 
+                <a asp-controller="Receptionist" asp-action="SearchPatient"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "SearchPatient" ? "active" : "")"
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Tìm Bệnh Nhân">
                     <i class="fa-solid fa-magnifying-glass-chart nav-icon"></i>
                     <span class="sidebar-nav-label">Tra Cứu Bệnh Nhân</span>
                 </a>
 
-                <a asp-controller="Receptionist" asp-action="DoctorsSchedule" 
+                <a asp-controller="Receptionist" asp-action="DoctorsSchedule"
                    class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "DoctorsSchedule" ? "active" : "")"
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Lịch Trực Bác Sĩ">
                     <i class="fa-solid fa-calendar-days nav-icon"></i>

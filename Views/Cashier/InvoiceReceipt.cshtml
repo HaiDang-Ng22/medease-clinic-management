@@ -1,0 +1,107 @@
+﻿@model Healthy_System.Models.Appointment
+@{
+    Layout = "_ReceptionistLayout";
+    ViewData["Title"] = "Phiếu Thu Viện Phí - " + Model.InvoiceCode;
+}
+<style>
+    @@media print {
+        body { background: #ffffff !important; }
+        .no-print { display: none !important; }
+        .invoice-card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+    }
+    .invoice-card {
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+</style>
+
+<div class="container py-3 no-print text-end">
+    <button onclick="window.print()" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">
+        <i class="fa-solid fa-print me-2"></i>In Phiếu Thu / Hóa Đơn
+    </button>
+    <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 ms-2">Về Danh Sách Thu Ngân</a>
+</div>
+
+<div class="container py-3">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="invoice-card p-4 p-md-5">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-4 mb-4">
+                    <div>
+                        <h4 class="fw-bold text-primary mb-1">PHÒNG KHÁM ĐA KHOA MEDEASE</h4>
+                        <small class="text-muted">280 An Dương Vương, P.4, Q.5, TP.HCM | Hotline: 1900 8888</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-success-subtle text-success border border-success px-3 py-2 fs-6 fw-bold">
+                            @Model.InvoiceCode
+                        </span>
+                        <div class="text-muted small mt-1">Thời gian: @(Model.PaidAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm"))</div>
+                    </div>
+                </div>
+
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold text-dark">PHIẾU THU TIỀN / HÓA ĐƠN VIỆN PHÍ</h3>
+                    <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Đã thanh toán qua: @(Model.PaymentMethod == "Cash" ? "Tiền mặt" : "Chuyển khoản ngân hàng")</span>
+                </div>
+
+                <!-- Thông tin bệnh nhân & chi tiết hóa đơn -->
+                <div class="row g-3 mb-4 p-3 bg-light rounded-3 border small">
+                    <div class="col-md-6">
+                        <strong>Họ tên bệnh nhân:</strong> @(Model.Patient?.FullName ?? "Chưa rõ")<br />
+                        <strong>Số điện thoại:</strong> @(Model.Patient?.PhoneNumber ?? "—")
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Thu ngân thực hiện:</strong> @Model.CashierName<br />
+                        <strong>Mã lịch hẹn:</strong> <span class="font-monospace">@Model.AppointmentCode</span>
+                    </div>
+                </div>
+
+                <!-- Chi tiết từng khoản mục -->
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" style="width:60px;">STT</th>
+                                <th>Nội dung dịch vụ khám bệnh</th>
+                                <th class="text-end" style="width:160px;">Thành tiền (VNĐ)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-center">1</td>
+                                <td>
+                                    <strong>Phí khám chuyên khoa:</strong> @(Model.Specialty?.Name ?? "Chuyên khoa")<br />
+                                    <small class="text-muted">Bác sĩ phụ trách: @(Model.Doctor?.Title) @(Model.Doctor?.User?.FullName) (Phòng @(Model.Doctor?.RoomNumber))</small>
+                                </td>
+                                <td class="text-end fw-bold">@((Model.Doctor?.ConsultationFee ?? 0).ToString("N0"))</td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="2" class="text-end fw-bold fs-6">Tổng cộng số tiền thanh toán:</td>
+                                <td class="text-end fw-bold fs-5 text-success">@((Model.PaidAmount > 0 ? Model.PaidAmount : Model.Doctor?.ConsultationFee ?? 0).ToString("N0")) đ</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Chữ ký xác nhận -->
+                <div class="row pt-4 mt-3 border-top text-center">
+                    <div class="col-6">
+                        <div class="text-muted small">BỆNH NHÂN / NGƯỜI NỘP TIỀN</div>
+                        <div style="height: 60px;"></div>
+                        <div class="fw-semibold">@(Model.Patient?.FullName)</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted small">NHÂN VIÊN THU NGÂN</div>
+                        <div style="height: 60px;"></div>
+                        <div class="fw-semibold text-primary">@Model.CashierName</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
