@@ -290,6 +290,14 @@
                                     </a>
                                 }
                                 @if (a.Status == "Pending" || a.Status == "Confirmed")
+                                {
+                                    <a asp-action="PrintTicket" asp-route-id="@a.Id" target="_blank"
+                                       class="btn btn-sm px-2 py-1 fw-semibold" style="background:#ffffff; color:#0f766e; border:1px solid #99f6e4; font-size:0.75rem; border-radius:4px;" title="In phiếu khám cho bệnh nhân">
+                                        <i class="fa-solid fa-print me-1"></i>In phiếu
+                                    </a>
+                                }
+
+                                @if (a.Status == "Pending" || a.Status == "Confirmed")
 
                                 {
 

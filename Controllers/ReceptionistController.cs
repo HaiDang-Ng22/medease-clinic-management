@@ -201,7 +201,22 @@ namespace Healthy_System.Controllers
 
             var typeLabel = bookingType == "Phone" ? "qua điện thoại" : "tại quầy";
             TempData["SuccessMessage"] = $"Tiếp nhận bệnh nhân thành công ({typeLabel})! Mã cuộc hẹn: {apptCode}";
-            return RedirectToAction(nameof(Dashboard));
+            // Chuyển sang trang in phiếu khám ngay sau khi tạo lịch thành công
+            return RedirectToAction(nameof(PrintTicket), new { id = appt.Id });
+        }
+
+        // US-15 Extension: In phiếu khám cho bệnh nhân
+        [HttpGet]
+        public IActionResult PrintTicket(int id)
+        {
+            var appt = _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor).ThenInclude(d => d.User)
+                .Include(a => a.Specialty)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (appt == null) return NotFound();
+            return View(appt);
         }
 
         // US-16: Search & Look Up Patient Information
