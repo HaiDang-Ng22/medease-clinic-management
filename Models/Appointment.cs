@@ -79,10 +79,10 @@ namespace Healthy_System.Models
 
         //US32: Thanh toán & Xuất phiếu thu
         public string PaymentStatus { get; set; } = "Unpaid";
-        public string PaymentMethod { get; set; }
-        public decimal PaidAmount { get; set; }
+        public string? PaymentMethod { get; set; }
+        public decimal PaidAmount { get; set; } = 0;
         public DateTime? PaidAt { get; set; }
-        public string CashierName { get; set; }
-        public string InvoiceCode { get; set; }
+        public string? CashierName { get; set; }
+        public string? InvoiceCode { get; set; }
     }
 }
