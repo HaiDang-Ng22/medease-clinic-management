@@ -37,6 +37,7 @@ namespace Healthy_System.Controllers
             ViewBag.PendingConfirmation = _context.Appointments.Count(a => a.Status == "Pending");
             ViewBag.ConfirmedToday = todayAppointments.Count(a => a.Status == "Confirmed");
             ViewBag.CompletedToday = todayAppointments.Count(a => a.Status == "Completed");
+            ViewBag.PendingContactCount = _context.ContactMessages.Count(c => !c.IsResolved);
 
             return View();
         }
@@ -103,10 +104,12 @@ namespace Healthy_System.Controllers
 
         // US-15: Create Walk-in OR Phone Appointment at Reception
         [HttpGet]
-        public IActionResult CreateAppointment()
+        public IActionResult CreateAppointment(string? patientName, string? phone)
         {
             ViewBag.Specialties = _context.Specialties.Where(s => s.IsActive).ToList();
             ViewBag.Doctors = _context.Doctors.Include(d => d.User).ToList();
+            ViewBag.PrefillPatientName = patientName;
+            ViewBag.PrefillPhone = phone;
             return View();
         }
 
@@ -645,6 +648,90 @@ namespace Healthy_System.Controllers
                 return DateTime.Now.TimeOfDay > startTime;
             }
             return false;
+        }
+
+        // US-07 / US-Reception: Quản lý yêu cầu liên hệ từ người dùng
+        [HttpGet]
+        public IActionResult ContactRequests(string? status, string? search)
+        {
+            var query = _context.ContactMessages.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                if (status.Equals("pending", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(c => !c.IsResolved);
+                }
+                else if (status.Equals("resolved", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(c => c.IsResolved);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLower();
+                query = query.Where(c => c.FullName.ToLower().Contains(term)
+                                      || (c.Phone != null && c.Phone.Contains(term))
+                                      || c.Email.ToLower().Contains(term)
+                                      || c.Subject.ToLower().Contains(term)
+                                      || c.Message.ToLower().Contains(term));
+            }
+
+            ViewBag.SelectedStatus = status ?? "all";
+            ViewBag.SearchTerm = search;
+            ViewBag.TotalCount = _context.ContactMessages.Count();
+            ViewBag.PendingCount = _context.ContactMessages.Count(c => !c.IsResolved);
+            ViewBag.ResolvedCount = _context.ContactMessages.Count(c => c.IsResolved);
+
+            var list = query
+                .OrderBy(c => c.IsResolved)
+                .ThenByDescending(c => c.CreatedAt)
+                .ToList();
+
+            return View(list);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ResolveContact(int id, string? returnStatus, string? returnSearch)
+        {
+            var contact = _context.ContactMessages.FirstOrDefault(c => c.Id == id);
+            if (contact == null) return NotFound();
+
+            contact.IsResolved = true;
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã cập nhật yêu cầu liên hệ từ bệnh nhân \"{contact.FullName}\" sang trạng thái Đã xử lý!";
+            return RedirectToAction(nameof(ContactRequests), new { status = returnStatus, search = returnSearch });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult UnresolveContact(int id, string? returnStatus, string? returnSearch)
+        {
+            var contact = _context.ContactMessages.FirstOrDefault(c => c.Id == id);
+            if (contact == null) return NotFound();
+
+            contact.IsResolved = false;
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã chuyển lại yêu cầu liên hệ từ bệnh nhân \"{contact.FullName}\" sang Chưa xử lý.";
+            return RedirectToAction(nameof(ContactRequests), new { status = returnStatus, search = returnSearch });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteContact(int id, string? returnStatus, string? returnSearch)
+        {
+            var contact = _context.ContactMessages.FirstOrDefault(c => c.Id == id);
+            if (contact == null) return NotFound();
+
+            _context.ContactMessages.Remove(contact);
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã xóa yêu cầu liên hệ của \"{contact.FullName}\"!";
+            return RedirectToAction(nameof(ContactRequests), new { status = returnStatus, search = returnSearch });
         }
 }
 }

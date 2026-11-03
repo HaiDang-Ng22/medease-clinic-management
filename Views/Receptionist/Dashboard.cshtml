@@ -18,6 +18,25 @@
     </div>
 </div>
 
+@if (ViewBag.PendingContactCount != null && (int)ViewBag.PendingContactCount > 0)
+{
+    <div class="alert alert-warning d-flex flex-column flex-md-row align-items-md-center justify-content-between p-3 rounded-2 mb-4 border-warning border-opacity-25 gap-2" style="background-color: #fffbeb;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;">
+                <i class="fa-solid fa-headset fs-6"></i>
+            </div>
+            <div>
+                <strong class="text-slate-900" style="color:#0f172a;">Có @ViewBag.PendingContactCount yêu cầu liên hệ / tư vấn trực tuyến đang chờ xử lý!</strong>
+                <div class="text-muted small">Người bệnh đã gửi câu hỏi hoặc thắc mắc qua cổng trực tuyến, vui lòng kiểm tra và gọi lại phản hồi.</div>
+            </div>
+        </div>
+        <a asp-action="ContactRequests" asp-route-status="pending" class="btn btn-sm btn-warning text-dark fw-bold px-3 py-2 text-nowrap d-inline-flex align-items-center gap-2">
+            <i class="fa-solid fa-arrow-right"></i>
+            <span>Xem &amp; Phản Hồi Ngay</span>
+        </a>
+    </div>
+}
+
 <!-- Authentic Clinical Metrics (app-screens §2.2) -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">

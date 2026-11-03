@@ -1,3 +1,4 @@
+@inject Healthy_System.Data.AppDbContext _layoutDbContext
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -522,6 +523,12 @@
             </div>
 
             <!-- Navigation Links -->
+            @{
+    int pendingContactBadge = 0;
+    try {
+        pendingContactBadge = _layoutDbContext.ContactMessages.Count(c => !c.IsResolved);
+    } catch { }
+}
             <nav class="sidebar-menu-wrapper">
                 <div class="sidebar-section-label">Nghiệp vụ tiếp đón</div>
 
@@ -544,6 +551,19 @@
                    data-bs-toggle="tooltip" data-bs-placement="right" title="Đặt Lịch Tại Quầy">
                     <i class="fa-solid fa-user-plus nav-icon"></i>
                     <span class="sidebar-nav-label">Đặt Lịch Tại Quầy</span>
+                </a>
+
+                <a asp-controller="Receptionist" asp-action="ContactRequests"
+                   class="sidebar-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "ContactRequests" ? "active" : "")"
+                   data-bs-toggle="tooltip" data-bs-placement="right" title="Yêu Cầu Liên Hệ & Tư Vấn">
+                    <i class="fa-solid fa-headset nav-icon text-info"></i>
+                    <span class="sidebar-nav-label d-flex align-items-center justify-content-between flex-grow-1">
+                        <span>Yêu Cầu Liên Hệ</span>
+                        @if (pendingContactBadge > 0)
+                        {
+                            <span class="badge rounded-pill bg-warning text-dark px-2 py-1 ms-2" style="font-size:0.7rem; font-weight:700;">@pendingContactBadge</span>
+                        }
+                    </span>
                 </a>
 
                 <a asp-controller="Cashier" asp-action="Index"
@@ -597,6 +617,16 @@
                 </div>
 
                 <div class="topbar-right">
+                    @if (pendingContactBadge > 0)
+                    {
+                        <a asp-controller="Receptionist" asp-action="ContactRequests" asp-route-status="pending" 
+                           class="btn btn-sm btn-outline-warning text-dark position-relative d-inline-flex align-items-center gap-1 px-3 py-1 fw-semibold bg-white border shadow-sm" 
+                           title="Có yêu cầu liên hệ trực tuyến đang chờ xử lý" style="border-color:#fde68a !important;">
+                            <i class="fa-solid fa-bell text-warning"></i>
+                            <span class="d-none d-md-inline" style="font-size:0.8125rem;">Liên hệ mới:</span>
+                            <span class="badge rounded-pill bg-danger text-white">@pendingContactBadge</span>
+                        </a>
+                    }
                     <a asp-controller="Receptionist" asp-action="CreateAppointment" class="btn-action-primary">
                         <i class="fa-solid fa-plus"></i>
                         <span>Tiếp nhận nhanh</span>

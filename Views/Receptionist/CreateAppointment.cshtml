@@ -29,13 +29,13 @@
                         <label class="form-label fw-bold">Hình thức tiếp nhận <span class="text-danger">*</span></label>
                         <div class="d-flex gap-3">
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="bookingType" id="walkIn" value="WalkIn" checked />
+                                <input class="form-check-input" type="radio" name="bookingType" id="walkIn" value="WalkIn" @(ViewBag.PrefillPhone == null ? "checked" : "") />
                                 <label class="form-check-label fw-semibold" for="walkIn">
                                     <i class="fa-solid fa-person-walking me-1 text-success"></i>Trực tiếp tại quầy
                                 </label>
                             </div>
                             <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="bookingType" id="phone" value="Phone" />
+                                <input class="form-check-input" type="radio" name="bookingType" id="phone" value="Phone" @(ViewBag.PrefillPhone != null ? "checked" : "") />
                                 <label class="form-check-label fw-semibold" for="phone">
                                     <i class="fa-solid fa-phone me-1 text-primary"></i>Qua điện thoại
                                 </label>
@@ -45,11 +45,11 @@
 
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Họ và tên bệnh nhân <span class="text-danger">*</span></label>
-                        <input type="text" name="patientName" class="form-control" required placeholder="Nguyễn Văn A" />
+                        <input type="text" name="patientName" class="form-control" required placeholder="Nguyễn Văn A" value="@ViewBag.PrefillPatientName" />
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Số điện thoại liên hệ <span class="text-danger">*</span></label>
-                        <input type="text" name="phone" class="form-control" required placeholder="0901234567"
+                        <input type="text" name="phone" class="form-control" required placeholder="0901234567" value="@ViewBag.PrefillPhone"
                                pattern="[0-9]{9,11}" title="Số điện thoại gồm 9–11 chữ số" />
                         <div class="form-text text-muted">Nếu đã có tài khoản, thông tin sẽ được tìm theo SĐT.</div>
                     </div>

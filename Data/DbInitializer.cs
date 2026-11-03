@@ -51,8 +51,12 @@ namespace Healthy_System.Data
                 ("Rating",        "INTEGER"),
                 ("ReviewComment", "TEXT"),
                 ("ReviewedAt",    "TEXT"),
+                ("PaymentStatus", "TEXT DEFAULT 'Unpaid'"),
                 ("PaymentMethod", "TEXT"),
+                ("PaidAmount",    "NUMERIC DEFAULT 0"),
+                ("PaidAt",        "TEXT"),
                 ("CashierName",   "TEXT"),
+                ("InvoiceCode",   "TEXT"),
             };
 
             try
@@ -132,6 +136,41 @@ namespace Healthy_System.Data
                     );
                     CREATE INDEX IF NOT EXISTS ""IX_AuditLogs_UserId"" ON ""AuditLogs"" (""UserId"");
                     CREATE INDEX IF NOT EXISTS ""IX_AuditLogs_CreatedAt"" ON ""AuditLogs"" (""CreatedAt"");
+                ");
+
+                // Tự động tạo bảng PayrollConfigs nếu chưa có (US33)
+                context.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS ""PayrollConfigs"" (
+                        ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_PayrollConfigs"" PRIMARY KEY AUTOINCREMENT,
+                        ""UserId"" INTEGER NOT NULL,
+                        ""BaseSalary"" TEXT NOT NULL,
+                        ""ShiftAllowance"" TEXT NOT NULL,
+                        ""CommissionRate"" REAL NOT NULL,
+                        ""UpdatedAt"" TEXT NOT NULL,
+                        CONSTRAINT ""FK_PayrollConfigs_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_PayrollConfigs_UserId"" ON ""PayrollConfigs"" (""UserId"");
+                ");
+
+                // Tự động tạo bảng Payrolls nếu chưa có (US33)
+                context.Database.ExecuteSqlRaw(@"
+                    CREATE TABLE IF NOT EXISTS ""Payrolls"" (
+                        ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_Payrolls"" PRIMARY KEY AUTOINCREMENT,
+                        ""UserId"" INTEGER NOT NULL,
+                        ""Month"" INTEGER NOT NULL,
+                        ""Year"" INTEGER NOT NULL,
+                        ""TotalExams"" INTEGER NOT NULL,
+                        ""TotalShifts"" INTEGER NOT NULL,
+                        ""BaseSalary"" TEXT NOT NULL,
+                        ""PerformanceSalary"" TEXT NOT NULL,
+                        ""Allowance"" TEXT NOT NULL,
+                        ""Deductions"" TEXT NOT NULL,
+                        ""NetSalary"" TEXT NOT NULL,
+                        ""Status"" TEXT NOT NULL,
+                        ""CreatedAt"" TEXT NOT NULL,
+                        CONSTRAINT ""FK_Payrolls_Users_UserId"" FOREIGN KEY (""UserId"") REFERENCES ""Users"" (""Id"") ON DELETE CASCADE
+                    );
+                    CREATE INDEX IF NOT EXISTS ""IX_Payrolls_UserId"" ON ""Payrolls"" (""UserId"");
                 ");
             }
             catch
