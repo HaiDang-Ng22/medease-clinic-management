@@ -3,120 +3,394 @@
     Layout = "_DoctorLayout";
     ViewData["Title"] = "Phòng Khám - " + Model.Patient?.FullName;
     var history = ViewBag.PatientHistory as List<Appointment> ?? new List<Appointment>();
+    var labResult = ViewBag.LabResult as Healthy_System.Models.LabResult;
+    bool hasLabRequest = !string.IsNullOrWhiteSpace(Model.LabRequest);
+    bool isCompleted = Model.Status == "Completed";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+@* ===== HEADER ===== *@
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
     <div>
-        <h2 class="fw-bold mb-1"><i class="fa-solid fa-stethoscope text-primary me-2"></i>Bàn Khám Bệnh & Chẩn Đoán</h2>
-        <p class="text-muted mb-0">Mã ca khám: <strong>@Model.AppointmentCode</strong> | Khung giờ: <strong>@Model.TimeSlot</strong> (Ngày @Model.AppointmentDate.ToString("dd/MM/yyyy"))</p>
+        <h2 class="fw-bold mb-1">
+            <i class="fa-solid fa-stethoscope text-primary me-2"></i>Bàn Khám Bệnh & Chẩn Đoán
+        </h2>
+        <p class="text-muted mb-0">
+            Mã ca: <strong>@Model.AppointmentCode</strong> &nbsp;|&nbsp;
+            Giờ: <strong>@Model.TimeSlot</strong> &nbsp;|&nbsp;
+            Ngày: <strong>@Model.AppointmentDate.ToString("dd/MM/yyyy")</strong>
+        </p>
     </div>
-    <a asp-action="Queue" class="btn btn-outline-secondary rounded-pill px-4">
-        <i class="fa-solid fa-arrow-left me-1"></i>Quay Lại Hàng Đợi
-    </a>
+    <div class="d-flex gap-2 flex-wrap">
+        @if (hasLabRequest)
+        {
+            <a asp-action="LabResultView" asp-route-appointmentId="@Model.Id"
+               class="btn btn-outline-info rounded-pill px-3 fw-semibold">
+                <i class="fa-solid fa-flask me-1"></i>Xem KQ Xét Nghiệm
+            </a>
+        }
+        <a asp-action="Queue" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="fa-solid fa-arrow-left me-1"></i>Hàng Đợi
+        </a>
+    </div>
 </div>
 
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show rounded-4 mb-4">
+        <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show rounded-4 mb-4">
+        <i class="fa-solid fa-circle-xmark me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (isCompleted)
+{
+    <div class="alert alert-success rounded-4 mb-4 d-flex align-items-center gap-3">
+        <i class="fa-solid fa-circle-check fa-2x text-success"></i>
+        <div>
+            <div class="fw-bold">Ca khám đã hoàn tất!</div>
+            <div class="small">Bạn có thể cập nhật thêm thông tin hoặc xem hồ sơ bệnh án đầy đủ.</div>
+        </div>
+        <a asp-action="MedicalRecord" asp-route-id="@Model.Id" class="btn btn-success rounded-pill px-4 ms-auto fw-bold">
+            <i class="fa-solid fa-file-medical me-1"></i>Xem Hồ Sơ
+        </a>
+    </div>
+}
+
 <div class="row g-4">
-    <!-- Left: Patient Info & Medical History -->
+
+    @* ===== LEFT PANEL: Thông tin BN + Lịch sử ===== *@
     <div class="col-lg-4">
+
+        @* Thông tin bệnh nhân *@
         <div class="card card-doctor p-4 mb-4">
-            <h5 class="fw-bold mb-3 text-primary"><i class="fa-solid fa-id-card me-2"></i>Thông Tin Bệnh Nhân</h5>
-            <div class="mb-2"><strong>Họ và tên:</strong> @Model.Patient?.FullName</div>
-            <div class="mb-2"><strong>Ngày sinh:</strong> @(Model.Patient?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa rõ") (@Model.Patient?.Gender)</div>
-            <div class="mb-2"><strong>Số điện thoại:</strong> @Model.Patient?.PhoneNumber</div>
-            <div class="mb-2"><strong>Địa chỉ:</strong> @(Model.Patient?.Address ?? "Chưa cung cấp")</div>
-            <div class="p-3 bg-light rounded-3 mt-3">
-                <strong>Triệu chứng ban đầu:</strong>
-                <p class="text-danger fw-semibold mb-0 mt-1">@Model.ReasonForVisit</p>
+            <h5 class="fw-bold mb-3 text-primary">
+                <i class="fa-solid fa-id-card me-2"></i>Thông Tin Bệnh Nhân
+            </h5>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold fs-4"
+                     style="width:52px;height:52px;flex-shrink:0;">
+                    @(Model.Patient?.FullName?.Length > 0 ? Model.Patient.FullName[0].ToString().ToUpper() : "?")
+                </div>
+                <div>
+                    <div class="fw-bold fs-6">@Model.Patient?.FullName</div>
+                    <div class="small text-muted">@Model.Patient?.Gender &nbsp;|&nbsp; @(Model.Patient?.DateOfBirth?.ToString("dd/MM/yyyy") ?? "Chưa rõ")</div>
+                </div>
+            </div>
+            <div class="small mb-1"><i class="fa-solid fa-phone me-2 text-muted"></i>@Model.Patient?.PhoneNumber</div>
+            <div class="small mb-1"><i class="fa-solid fa-location-dot me-2 text-muted"></i>@(Model.Patient?.Address ?? "Chưa cung cấp")</div>
+            <div class="p-3 bg-warning-subtle rounded-3 mt-3 border border-warning-subtle">
+                <div class="small fw-bold text-warning-emphasis mb-1"><i class="fa-solid fa-notes-medical me-1"></i>Lý do khám:</div>
+                <div class="text-danger fw-semibold small">@Model.ReasonForVisit</div>
             </div>
         </div>
 
+        @* Trạng thái XN *@
+        <div class="card card-doctor p-4 mb-4">
+            <h5 class="fw-bold mb-3 text-info">
+                <i class="fa-solid fa-flask me-2"></i>Xét Nghiệm / Cận Lâm Sàng
+            </h5>
+            @if (hasLabRequest)
+            {
+                <div class="p-3 bg-info-subtle rounded-3 border border-info-subtle mb-3">
+                    <div class="small fw-bold text-info mb-1">Đã chỉ định:</div>
+                    <div class="small">@Model.LabRequest</div>
+                </div>
+                @if (labResult != null)
+                {
+                    <div class="alert alert-success py-2 px-3 small rounded-3 mb-2">
+                        <i class="fa-solid fa-circle-check me-1"></i>KTV đã có kết quả
+                    </div>
+                    <a asp-action="LabResultView" asp-route-appointmentId="@Model.Id"
+                       class="btn btn-sm btn-info w-100 rounded-pill fw-semibold">
+                        <i class="fa-solid fa-eye me-1"></i>Xem Kết Quả XN
+                    </a>
+                }
+                else
+                {
+                    <div class="alert alert-warning py-2 px-3 small rounded-3 mb-2">
+                        <i class="fa-solid fa-clock me-1"></i>Đang chờ KTV nhập kết quả
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-muted small mb-3">Chưa có chỉ định xét nghiệm.</div>
+            }
+            @* Nút yêu cầu XN riêng *@
+            <a asp-action="LabRequestForm" asp-route-id="@Model.Id"
+               class="btn btn-sm btn-outline-info w-100 rounded-pill fw-semibold">
+                <i class="fa-solid fa-flask-vial me-1"></i>@(hasLabRequest ? "Chỉnh Sửa Yêu Cầu XN" : "Yêu Cầu Xét Nghiệm")
+            </a>
+        </div>
+
+        @* Lịch sử khám *@
         <div class="card card-doctor p-4">
-            <h5 class="fw-bold mb-3 text-secondary"><i class="fa-solid fa-clock-rotate-left me-2"></i>Lịch Sử Khám Trước Đây</h5>
+            <h5 class="fw-bold mb-3 text-secondary">
+                <i class="fa-solid fa-clock-rotate-left me-2"></i>Lịch Sử Khám
+            </h5>
             @if (history.Any())
             {
-                <div class="d-flex flex-column gap-3">
-                    @foreach (var h in history)
+                <div class="d-flex flex-column gap-2" style="max-height:300px;overflow-y:auto;">
+                    @foreach (var h in history.Take(5))
                     {
                         <div class="p-3 bg-light rounded-3 border">
                             <div class="d-flex justify-content-between mb-1">
-                                <span class="badge bg-secondary">@h.AppointmentDate.ToString("dd/MM/yyyy")</span>
+                                <span class="badge bg-secondary small">@h.AppointmentDate.ToString("dd/MM/yyyy")</span>
                                 <small class="text-muted">@h.Specialty?.Name</small>
                             </div>
                             <small class="text-muted d-block">BS: @h.Doctor?.Title @h.Doctor?.User?.FullName</small>
-                            <small class="text-dark d-block mt-1">Lý do: @h.ReasonForVisit</small>
+                            @if (!string.IsNullOrWhiteSpace(h.Diagnosis))
+                            {
+                                <small class="text-dark d-block mt-1">CĐ: @h.Diagnosis</small>
+                            }
                         </div>
                     }
                 </div>
             }
             else
             {
-                <div class="text-muted small">Đây là lần đầu bệnh nhân đến khám tại phòng khám.</div>
+                <div class="text-muted small">Đây là lần đầu bệnh nhân đến khám.</div>
             }
         </div>
     </div>
 
-    <!-- Right: Clinical Diagnosis & e-Prescription -->
+    @* ===== RIGHT PANEL: Form khám + Kê thuốc ===== *@
     <div class="col-lg-8">
-        <div class="card card-doctor p-4 p-md-5">
-            <h4 class="fw-bold mb-3 text-dark">
-                <i class="fa-solid fa-file-medical text-primary me-2"></i>Kết Quả Khám & Kê Đơn Thuốc Điện Tử
-            </h4>
+        <form asp-action="CompleteExamination" method="post" id="examinationForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="appointmentId" value="@Model.Id" />
 
-            @if (Model.Status == "Completed")
-            {
-                <div class="alert alert-success rounded-4 p-4 mb-4">
-                    <h5 class="fw-bold"><i class="fa-solid fa-circle-check me-2"></i>Ca khám này đã hoàn tất!</h5>
-                    <p class="mb-0">Kết quả khám và đơn thuốc điện tử đã được chuyển đến tài khoản của bệnh nhân và bộ phận kế toán.</p>
+            @* === SECTION 1: CHẨN ĐOÁN === *@
+            <div class="card card-doctor p-4 mb-4">
+                <h5 class="fw-bold mb-3">
+                    <span class="badge bg-primary rounded-pill me-2">1</span>Chẩn Đoán Lâm Sàng
+                    <span class="text-danger">*</span>
+                </h5>
+                <textarea name="diagnosis" rows="3" class="form-control rounded-3" required
+                          placeholder="Nhập chẩn đoán (ví dụ: Viêm họng cấp tính, Tăng huyết áp độ 1...)">@(Model.Diagnosis ?? "")</textarea>
+            </div>
+
+            @* === SECTION 2: KÊ ĐƠN THUỐC === *@
+            <div class="card card-doctor p-4 mb-4">
+                <h5 class="fw-bold mb-3">
+                    <span class="badge bg-success rounded-pill me-2">2</span>Kê Đơn Thuốc Điện Tử
+                    <span class="text-danger">*</span>
+                </h5>
+
+                @* Drug builder UI *@
+                <div class="bg-light rounded-3 p-3 mb-3 border">
+                    <div class="small fw-bold text-muted mb-2"><i class="fa-solid fa-plus me-1"></i>Thêm thuốc nhanh:</div>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label small mb-1">Tên thuốc & hàm lượng</label>
+                            <input type="text" id="drugName" class="form-control form-control-sm rounded-3"
+                                   placeholder="VD: Amoxicillin 500mg" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small mb-1">Số lượng</label>
+                            <input type="number" id="drugQty" class="form-control form-control-sm rounded-3"
+                                   placeholder="20" min="1" value="10" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">Đơn vị</label>
+                            <select id="drugUnit" class="form-select form-select-sm rounded-3">
+                                <option>viên</option>
+                                <option>gói</option>
+                                <option>ống</option>
+                                <option>chai</option>
+                                <option>tuýp</option>
+                                <option>hộp</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small mb-1">Cách dùng</label>
+                            <input type="text" id="drugUsage" class="form-control form-control-sm rounded-3"
+                                   placeholder="1 viên x 2 lần/ngày sau ăn" />
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-primary rounded-pill mt-2 px-3" onclick="addDrug()">
+                        <i class="fa-solid fa-plus me-1"></i>Thêm vào đơn
+                    </button>
                 </div>
-            }
 
-            <form asp-action="CompleteExamination" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="appointmentId" value="@Model.Id" />
-
-                <!-- Clinical Diagnosis -->
-                <div class="mb-4">
-                    <label class="form-label fw-bold fs-6">1. Chẩn Đoán Lâm Sàng (Diagnosis) <span class="text-danger">*</span></label>
-                    <textarea name="diagnosis" rows="3" class="form-control rounded-3" required 
-                              placeholder="Nhập chẩn đoán bệnh của bác sĩ (ví dụ: Viêm họng cấp tính, Tăng huyết áp độ 1, v.v.)..."></textarea>
-                </div>
-
-                <!-- Laboratory / Imaging Requests -->
-                <div class="mb-4">
-                    <label class="form-label fw-bold fs-6">2. Chỉ Định Cận Lâm Sàng (Xét nghiệm / X-Quang / Siêu âm nếu có)</label>
-                    <textarea name="labRequest" rows="2" class="form-control rounded-3" 
-                              placeholder="Ví dụ: Chỉ định làm Công thức máu 24 thông số, Siêu âm tim Doppler..."></textarea>
-                </div>
-
-                <!-- e-Prescription -->
-                <div class="mb-4">
-                    <label class="form-label fw-bold fs-6">3. Kê Đơn Thuốc Điện Tử (e-Prescription) <span class="text-danger">*</span></label>
-                    <textarea name="prescription" rows="5" class="form-control rounded-3 font-monospace" required 
-                              placeholder="1. Amoxicillin 500mg - 20 viên (Uống 1 viên x 2 lần/ngày sau ăn)&#10;2. Paracetamol 500mg - 10 viên (Uống khi sốt > 38.5 độ)&#10;3. Vitamin C 500mg - 10 viên (Uống sáng 1 viên)...">@(Model.Prescription ?? "")</textarea>
-                </div>
-
-                <!-- Doctor Notes -->
-                <div class="mb-4">
-                    <label class="form-label fw-bold fs-6">4. Lời Dặn Của Bác Sĩ (Chế độ ăn uống, tái khám)</label>
-                    <textarea name="doctorNotes" rows="2" class="form-control rounded-3" 
-                              placeholder="Ví dụ: Nghỉ ngơi nhiều, kiêng đồ dầu mỡ cay nóng. Tái khám sau 7 ngày nếu không đỡ...">@(Model.DoctorNotes ?? "")</textarea>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                    <a asp-action="Queue" class="btn btn-outline-secondary rounded-pill px-4">Tạm dừng</a>
-                    <div class="d-flex gap-2">
-                        @if (Model.Status == "Completed")
-                        {
-                            <a asp-action="MedicalRecord" asp-route-id="@Model.Id" class="btn btn-primary rounded-pill px-4 fw-bold">
-                                <i class="fa-solid fa-print me-2"></i>Xem & In Đơn Thuốc
-                            </a>
-                        }
-                        <button type="submit" class="btn btn-success btn-lg rounded-pill px-5 fw-bold shadow">
-                            <i class="fa-solid fa-circle-check me-2"></i>@(Model.Status == "Completed" ? "CẬP NHẬT KẾT QUẢ KHÁM" : "LƯU KẾT QUẢ & HOÀN TẤT CA KHÁM")
+                @* Mẫu thuốc nhanh *@
+                <div class="mb-2">
+                    <div class="small text-muted mb-1">Mẫu nhanh:</div>
+                    <div class="d-flex flex-wrap gap-1">
+                        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 quick-drug"
+                                data-drug="Paracetamol 500mg" data-qty="10" data-unit="viên" data-usage="Uống khi sốt > 38.5°C, cách 4-6 giờ/lần">
+                            Paracetamol
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 quick-drug"
+                                data-drug="Amoxicillin 500mg" data-qty="21" data-unit="viên" data-usage="1 viên x 3 lần/ngày sau ăn, trong 7 ngày">
+                            Amoxicillin
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 quick-drug"
+                                data-drug="Vitamin C 500mg" data-qty="30" data-unit="viên" data-usage="1 viên/ngày sau ăn sáng">
+                            Vitamin C
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 quick-drug"
+                                data-drug="Omeprazole 20mg" data-qty="14" data-unit="viên" data-usage="1 viên/ngày trước ăn 30 phút">
+                            Omeprazole
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 quick-drug"
+                                data-drug="Cetirizine 10mg" data-qty="10" data-unit="viên" data-usage="1 viên/ngày trước khi ngủ">
+                            Cetirizine
                         </button>
                     </div>
                 </div>
-            </form>
-        </div>
+
+                @* Textarea đơn thuốc *@
+                <label class="form-label small fw-bold mt-2">Đơn thuốc (có thể chỉnh sửa trực tiếp):</label>
+                <textarea name="prescription" id="prescriptionText" rows="6"
+                          class="form-control rounded-3 font-monospace" required
+                          placeholder="Đơn thuốc sẽ hiện ở đây sau khi thêm...">@(Model.Prescription ?? "")</textarea>
+                <div class="form-text">Có thể chỉnh sửa trực tiếp hoặc dùng công cụ thêm thuốc nhanh ở trên.</div>
+            </div>
+
+            @* === SECTION 3: LỜI DẶN === *@
+            <div class="card card-doctor p-4 mb-4">
+                <h5 class="fw-bold mb-3">
+                    <span class="badge bg-warning text-dark rounded-pill me-2">3</span>Lời Dặn & Chế Độ
+                </h5>
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                    <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 quick-note"
+                            data-note="Nghỉ ngơi nhiều, uống đủ nước, kiêng đồ cay nóng và dầu mỡ.">
+                        Kiêng cử cơ bản
+                    </button>
+                    <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 quick-note"
+                            data-note="Tái khám sau 7 ngày nếu không đỡ hoặc có triệu chứng bất thường.">
+                        Tái khám 7 ngày
+                    </button>
+                    <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 quick-note"
+                            data-note="Uống thuốc đúng giờ, đủ liều. Không tự ý ngưng thuốc khi chưa hết đơn.">
+                        Nhắc uống thuốc
+                    </button>
+                    <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 quick-note"
+                            data-note="Hạn chế muối, dầu mỡ. Tập thể dục nhẹ 30 phút/ngày. Đo huyết áp định kỳ.">
+                        Huyết áp cao
+                    </button>
+                </div>
+                <textarea name="doctorNotes" id="doctorNotes" rows="2" class="form-control rounded-3"
+                          placeholder="Lời dặn về chế độ ăn uống, sinh hoạt, tái khám...">@(Model.DoctorNotes ?? "")</textarea>
+            </div>
+
+            @* === ACTION BUTTONS === *@
+            <div class="card card-doctor p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <a asp-action="Queue" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="fa-solid fa-pause me-1"></i>Tạm dừng
+                    </a>
+                    <div class="d-flex gap-2 flex-wrap">
+                        @if (isCompleted)
+                        {
+                            <a asp-action="MedicalRecord" asp-route-id="@Model.Id"
+                               class="btn btn-outline-primary rounded-pill px-4 fw-semibold">
+                                <i class="fa-solid fa-file-medical me-1"></i>Xem Hồ Sơ Bệnh Án
+                            </a>
+                        }
+                        <button type="submit" class="btn btn-success btn-lg rounded-pill px-5 fw-bold shadow">
+                            <i class="fa-solid fa-circle-check me-2"></i>
+                            @(isCompleted ? "CẬP NHẬT HỒ SƠ" : "LƯU & HOÀN TẤT CA KHÁM")
+                        </button>
+                    </div>
+                </div>
+                @if (!isCompleted)
+                {
+                    <div class="mt-3 small text-muted text-center">
+                        <i class="fa-solid fa-info-circle me-1"></i>
+                        Sau khi hoàn tất, trạng thái lịch hẹn chuyển sang <strong>Completed</strong> và bệnh nhân nhận thông báo.
+                        Nếu cần XN, hãy dùng nút <strong>"Yêu Cầu Xét Nghiệm"</strong> ở panel trái trước khi kết thúc.
+                    </div>
+                }
+            </div>
+
+        </form>
     </div>
 </div>
+
+@section Scripts {
+<style>
+    .btn-xs { font-size: 0.75rem; }
+    .card-doctor { border-radius: 12px; border: 1px solid #e5e7eb; }
+</style>
+<script>
+    // ===== Thêm thuốc vào đơn =====
+    var drugCounter = 0;
+
+    function getCurrentLines() {
+        var txt = document.getElementById('prescriptionText').value.trim();
+        return txt ? txt.split('\n') : [];
+    }
+
+    function addDrug() {
+        var name = document.getElementById('drugName').value.trim();
+        var qty = document.getElementById('drugQty').value.trim();
+        var unit = document.getElementById('drugUnit').value;
+        var usage = document.getElementById('drugUsage').value.trim();
+
+        if (!name) { alert('Vui lòng nhập tên thuốc!'); return; }
+        if (!qty) qty = '1';
+
+        var lines = getCurrentLines();
+        // Đếm số thuốc hiện có (dòng bắt đầu bằng số)
+        var count = lines.filter(function(l) { return /^\d+\./.test(l.trim()); }).length;
+        var newLine = (count + 1) + '. ' + name + ' - ' + qty + ' ' + unit;
+        if (usage) newLine += ' (' + usage + ')';
+
+        lines.push(newLine);
+        document.getElementById('prescriptionText').value = lines.join('\n');
+
+        // Clear inputs
+        document.getElementById('drugName').value = '';
+        document.getElementById('drugQty').value = '10';
+        document.getElementById('drugUsage').value = '';
+        document.getElementById('drugName').focus();
+    }
+
+    // Enter trong drug name = thêm thuốc
+    document.getElementById('drugName').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); addDrug(); }
+    });
+
+    // ===== Quick drug buttons =====
+    document.querySelectorAll('.quick-drug').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.getElementById('drugName').value = this.dataset.drug;
+            document.getElementById('drugQty').value = this.dataset.qty;
+            document.getElementById('drugUnit').value = this.dataset.unit;
+            document.getElementById('drugUsage').value = this.dataset.usage;
+            document.getElementById('drugName').focus();
+        });
+    });
+
+    // ===== Quick notes buttons =====
+    document.querySelectorAll('.quick-note').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var el = document.getElementById('doctorNotes');
+            var current = el.value.trim();
+            el.value = current ? current + ' ' + this.dataset.note : this.dataset.note;
+        });
+    });
+
+    // ===== Confirm trước khi hoàn tất (nếu chưa xong) =====
+    @if (!isCompleted)
+    {
+        <text>
+    document.getElementById('examinationForm').addEventListener('submit', function(e) {
+        var diagnosis = document.querySelector('[name=diagnosis]').value.trim();
+        var prescription = document.getElementById('prescriptionText').value.trim();
+        if (!diagnosis || !prescription) return true;
+        return confirm('Xác nhận hoàn tất ca khám?\n\nSau khi lưu, trạng thái sẽ chuyển sang "Hoàn thành" và bệnh nhân sẽ nhận thông báo.');
+    });
+        </text>
+    }
+</script>
+}

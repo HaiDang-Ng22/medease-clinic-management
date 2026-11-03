@@ -322,6 +322,11 @@ namespace Healthy_System.Controllers
 
             ViewBag.Doctor = doctor;
 
+            // Load LabResult neu co
+            ViewBag.LabResult = _context.LabResults
+                .Include(r => r.LabTech)
+                .FirstOrDefault(r => r.AppointmentId == id);
+
             return View(appointment);
 
         }
