@@ -108,7 +108,17 @@ cd medease-clinic-management
 
 ```bash
 dotnet user-secrets init
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=aws-0-ap-northeast-2.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.recelqensesdpwzdvslp;Password=YOUR_PASSWORD_HERE;SSL Mode=Require;Trust Server Certificate=true"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=aws-0-ap-northeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.skkryypazfjdqmrnsqna;Password=YOUR_PASSWORD_HERE;SSL Mode=Require;Trust Server Certificate=true"
+```
+
+Hoặc cập nhật trực tiếp trong `appsettings.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=aws-0-ap-northeast-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.skkryypazfjdqmrnsqna;Password=YOUR_PASSWORD_HERE;SSL Mode=Require;Trust Server Certificate=true"
+  }
+}
 ```
 
 ### 3. Chạy Migration & Khởi tạo dữ liệu mẫu

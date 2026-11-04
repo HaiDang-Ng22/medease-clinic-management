@@ -7,6 +7,24 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (args.Contains("--seed-supabase"))
+{
+    var postgresConn = builder.Configuration.GetConnectionString("DefaultConnection");
+    Console.WriteLine("[SUPABASE] Connecting to Supabase: " + postgresConn);
+    var optBuilder = new DbContextOptionsBuilder<AppDbContext>();
+    optBuilder.UseNpgsql(postgresConn);
+    optBuilder.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+    using var db = new AppDbContext(optBuilder.Options);
+    Console.WriteLine("[SUPABASE] Generating PostgreSQL DDL Script...");
+    var script = db.Database.GenerateCreateScript();
+    Console.WriteLine($"[SUPABASE] Script length: {script.Length} chars. Executing on Supabase...");
+    db.Database.ExecuteSqlRaw(script);
+    Console.WriteLine("[SUPABASE] Tables created successfully! Seeding data...");
+    DbInitializer.SeedData(db);
+    Console.WriteLine(">>> [SUPABASE] HOAN TAT TAO BANG VA NAP DU LIEU MAU LEN SUPABASE! <<<");
+    return;
+}
+
 // Add services to the container.
 builder.Services.AddControllersWithViews(options =>
 {
@@ -26,6 +44,8 @@ var sqliteConnectionString = builder.Configuration.GetConnectionString("SqliteCo
 // 2. DefaultConnection chứa "Data Source=" (đã override bởi appsettings.Development.json sang SQLite)
 // 3. DefaultConnection rỗng
 bool useSqlite = string.IsNullOrWhiteSpace(postgresConnectionString)
+    || postgresConnectionString.Contains("[YOUR-PASSWORD]")
+
     || postgresConnectionString.Contains("[D@ng0799192226]")
     || postgresConnectionString.Contains("Data Source=HealthySystem.db");
 
@@ -33,6 +53,7 @@ string activeConnectionString = useSqlite ? sqliteConnectionString : postgresCon
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
+    options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     if (useSqlite)
     {
         options.UseSqlite(activeConnectionString);
@@ -71,8 +92,10 @@ try
     }
     else
     {
-        // Đối với Postgres: chạy migration
-        DbInitializer.Initialize(app.Services);
+        // Đối với Postgres: đã tạo schema DDL, chạy seed data nếu cần
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        DbInitializer.SeedData(context);
     }
 }
 catch (Exception ex)

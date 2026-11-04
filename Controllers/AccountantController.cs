@@ -546,6 +546,76 @@ namespace Healthy_System.Controllers
         }
 
         // ==========================================
+        // US32: Xác nhận thu tiền nhanh từ CostSheet
+        // ==========================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MarkAsPaid(int id, string? paymentMethod)
+        {
+            var cost = _context.PatientCosts
+                .Include(c => c.Appointment)
+                .ThenInclude(a => a!.Patient)
+                .FirstOrDefault(c => c.Id == id);
+
+            if (cost == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy bảng tính chi phí.";
+                return RedirectToAction(nameof(PatientCosts));
+            }
+
+            cost.PaymentStatus = "Paid";
+            cost.PaymentMethod = string.IsNullOrWhiteSpace(paymentMethod) ? "Tiền mặt" : paymentMethod;
+            cost.PaidAt = DateTime.UtcNow;
+            cost.AccountantId ??= GetCurrentUserId();
+
+            var appt = cost.Appointment;
+            if (appt != null)
+            {
+                appt.PaymentStatus = "Paid";
+                appt.PaymentMethod = cost.PaymentMethod;
+                appt.PaidAmount = cost.TotalAmount;
+                appt.PaidAt = DateTime.UtcNow;
+                appt.CashierName = User.Identity?.Name ?? "Kế toán thu ngân";
+                if (string.IsNullOrWhiteSpace(appt.InvoiceCode))
+                {
+                    appt.InvoiceCode = $"HD-{DateTime.Now:yyyyMMdd}-{appt.Id:D4}";
+                }
+
+                if (appt.PatientId > 0)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = appt.PatientId,
+                        Title = "Thanh toán viện phí thành công",
+                        Message = $"Hóa đơn {appt.InvoiceCode} cho ca khám {appt.AppointmentCode} đã được thanh toán thành công ({cost.TotalAmount:N0} VNĐ). Cảm ơn quý khách!",
+                        Type = "PaymentSuccess",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = $"Đã xác nhận thu tiền thành công cho ca khám {appt?.AppointmentCode}!";
+            return RedirectToAction(nameof(InvoiceReceipt), new { id = appt?.Id ?? cost.AppointmentId });
+        }
+
+        [HttpGet]
+        public IActionResult MarkAsPaid(int? id)
+        {
+            if (id.HasValue && id.Value > 0)
+            {
+                var cost = _context.PatientCosts.FirstOrDefault(c => c.Id == id.Value || c.AppointmentId == id.Value);
+                if (cost != null)
+                {
+                    return RedirectToAction(nameof(CostSheet), new { id = cost.Id });
+                }
+            }
+            return RedirectToAction(nameof(Invoices));
+        }
+
+        // ==========================================
         // US32: Hóa đơn / Phiếu thu viện phí (In & PDF)
         // ==========================================
         [HttpGet]
