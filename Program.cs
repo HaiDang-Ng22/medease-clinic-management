@@ -8,7 +8,11 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // US41: tự động ghi Audit Log cho mọi thao tác thay đổi dữ liệu
+    options.Filters.Add<Healthy_System.Filters.AuditLogActionFilter>();
+});
 
 // Connection Strings
 var postgresConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
