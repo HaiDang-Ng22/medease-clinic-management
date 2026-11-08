@@ -165,7 +165,7 @@ dotnet run
 | 1 | **Nguyễn Hải Đăng** | [@HaiDang-Ng22](https://github.com/HaiDang-Ng22) | Dev / Team Lead | 16/09/2026 |
 | 2 | **Lâm Gia Bảo** | [@vodanh1a2b-rgb](https://github.com/vodanh1a2b-rgb) | Dev / Product Owner | 16/09/2026 |
 | 3 | **Nguyễn Hữu Danh** | [@nhdanh0412](https://github.com/nhdanh0412) | Dev / Scrum Master | 16/09/2026 |
-| 4 | **Nguyễn Phước Sang** | [@PSang275](https://github.com/PSang275) | Dev / QA & Tester | 23/09/2026 |
+| 4 | **Nguyễn Phước Sang** | [@PSang275](https://github.com/PSang275) | Dev | 23/09/2026 |
 
 ---
 
