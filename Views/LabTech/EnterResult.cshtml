@@ -1,12 +1,14 @@
 @model Appointment
 @{
-    ViewData["Title"] = "Nhap Ket Qua Xet Nghiem";
+    ViewData["Title"] = "Nhập Kết Quả Xét Nghiệm";
     Layout = "_LabTechLayout";
     var existing = ViewBag.ExistingResult as LabResult;
+    var existingExt = existing?.ImageFileType?.ToLower();
+    bool existingIsImage = existingExt == "jpg" || existingExt == "jpeg" || existingExt == "png";
 }
 
 <div class="row g-4">
-    <!-- Thong tin benh nhan & phieu yeu cau -->
+    <!-- Thông tin bệnh nhân & phiếu yêu cầu -->
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm mb-3">
             <div class="card-header bg-primary text-white fw-bold">
@@ -52,12 +54,12 @@
                     <i class="fa-solid fa-image me-2"></i>File đính kèm hiện tại
                 </div>
                 <div class="card-body text-center">
-                    @{
-                        var ext = existing.ImageFileType?.ToLower();
-                    }
-                    @if (ext == "jpg" || ext == "jpeg" || ext == "png")
+                    @if (existingIsImage)
                     {
-                        <img src="@existing.ImageFilePath" class="img-fluid rounded" style="max-height:200px" />
+                        <a href="@existing.ImageFilePath" target="_blank">
+                            <img src="@existing.ImageFilePath" class="img-fluid rounded shadow-sm" style="max-height:220px; object-fit:contain;" />
+                        </a>
+                        <div class="small text-muted mt-1">@existing.ImageFileName</div>
                     }
                     else
                     {
@@ -74,7 +76,7 @@
         }
     </div>
 
-    <!-- Form nhap ket qua (US29) + upload file (US30) -->
+    <!-- Form nhập kết quả (US29) + upload file (US30) -->
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-success text-white fw-bold">
@@ -85,7 +87,7 @@
                 <form asp-action="SaveResult" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="appointmentId" value="@Model.Id" />
 
-                    <!-- US29: Ket qua tom tat -->
+                    <!-- US29: Kết quả tóm tắt -->
                     <div class="mb-3">
                         <label class="form-label fw-bold">
                             Kết quả tóm tắt <span class="text-danger">*</span>
@@ -95,27 +97,59 @@
                                   required>@(existing?.ResultSummary)</textarea>
                     </div>
 
-                    <!-- US29: Ket qua chi tiet tung chi so -->
+                    <!-- US29: Kết quả chi tiết từng chỉ số -->
                     <div class="mb-3">
                         <label class="form-label fw-bold">Kết quả chi tiết từng chỉ số</label>
                         <textarea name="detailedResult" rows="6" class="form-control font-monospace"
                                   placeholder="VD:&#10;Hồng cầu (RBC): 4.8 T/L [BT: 4.2-5.4]&#10;Bạch cầu (WBC): 7.2 G/L [BT: 4.0-10.0]&#10;Hemoglobin: 138 g/L [BT: 120-160]&#10;Tiểu cầu: 285 G/L [BT: 150-400]">@(existing?.DetailedResult)</textarea>
                     </div>
 
-                    <!-- US30: Upload file hinh anh -->
+                    <!-- US30: Upload file hình ảnh - Modern UI với preview -->
                     <div class="mb-3">
                         <label class="form-label fw-bold">
-                            <i class="fa-solid fa-paperclip me-1 text-info"></i>
-                            Đính kèm file hình ảnh (US30)
+                            <i class="fa-solid fa-camera me-1 text-info"></i>
+                            Đính kèm hình ảnh / file kết quả
                         </label>
-                        <input type="file" name="imageFile" class="form-control"
-                               accept=".jpg,.jpeg,.png,.pdf,.dcm" />
-                        <div class="form-text">
-                            Chấp nhận: JPG, PNG (ảnh X-quang, siêu âm), PDF (báo cáo), DICOM (.dcm). Tối đa 10MB.
+
+                        <!-- Drop zone -->
+                        <div id="uploadZone" class="border border-2 border-dashed rounded-3 p-4 text-center position-relative"
+                             style="border-color: #dee2e6 !important; cursor: pointer; transition: all .2s; min-height: 140px; background: #f8f9fa;">
+                            <input type="file" name="imageFile" id="imageFileInput"
+                                   accept=".jpg,.jpeg,.png,.pdf,.dcm"
+                                   class="position-absolute w-100 h-100 top-0 start-0 opacity-0"
+                                   style="cursor: pointer; z-index: 2;" />
+
+                            <!-- Placeholder (trước khi chọn) -->
+                            <div id="uploadPlaceholder">
+                                <i class="fa-solid fa-cloud-arrow-up fa-2x text-muted mb-2"></i>
+                                <div class="fw-semibold text-muted">Kéo thả file vào đây hoặc <span class="text-primary">click để chọn</span></div>
+                                <div class="small text-muted mt-1">JPG, PNG, PDF, DICOM — tối đa 10MB</div>
+                            </div>
+
+                            <!-- Preview ảnh (ẩn ban đầu) -->
+                            <div id="imagePreviewWrap" class="d-none flex-column align-items-center gap-2">
+                                <img id="imagePreview" src="#" alt="Preview" class="rounded shadow-sm"
+                                     style="max-height: 180px; max-width: 100%; object-fit: contain;" />
+                                <div id="previewFileName" class="small text-muted"></div>
+                                <button type="button" id="clearFileBtn" class="btn btn-sm btn-outline-danger">
+                                    <i class="fa-solid fa-xmark me-1"></i>Xóa file
+                                </button>
+                            </div>
+
+                            <!-- Preview file không phải ảnh (ẩn ban đầu) -->
+                            <div id="filePreviewWrap" class="d-none flex-column align-items-center gap-2">
+                                <i class="fa-solid fa-file-pdf text-danger fa-3x"></i>
+                                <div id="filePreviewName" class="small fw-semibold text-dark"></div>
+                                <div id="filePreviewSize" class="small text-muted"></div>
+                                <button type="button" id="clearFileBtn2" class="btn btn-sm btn-outline-danger">
+                                    <i class="fa-solid fa-xmark me-1"></i>Xóa file
+                                </button>
+                            </div>
                         </div>
+                        <div class="form-text">Chấp nhận: JPG, PNG (ảnh X-quang, siêu âm), PDF (báo cáo), DICOM (.dcm). Tối đa 10MB.</div>
                     </div>
 
-                    <!-- Ghi chu KTV -->
+                    <!-- Ghi chú KTV -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">Ghi chú của kỹ thuật viên</label>
                         <textarea name="labTechNotes" rows="2" class="form-control"
@@ -153,3 +187,93 @@
         }
     </div>
 </div>
+
+@section Scripts {
+<script>
+(function () {
+    const input = document.getElementById('imageFileInput');
+    const zone  = document.getElementById('uploadZone');
+    const placeholder   = document.getElementById('uploadPlaceholder');
+    const imgWrap       = document.getElementById('imagePreviewWrap');
+    const imgEl         = document.getElementById('imagePreview');
+    const imgName       = document.getElementById('previewFileName');
+    const fileWrap      = document.getElementById('filePreviewWrap');
+    const fileName      = document.getElementById('filePreviewName');
+    const fileSize      = document.getElementById('filePreviewSize');
+    const clearBtn      = document.getElementById('clearFileBtn');
+    const clearBtn2     = document.getElementById('clearFileBtn2');
+
+    function formatBytes(b) {
+        if (b < 1024) return b + ' B';
+        if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+        return (b/1024/1024).toFixed(2) + ' MB';
+    }
+
+    function resetUI() {
+        placeholder.classList.remove('d-none');
+        imgWrap.classList.add('d-none');
+        imgWrap.classList.remove('d-flex');
+        fileWrap.classList.add('d-none');
+        fileWrap.classList.remove('d-flex');
+        zone.style.borderColor = '#dee2e6';
+        input.value = '';
+    }
+
+    function handleFile(file) {
+        if (!file) return;
+        const ext = file.name.split('.').pop().toLowerCase();
+        const isImage = ['jpg','jpeg','png'].includes(ext);
+
+        placeholder.classList.add('d-none');
+        zone.style.borderColor = '#0d6efd';
+
+        if (isImage) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                imgEl.src = e.target.result;
+                imgName.textContent = file.name + ' (' + formatBytes(file.size) + ')';
+                imgWrap.classList.remove('d-none');
+                imgWrap.classList.add('d-flex');
+                fileWrap.classList.add('d-none');
+                fileWrap.classList.remove('d-flex');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            fileName.textContent = file.name;
+            fileSize.textContent = formatBytes(file.size);
+            fileWrap.classList.remove('d-none');
+            fileWrap.classList.add('d-flex');
+            imgWrap.classList.add('d-none');
+            imgWrap.classList.remove('d-flex');
+        }
+    }
+
+    input.addEventListener('change', () => handleFile(input.files[0]));
+    clearBtn.addEventListener('click', resetUI);
+    clearBtn2.addEventListener('click', resetUI);
+
+    // Drag & drop
+    zone.addEventListener('dragover', e => {
+        e.preventDefault();
+        zone.style.borderColor = '#0d6efd';
+        zone.style.background  = '#e9f0ff';
+    });
+    zone.addEventListener('dragleave', () => {
+        zone.style.background = '#f8f9fa';
+        if (!input.files?.length) zone.style.borderColor = '#dee2e6';
+    });
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.style.background = '#f8f9fa';
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            // Gán file vào input (DataTransfer)
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            handleFile(file);
+        }
+    });
+})();
+</script>
+}

@@ -1,4 +1,4 @@
-﻿@model Appointment
+@model Appointment
 @{
     Layout = "_DoctorLayout";
     ViewData["Title"] = "Hồ Sơ Bệnh Nhân - " + Model.Patient?.FullName;
@@ -108,12 +108,6 @@
                 <div class="d-flex gap-2 mt-3">
                     <a asp-action="Examination" asp-route-id="@Model.Id" class="btn btn-primary rounded-pill px-4 fw-bold flex-grow-1">
                         <i class="fa-solid fa-stethoscope me-1"></i>Vào Khám
-                    </a>
-                    <a asp-action="LabRequestForm" asp-route-id="@Model.Id" class="btn btn-outline-info rounded-pill px-3" title="Lập phiếu XN">
-                        <i class="fa-solid fa-flask"></i>
-                    </a>
-                    <a asp-action="PrescriptionForm" asp-route-id="@Model.Id" class="btn btn-outline-success rounded-pill px-3" title="Kê đơn thuốc">
-                        <i class="fa-solid fa-pills"></i>
                     </a>
                 </div>
             }
