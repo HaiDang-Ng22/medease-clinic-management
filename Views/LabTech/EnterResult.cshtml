@@ -5,163 +5,256 @@
     var existing = ViewBag.ExistingResult as LabResult;
     var existingExt = existing?.ImageFileType?.ToLower();
     bool existingIsImage = existingExt == "jpg" || existingExt == "jpeg" || existingExt == "png";
+    bool isEdit = existing != null;
 }
 
+<!-- Breadcrumb -->
+<nav class="mb-4" style="font-size:.82rem;">
+    <a asp-action="Index" class="text-decoration-none text-muted">
+        <i class="fa-solid fa-list-ul me-1"></i>Danh sách phiếu
+    </a>
+    <span class="mx-2 text-muted">/</span>
+    <a asp-action="LabRequestDetail" asp-route-id="@Model.Id" class="text-decoration-none text-muted">
+        Chi tiết phiếu
+    </a>
+    <span class="mx-2 text-muted">/</span>
+    <span class="text-primary fw-semibold">@(isEdit ? "Cập nhật kết quả" : "Nhập kết quả")</span>
+</nav>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h5 class="fw-bold mb-1 text-dark">
+            @(isEdit ? "Cập Nhật Kết Quả Xét Nghiệm" : "Nhập Kết Quả Xét Nghiệm")
+        </h5>
+        <p class="text-muted small mb-0">
+            Phiếu <strong class="text-primary">@Model.AppointmentCode</strong> —
+            @Model.Patient?.FullName — @Model.AppointmentDate.ToString("dd/MM/yyyy") (@Model.TimeSlot)
+        </p>
+    </div>
+    @if (isEdit)
+    {
+        <span class="badge px-3 py-2"
+              style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:2rem;font-size:.8rem;">
+            <i class="fa-solid fa-circle-check me-1"></i>Đã có kết quả
+        </span>
+    }
+    else
+    {
+        <span class="badge px-3 py-2"
+              style="background:#fffbeb;color:#d97706;border:1px solid #fde68a;border-radius:2rem;font-size:.8rem;">
+            <i class="fa-solid fa-clock me-1"></i>Chưa có kết quả
+        </span>
+    }
+</div>
+
 <div class="row g-4">
-    <!-- Thông tin bệnh nhân & phiếu yêu cầu -->
+    <!-- Cột trái: Thông tin -->
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm mb-3">
-            <div class="card-header bg-primary text-white fw-bold">
-                <i class="fa-solid fa-user me-2"></i>Thông tin bệnh nhân
-            </div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <small class="text-muted">Họ tên</small>
-                    <div class="fw-bold">@Model.Patient?.FullName</div>
-                </div>
-                <div class="mb-2">
-                    <small class="text-muted">SĐT</small>
-                    <div>@Model.Patient?.PhoneNumber</div>
-                </div>
-                <div class="mb-2">
-                    <small class="text-muted">Mã lịch hẹn</small>
-                    <div><span class="badge bg-primary">@Model.AppointmentCode</span></div>
-                </div>
-                <div class="mb-2">
-                    <small class="text-muted">Ngày khám</small>
-                    <div>@Model.AppointmentDate.ToString("dd/MM/yyyy") – @Model.TimeSlot</div>
-                </div>
-                <div class="mb-2">
-                    <small class="text-muted">Bác sĩ yêu cầu</small>
-                    <div>@Model.Doctor?.Title @Model.Doctor?.User?.FullName</div>
+        <!-- Thông tin BN -->
+        <div class="card border-0 shadow-sm mb-3" style="border-radius:.85rem;">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-3">
+                    <i class="fa-solid fa-user-injured text-primary me-2"></i>Thông Tin Bệnh Nhân
+                </h6>
+                <div class="d-flex flex-column gap-2" style="font-size:.85rem;">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Họ tên:</span>
+                        <span class="fw-semibold text-dark">@Model.Patient?.FullName</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">SĐT:</span>
+                        <span>@(Model.Patient?.PhoneNumber ?? "—")</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Giới tính:</span>
+                        <span>@(Model.Patient?.Gender ?? "—")</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Mã lịch:</span>
+                        <span class="badge px-2 py-1"
+                              style="background:#eff6ff;color:#2563eb;font-size:.75rem;border-radius:.4rem;">
+                            @Model.AppointmentCode
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Ngày khám:</span>
+                        <span>@Model.AppointmentDate.ToString("dd/MM/yyyy")</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Khung giờ:</span>
+                        <span>@Model.TimeSlot</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-warning text-dark fw-bold">
-                <i class="fa-solid fa-clipboard-list me-2"></i>Yêu cầu xét nghiệm
-            </div>
-            <div class="card-body">
-                <p class="small mb-0" style="white-space:pre-line">@Model.LabRequest</p>
+        <!-- Bác sĩ chỉ định -->
+        <div class="card border-0 shadow-sm mb-3" style="border-radius:.85rem;">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-3">
+                    <i class="fa-solid fa-user-doctor text-primary me-2"></i>Bác Sĩ Chỉ Định
+                </h6>
+                <div class="d-flex flex-column gap-2" style="font-size:.85rem;">
+                    <div>
+                        <span class="text-muted d-block mb-1">Bác sĩ:</span>
+                        <span class="fw-semibold text-dark">@Model.Doctor?.Title @Model.Doctor?.User?.FullName</span>
+                    </div>
+                    <div>
+                        <span class="text-muted d-block mb-1">Chuyên khoa:</span>
+                        <span class="badge px-2 py-1"
+                              style="background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;font-size:.75rem;border-radius:.4rem;">
+                            @Model.Specialty?.Name
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
 
+        <!-- Nội dung yêu cầu -->
+        <div class="card border-0 shadow-sm mb-3" style="border-radius:.85rem;border-left:4px solid #f59e0b!important;">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-3">
+                    <i class="fa-solid fa-clipboard-list text-warning me-2"></i>Yêu Cầu Xét Nghiệm
+                </h6>
+                <p class="small mb-0 text-dark" style="white-space:pre-line;line-height:1.6;">@Model.LabRequest</p>
+            </div>
+        </div>
+
+        <!-- File đính kèm hiện tại (nếu có) -->
         @if (existing?.ImageFilePath != null)
         {
-            <div class="card border-0 shadow-sm mt-3">
-                <div class="card-header bg-info text-white fw-bold">
-                    <i class="fa-solid fa-image me-2"></i>File đính kèm hiện tại
-                </div>
-                <div class="card-body text-center">
+            <div class="card border-0 shadow-sm" style="border-radius:.85rem;border-left:4px solid #22c55e!important;">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-dark mb-3">
+                        <i class="fa-solid fa-image text-success me-2"></i>File Đính Kèm Hiện Tại
+                    </h6>
                     @if (existingIsImage)
                     {
                         <a href="@existing.ImageFilePath" target="_blank">
-                            <img src="@existing.ImageFilePath" class="img-fluid rounded shadow-sm" style="max-height:220px; object-fit:contain;" />
+                            <img src="@existing.ImageFilePath" class="img-fluid rounded-3 shadow-sm w-100 mb-2"
+                                 style="max-height:200px;object-fit:contain;" />
                         </a>
-                        <div class="small text-muted mt-1">@existing.ImageFileName</div>
                     }
                     else
                     {
-                        <i class="fa-solid fa-file-pdf text-danger fa-3x mb-2"></i>
-                        <div class="small">@existing.ImageFileName</div>
+                        <div class="text-center py-2">
+                            <i class="fa-solid fa-file-pdf text-danger fa-3x mb-2"></i>
+                        </div>
                     }
-                    <div class="mt-2">
-                        <a href="@existing.ImageFilePath" target="_blank" class="btn btn-sm btn-outline-primary">
-                            <i class="fa-solid fa-external-link me-1"></i>Mở file
-                        </a>
-                    </div>
+                    <div class="small text-muted text-center">@existing.ImageFileName</div>
+                    <a href="@existing.ImageFilePath" target="_blank"
+                       class="btn btn-sm w-100 mt-2"
+                       style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:.5rem;font-size:.8rem;">
+                        <i class="fa-solid fa-external-link me-1"></i>Mở file
+                    </a>
                 </div>
             </div>
         }
     </div>
 
-    <!-- Form nhập kết quả (US29) + upload file (US30) -->
+    <!-- Cột phải: Form -->
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-success text-white fw-bold">
-                <i class="fa-solid fa-flask-vial me-2"></i>
-                @(existing != null ? "Cập nhật kết quả xét nghiệm" : "Nhập kết quả xét nghiệm")
-            </div>
-            <div class="card-body">
+        <div class="card border-0 shadow-sm" style="border-radius:.85rem;">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-dark mb-4">
+                    <i class="fa-solid fa-flask-vial text-success me-2"></i>
+                    @(isEdit ? "Cập nhật kết quả xét nghiệm" : "Nhập kết quả xét nghiệm")
+                </h6>
+
                 <form asp-action="SaveResult" method="post" enctype="multipart/form-data">
                     <input type="hidden" name="appointmentId" value="@Model.Id" />
 
-                    <!-- US29: Kết quả tóm tắt -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">
+                    <!-- Kết quả tóm tắt -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-dark mb-1">
                             Kết quả tóm tắt <span class="text-danger">*</span>
                         </label>
                         <textarea name="resultSummary" rows="3" class="form-control"
+                                  style="border-radius:.5rem;border-color:#e2e8f0;background:#f8fafc;font-size:.875rem;"
                                   placeholder="VD: Tất cả chỉ số trong giới hạn bình thường. Không phát hiện bất thường."
                                   required>@(existing?.ResultSummary)</textarea>
                     </div>
 
-                    <!-- US29: Kết quả chi tiết từng chỉ số -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Kết quả chi tiết từng chỉ số</label>
-                        <textarea name="detailedResult" rows="6" class="form-control font-monospace"
-                                  placeholder="VD:&#10;Hồng cầu (RBC): 4.8 T/L [BT: 4.2-5.4]&#10;Bạch cầu (WBC): 7.2 G/L [BT: 4.0-10.0]&#10;Hemoglobin: 138 g/L [BT: 120-160]&#10;Tiểu cầu: 285 G/L [BT: 150-400]">@(existing?.DetailedResult)</textarea>
+                    <!-- Kết quả chi tiết -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-dark mb-1">Kết quả chi tiết từng chỉ số</label>
+                        <textarea name="detailedResult" rows="7" class="form-control font-monospace"
+                                  style="border-radius:.5rem;border-color:#e2e8f0;background:#f8fafc;font-size:.82rem;"
+                                  placeholder="VD:&#10;Hồng cầu (RBC): 4.8 T/L  [BT: 4.2–5.4]&#10;Bạch cầu (WBC): 7.2 G/L  [BT: 4.0–10.0]&#10;Hemoglobin:     138 g/L   [BT: 120–160]&#10;Tiểu cầu:       285 G/L   [BT: 150–400]">@(existing?.DetailedResult)</textarea>
                     </div>
 
-                    <!-- US30: Upload file hình ảnh - Modern UI với preview -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">
-                            <i class="fa-solid fa-camera me-1 text-info"></i>
-                            Đính kèm hình ảnh / file kết quả
+                    <!-- Upload ảnh modern -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-dark mb-2">
+                            <i class="fa-solid fa-camera text-primary me-1"></i>Đính kèm hình ảnh / file kết quả
                         </label>
 
-                        <!-- Drop zone -->
-                        <div id="uploadZone" class="border border-2 border-dashed rounded-3 p-4 text-center position-relative"
-                             style="border-color: #dee2e6 !important; cursor: pointer; transition: all .2s; min-height: 140px; background: #f8f9fa;">
+                        <div id="uploadZone" class="position-relative text-center"
+                             style="border:2px dashed #cbd5e1;border-radius:.85rem;padding:2rem 1.5rem;background:#f8fafc;cursor:pointer;transition:all .2s;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+
                             <input type="file" name="imageFile" id="imageFileInput"
                                    accept=".jpg,.jpeg,.png,.pdf,.dcm"
                                    class="position-absolute w-100 h-100 top-0 start-0 opacity-0"
-                                   style="cursor: pointer; z-index: 2;" />
+                                   style="cursor:pointer;z-index:2;" />
 
-                            <!-- Placeholder (trước khi chọn) -->
+                            <!-- Placeholder -->
                             <div id="uploadPlaceholder">
-                                <i class="fa-solid fa-cloud-arrow-up fa-2x text-muted mb-2"></i>
-                                <div class="fw-semibold text-muted">Kéo thả file vào đây hoặc <span class="text-primary">click để chọn</span></div>
-                                <div class="small text-muted mt-1">JPG, PNG, PDF, DICOM — tối đa 10MB</div>
+                                <div class="rounded-3 d-flex align-items-center justify-content-center mx-auto mb-3"
+                                     style="width:56px;height:56px;background:#eff6ff;">
+                                    <i class="fa-solid fa-cloud-arrow-up text-primary fa-xl"></i>
+                                </div>
+                                <div class="fw-semibold text-dark mb-1">Kéo thả file vào đây</div>
+                                <div class="text-muted small">hoặc <span class="text-primary fw-semibold">click để chọn</span></div>
+                                <div class="text-muted mt-2" style="font-size:.75rem;">JPG, PNG, PDF, DICOM — tối đa 10MB</div>
                             </div>
 
-                            <!-- Preview ảnh (ẩn ban đầu) -->
-                            <div id="imagePreviewWrap" class="d-none flex-column align-items-center gap-2">
-                                <img id="imagePreview" src="#" alt="Preview" class="rounded shadow-sm"
-                                     style="max-height: 180px; max-width: 100%; object-fit: contain;" />
-                                <div id="previewFileName" class="small text-muted"></div>
-                                <button type="button" id="clearFileBtn" class="btn btn-sm btn-outline-danger">
-                                    <i class="fa-solid fa-xmark me-1"></i>Xóa file
+                            <!-- Preview ảnh -->
+                            <div id="imagePreviewWrap" class="d-none w-100 text-center">
+                                <img id="imagePreview" src="#" alt="Preview"
+                                     class="rounded-3 shadow-sm mb-2"
+                                     style="max-height:200px;max-width:100%;object-fit:contain;" />
+                                <div id="previewFileName" class="small text-muted mb-2"></div>
+                                <button type="button" id="clearFileBtn"
+                                        class="btn btn-sm px-3"
+                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:.5rem;font-size:.8rem;position:relative;z-index:3;">
+                                    <i class="fa-solid fa-xmark me-1"></i>Xóa
                                 </button>
                             </div>
 
-                            <!-- Preview file không phải ảnh (ẩn ban đầu) -->
-                            <div id="filePreviewWrap" class="d-none flex-column align-items-center gap-2">
-                                <i class="fa-solid fa-file-pdf text-danger fa-3x"></i>
-                                <div id="filePreviewName" class="small fw-semibold text-dark"></div>
-                                <div id="filePreviewSize" class="small text-muted"></div>
-                                <button type="button" id="clearFileBtn2" class="btn btn-sm btn-outline-danger">
-                                    <i class="fa-solid fa-xmark me-1"></i>Xóa file
+                            <!-- Preview file không phải ảnh -->
+                            <div id="filePreviewWrap" class="d-none text-center">
+                                <i class="fa-solid fa-file-pdf text-danger fa-3x mb-2"></i>
+                                <div id="filePreviewName" class="small fw-semibold text-dark mb-1"></div>
+                                <div id="filePreviewSize" class="small text-muted mb-2"></div>
+                                <button type="button" id="clearFileBtn2"
+                                        class="btn btn-sm px-3"
+                                        style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:.5rem;font-size:.8rem;position:relative;z-index:3;">
+                                    <i class="fa-solid fa-xmark me-1"></i>Xóa
                                 </button>
                             </div>
                         </div>
-                        <div class="form-text">Chấp nhận: JPG, PNG (ảnh X-quang, siêu âm), PDF (báo cáo), DICOM (.dcm). Tối đa 10MB.</div>
+                        <div class="text-muted mt-1" style="font-size:.75rem;">
+                            Chấp nhận: JPG, PNG (X-quang, siêu âm), PDF (báo cáo), DICOM (.dcm). Tối đa 10MB.
+                        </div>
                     </div>
 
                     <!-- Ghi chú KTV -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold">Ghi chú của kỹ thuật viên</label>
+                        <label class="form-label fw-semibold text-dark mb-1">Ghi chú của kỹ thuật viên</label>
                         <textarea name="labTechNotes" rows="2" class="form-control"
+                                  style="border-radius:.5rem;border-color:#e2e8f0;background:#f8fafc;font-size:.875rem;"
                                   placeholder="Ghi chú thêm nếu cần (VD: Mẫu XN đạt tiêu chuẩn, thực hiện bởi KTV...)">@(existing?.LabTechNotes)</textarea>
                     </div>
 
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-success px-4">
+                    <!-- Action buttons -->
+                    <div class="d-flex gap-2 pt-2 border-top">
+                        <button type="submit" class="btn btn-success px-4" style="border-radius:.5rem;">
                             <i class="fa-solid fa-floppy-disk me-2"></i>
-                            @(existing != null ? "Cập nhật kết quả" : "Lưu kết quả")
+                            @(isEdit ? "Cập nhật kết quả" : "Lưu kết quả")
                         </button>
-                        <a asp-action="Index" class="btn btn-outline-secondary px-4">
+                        <a asp-action="LabRequestDetail" asp-route-id="@Model.Id"
+                           class="btn btn-outline-secondary px-4" style="border-radius:.5rem;">
                             <i class="fa-solid fa-arrow-left me-1"></i>Quay lại
                         </a>
                     </div>
@@ -169,17 +262,22 @@
             </div>
         </div>
 
+        <!-- Thông tin đã nhập -->
         @if (existing != null)
         {
-            <div class="card border-0 shadow-sm mt-3 border-success">
-                <div class="card-body">
-                    <div class="small text-muted">
-                        <i class="fa-solid fa-circle-check text-success me-1"></i>
-                        Đã nhập bởi KTV: <strong>@existing.LabTech?.FullName</strong>
-                        lúc @existing.ResultDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+            <div class="card border-0 shadow-sm mt-3" style="border-radius:.85rem;border-left:4px solid #22c55e!important;">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center gap-2" style="font-size:.82rem;color:#64748b;">
+                        <i class="fa-solid fa-circle-check text-success"></i>
+                        <span>
+                            Đã nhập bởi KTV: <strong class="text-dark">@existing.LabTech?.FullName</strong>
+                            lúc @existing.ResultDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                        </span>
                         @if (existing.UpdatedAt.HasValue)
                         {
-                            <span> – Cập nhật lần cuối: @existing.UpdatedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                            <span class="text-muted">
+                                — Cập nhật lần cuối: @existing.UpdatedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </span>
                         }
                     </div>
                 </div>
@@ -191,83 +289,67 @@
 @section Scripts {
 <script>
 (function () {
-    const input = document.getElementById('imageFileInput');
-    const zone  = document.getElementById('uploadZone');
-    const placeholder   = document.getElementById('uploadPlaceholder');
-    const imgWrap       = document.getElementById('imagePreviewWrap');
-    const imgEl         = document.getElementById('imagePreview');
-    const imgName       = document.getElementById('previewFileName');
-    const fileWrap      = document.getElementById('filePreviewWrap');
-    const fileName      = document.getElementById('filePreviewName');
-    const fileSize      = document.getElementById('filePreviewSize');
-    const clearBtn      = document.getElementById('clearFileBtn');
-    const clearBtn2     = document.getElementById('clearFileBtn2');
+    const input    = document.getElementById('imageFileInput');
+    const zone     = document.getElementById('uploadZone');
+    const ph       = document.getElementById('uploadPlaceholder');
+    const imgWrap  = document.getElementById('imagePreviewWrap');
+    const imgEl    = document.getElementById('imagePreview');
+    const imgName  = document.getElementById('previewFileName');
+    const fileWrap = document.getElementById('filePreviewWrap');
+    const fileName = document.getElementById('filePreviewName');
+    const fileSize = document.getElementById('filePreviewSize');
 
-    function formatBytes(b) {
+    function fmt(b) {
         if (b < 1024) return b + ' B';
-        if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
-        return (b/1024/1024).toFixed(2) + ' MB';
+        if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+        return (b/1048576).toFixed(2) + ' MB';
     }
 
     function resetUI() {
-        placeholder.classList.remove('d-none');
+        ph.style.display = '';
         imgWrap.classList.add('d-none');
-        imgWrap.classList.remove('d-flex');
         fileWrap.classList.add('d-none');
-        fileWrap.classList.remove('d-flex');
-        zone.style.borderColor = '#dee2e6';
+        zone.style.borderColor = '#cbd5e1';
+        zone.style.background  = '#f8fafc';
         input.value = '';
     }
 
     function handleFile(file) {
         if (!file) return;
         const ext = file.name.split('.').pop().toLowerCase();
-        const isImage = ['jpg','jpeg','png'].includes(ext);
+        const isImg = ['jpg','jpeg','png'].includes(ext);
+        ph.style.display = 'none';
+        zone.style.borderColor = '#3b82f6';
+        zone.style.background  = '#eff6ff';
 
-        placeholder.classList.add('d-none');
-        zone.style.borderColor = '#0d6efd';
-
-        if (isImage) {
-            const reader = new FileReader();
-            reader.onload = e => {
+        if (isImg) {
+            const r = new FileReader();
+            r.onload = e => {
                 imgEl.src = e.target.result;
-                imgName.textContent = file.name + ' (' + formatBytes(file.size) + ')';
+                imgName.textContent = file.name + '  (' + fmt(file.size) + ')';
                 imgWrap.classList.remove('d-none');
-                imgWrap.classList.add('d-flex');
                 fileWrap.classList.add('d-none');
-                fileWrap.classList.remove('d-flex');
             };
-            reader.readAsDataURL(file);
+            r.readAsDataURL(file);
         } else {
             fileName.textContent = file.name;
-            fileSize.textContent = formatBytes(file.size);
+            fileSize.textContent = fmt(file.size);
             fileWrap.classList.remove('d-none');
-            fileWrap.classList.add('d-flex');
             imgWrap.classList.add('d-none');
-            imgWrap.classList.remove('d-flex');
         }
     }
 
     input.addEventListener('change', () => handleFile(input.files[0]));
-    clearBtn.addEventListener('click', resetUI);
-    clearBtn2.addEventListener('click', resetUI);
 
-    // Drag & drop
-    zone.addEventListener('dragover', e => {
-        e.preventDefault();
-        zone.style.borderColor = '#0d6efd';
-        zone.style.background  = '#e9f0ff';
-    });
-    zone.addEventListener('dragleave', () => {
-        zone.style.background = '#f8f9fa';
-        if (!input.files?.length) zone.style.borderColor = '#dee2e6';
-    });
+    document.getElementById('clearFileBtn').addEventListener('click',  e => { e.stopPropagation(); resetUI(); });
+    document.getElementById('clearFileBtn2').addEventListener('click', e => { e.stopPropagation(); resetUI(); });
+
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.style.borderColor='#3b82f6'; zone.style.background='#eff6ff'; });
+    zone.addEventListener('dragleave', () => { if (!input.files?.length) { zone.style.borderColor='#cbd5e1'; zone.style.background='#f8fafc'; }});
     zone.addEventListener('drop', e => {
         e.preventDefault();
-        zone.style.background = '#f8f9fa';
         const file = e.dataTransfer.files[0];
         if (file) {
-            // Gán file vào input (DataTransfer)
             const dt = new DataTransfer();
             dt.items.add(file);
             input.files = dt.files;
