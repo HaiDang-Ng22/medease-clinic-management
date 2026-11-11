@@ -1,13 +1,17 @@
-﻿@model Healthy_System.Models.Appointment
+@model Healthy_System.Models.Appointment
 @{
     Layout = "_ReceptionistLayout";
     ViewData["Title"] = "Phiếu Thu Viện Phí - " + Model.InvoiceCode;
+    var cost = ViewBag.Cost as Healthy_System.Models.PatientCost;
+    decimal totalDisplay = cost != null ? cost.TotalAmount : (Model.PaidAmount > 0 ? Model.PaidAmount : (Model.Doctor?.ConsultationFee ?? 0));
 }
 <style>
     @@media print {
         body { background: #ffffff !important; }
         .no-print { display: none !important; }
         .invoice-card { border: none !important; box-shadow: none !important; padding: 0 !important; }
+        .app-sidebar, .app-topbar { display: none !important; }
+        .app-main-wrapper { margin-left: 0 !important; padding: 0 !important; }
     }
     .invoice-card {
         background: #fff;
@@ -38,16 +42,23 @@
                         <span class="badge bg-success-subtle text-success border border-success px-3 py-2 fs-6 fw-bold">
                             @Model.InvoiceCode
                         </span>
-                        <div class="text-muted small mt-1">Thời gian: @(Model.PaidAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm"))</div>
+                        <div class="text-muted small mt-1">
+                            @(Model.PaidAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? DateTime.Now.ToString("dd/MM/yyyy HH:mm"))
+                        </div>
                     </div>
                 </div>
 
                 <div class="text-center mb-4">
                     <h3 class="fw-bold text-dark">PHIẾU THU TIỀN / HÓA ĐƠN VIỆN PHÍ</h3>
-                    <span class="badge bg-success px-3 py-2 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Đã thanh toán qua: @(Model.PaymentMethod == "Cash" ? "Tiền mặt" : "Chuyển khoản ngân hàng")</span>
+                    <span class="badge bg-success px-3 py-2 rounded-pill">
+                        <i class="fa-solid fa-circle-check me-1"></i>Đã thanh toán qua:
+                        @(Model.PaymentMethod == "Cash" ? "Tiền mặt" :
+                          Model.PaymentMethod == "BankTransfer" ? "Chuyển khoản ngân hàng" :
+                          (Model.PaymentMethod ?? "Tiền mặt"))
+                    </span>
                 </div>
 
-                <!-- Thông tin bệnh nhân & chi tiết hóa đơn -->
+                <!-- Thông tin bệnh nhân -->
                 <div class="row g-3 mb-4 p-3 bg-light rounded-3 border small">
                     <div class="col-md-6">
                         <strong>Họ tên bệnh nhân:</strong> @(Model.Patient?.FullName ?? "Chưa rõ")<br />
@@ -57,6 +68,12 @@
                         <strong>Thu ngân thực hiện:</strong> @Model.CashierName<br />
                         <strong>Mã lịch hẹn:</strong> <span class="font-monospace">@Model.AppointmentCode</span>
                     </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Diagnosis))
+                    {
+                        <div class="col-12 border-top pt-2">
+                            <strong>Chẩn đoán:</strong> <span class="text-primary">@Model.Diagnosis</span>
+                        </div>
+                    }
                 </div>
 
                 <!-- Chi tiết từng khoản mục -->
@@ -70,19 +87,94 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td class="text-center">1</td>
-                                <td>
-                                    <strong>Phí khám chuyên khoa:</strong> @(Model.Specialty?.Name ?? "Chuyên khoa")<br />
-                                    <small class="text-muted">Bác sĩ phụ trách: @(Model.Doctor?.Title) @(Model.Doctor?.User?.FullName) (Phòng @(Model.Doctor?.RoomNumber))</small>
-                                </td>
-                                <td class="text-end fw-bold">@((Model.Doctor?.ConsultationFee ?? 0).ToString("N0"))</td>
-                            </tr>
+                            @if (cost != null)
+                            {
+                                <!-- 1. Phí khám -->
+                                <tr>
+                                    <td class="text-center">1</td>
+                                    <td>
+                                        <strong>Phí khám chuyên khoa:</strong> @(Model.Specialty?.Name ?? "Chuyên khoa")<br />
+                                        <small class="text-muted">Bác sĩ: @(Model.Doctor?.Title) @(Model.Doctor?.User?.FullName)</small>
+                                    </td>
+                                    <td class="text-end fw-bold">@cost.ConsultationFee.ToString("N0")</td>
+                                </tr>
+
+                                <!-- 2. Dịch vụ kỹ thuật (nếu có) -->
+                                @if (cost.ServiceFee > 0)
+                                {
+                                    <tr>
+                                        <td class="text-center">2</td>
+                                        <td>
+                                            <strong>Dịch vụ kỹ thuật / Thủ thuật y tế</strong><br />
+                                            @if (!string.IsNullOrWhiteSpace(cost.ServiceDetails))
+                                            {
+                                                <small class="text-muted">@cost.ServiceDetails</small>
+                                            }
+                                        </td>
+                                        <td class="text-end fw-bold">@cost.ServiceFee.ToString("N0")</td>
+                                    </tr>
+                                }
+
+                                <!-- 3. Xét nghiệm (nếu có) -->
+                                @if (cost.LabFee > 0)
+                                {
+                                    <tr>
+                                        <td class="text-center">@(cost.ServiceFee > 0 ? 3 : 2)</td>
+                                        <td>
+                                            <strong>Xét nghiệm cận lâm sàng / Chẩn đoán hình ảnh</strong><br />
+                                            @if (!string.IsNullOrWhiteSpace(cost.LabDetails))
+                                            {
+                                                <small class="text-muted">@cost.LabDetails</small>
+                                            }
+                                        </td>
+                                        <td class="text-end fw-bold">@cost.LabFee.ToString("N0")</td>
+                                    </tr>
+                                }
+
+                                <!-- 4. Thuốc (nếu có) -->
+                                @if (cost.PrescriptionFee > 0)
+                                {
+                                    int stt = 2 + (cost.ServiceFee > 0 ? 1 : 0) + (cost.LabFee > 0 ? 1 : 0);
+                                    <tr>
+                                        <td class="text-center">@stt</td>
+                                        <td>
+                                            <strong>Tiền thuốc điều trị theo đơn điện tử</strong><br />
+                                            @if (!string.IsNullOrWhiteSpace(cost.PrescriptionDetails))
+                                            {
+                                                <small class="text-muted" style="white-space:pre-wrap;">@cost.PrescriptionDetails</small>
+                                            }
+                                        </td>
+                                        <td class="text-end fw-bold">@cost.PrescriptionFee.ToString("N0")</td>
+                                    </tr>
+                                }
+
+                                <!-- Khấu trừ BHYT -->
+                                @if (cost.DiscountAmount > 0)
+                                {
+                                    <tr class="table-warning">
+                                        <td class="text-center">—</td>
+                                        <td><strong>Khấu trừ BHYT (@cost.HealthInsuranceCoveragePercent%)</strong></td>
+                                        <td class="text-end fw-bold text-danger">-@cost.DiscountAmount.ToString("N0")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <!-- Chưa lập bảng phí chi tiết — chỉ có phí khám -->
+                                <tr>
+                                    <td class="text-center">1</td>
+                                    <td>
+                                        <strong>Phí khám chuyên khoa:</strong> @(Model.Specialty?.Name ?? "Chuyên khoa")<br />
+                                        <small class="text-muted">Bác sĩ phụ trách: @(Model.Doctor?.Title) @(Model.Doctor?.User?.FullName)</small>
+                                    </td>
+                                    <td class="text-end fw-bold">@((Model.Doctor?.ConsultationFee ?? 0).ToString("N0"))</td>
+                                </tr>
+                            }
                         </tbody>
                         <tfoot class="table-light">
                             <tr>
                                 <td colspan="2" class="text-end fw-bold fs-6">Tổng cộng số tiền thanh toán:</td>
-                                <td class="text-end fw-bold fs-5 text-success">@((Model.PaidAmount > 0 ? Model.PaidAmount : Model.Doctor?.ConsultationFee ?? 0).ToString("N0")) đ</td>
+                                <td class="text-end fw-bold fs-5 text-success">@totalDisplay.ToString("N0") đ</td>
                             </tr>
                         </tfoot>
                     </table>
