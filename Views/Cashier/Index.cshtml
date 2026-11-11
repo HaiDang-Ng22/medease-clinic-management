@@ -1,117 +1,188 @@
-﻿@model List<Healthy_System.Models.Appointment>
+@model List<Healthy_System.Models.Appointment>
+@using Healthy_System.Models
 @{
     Layout = "_ReceptionistLayout";
     ViewData["Title"] = "Quản Lý Thu Ngân & Viện Phí";
+    var costs = ViewBag.Costs as Dictionary<int, Healthy_System.Models.PatientCost> ?? new Dictionary<int, Healthy_System.Models.PatientCost>();
 }
 
-<div class="container py-4">
+<div class="container-fluid px-0 py-4">
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold mb-1"><i class="fa-solid fa-cash-register text-success me-2"></i>Quản Lý Thu Ngân & Xuất Hóa Đơn</h2>
-            <p class="text-muted mb-0">US32: Xác nhận thanh toán viện phí, lưu vết giao dịch và in phiếu thu cho bệnh nhân.</p>
+            <h4 class="fw-bold mb-1 text-dark">
+                <i class="fa-solid fa-cash-register text-success me-2"></i>Quản Lý Thu Ngân & Xuất Hóa Đơn
+            </h4>
+            <p class="text-muted mb-0 small">Danh sách bệnh nhân <strong>đã khám xong</strong> — xác nhận thanh toán viện phí và in phiếu thu</p>
         </div>
         <div class="d-flex gap-2">
-            <span class="badge bg-warning-subtle text-dark border px-3 py-2">Chưa thanh toán: <strong>@ViewBag.UnpaidCount</strong></span>
-            <span class="badge bg-success-subtle text-success border px-3 py-2">Đã thanh toán: <strong>@ViewBag.PaidCount</strong></span>
+            <span class="badge px-3 py-2 fw-semibold" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d;">
+                <i class="fa-solid fa-clock me-1"></i>Chờ thanh toán: <strong>@ViewBag.UnpaidCount</strong>
+            </span>
+            <span class="badge px-3 py-2 fw-semibold" style="background:#d1fae5; color:#065f46; border:1px solid #6ee7b7;">
+                <i class="fa-solid fa-circle-check me-1"></i>Đã thanh toán: <strong>@ViewBag.PaidCount</strong>
+            </span>
         </div>
     </div>
 
-    <!-- Bộ lọc tìm kiếm -->
-    <div class="card card-custom p-3 mb-4 shadow-sm">
-        <form method="get" class="row g-2 align-items-center">
-            <div class="col-md-7">
-                <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Tìm theo mã hẹn, tên bệnh nhân, SĐT..." />
-            </div>
-            <div class="col-md-3">
-                <select name="status" class="form-select">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="Unpaid" selected="@(ViewBag.Status == "Unpaid")">Chưa thanh toán</option>
-                    <option value="Paid" selected="@(ViewBag.Status == "Paid")">Đã thanh toán</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100 fw-bold">Lọc kết quả</button>
-            </div>
-        </form>
+    <!-- Bộ lọc -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4" style="background:#f8fafc;">
+        <div class="card-body p-3">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-md-7">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" name="search" value="@ViewBag.Search"
+                               class="form-control border-start-0 ps-0"
+                               placeholder="Tìm theo mã hẹn, tên bệnh nhân, SĐT..." />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">Tất cả trạng thái TT</option>
+                        @if (ViewBag.Status == "Unpaid") { <option value="Unpaid" selected>Chưa thanh toán</option> }
+                        else { <option value="Unpaid">Chưa thanh toán</option> }
+                        @if (ViewBag.Status == "Paid") { <option value="Paid" selected>Đã thanh toán</option> }
+                        else { <option value="Paid">Đã thanh toán</option> }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold rounded-2">
+                        <i class="fa-solid fa-filter me-1"></i>Lọc
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Bảng danh sách -->
-    <div class="card card-custom p-4 shadow-sm">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-3">Mã hẹn / Hóa đơn</th>
-                        <th>Bệnh nhân</th>
-                        <th>Bác sĩ / Chuyên khoa</th>
-                        <th>Viện phí (VNĐ)</th>
-                        <th>Trạng thái</th>
-                        <th class="text-center pe-3">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model != null && Model.Any())
-                    {
-                        foreach (var item in Model)
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr style="background:#f1f5f9; border-bottom:2px solid #e2e8f0;">
+                            <th class="ps-4 py-3 text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em;">Mã hẹn / Hóa đơn</th>
+                            <th class="py-3 text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em;">Bệnh nhân</th>
+                            <th class="py-3 text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em;">Bác sĩ / Chuyên khoa</th>
+                            <th class="py-3 text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em;">Dịch vụ sử dụng</th>
+                            <th class="py-3 text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em;">Viện phí</th>
+                            <th class="py-3 text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em;">Trạng thái</th>
+                            <th class="py-3 pe-4 text-center text-muted small fw-semibold text-uppercase" style="letter-spacing:.04em;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                costs.TryGetValue(item.Id, out var cost);
+                                decimal displayFee = cost != null ? cost.TotalAmount : (item.Doctor?.ConsultationFee ?? 0);
+                                bool hasLab = cost != null && cost.LabFee > 0;
+                                bool hasPrescription = cost != null && cost.PrescriptionFee > 0;
+                                bool hasCostSheet = cost != null;
+
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="badge bg-light text-dark border font-monospace fw-semibold">@item.AppointmentCode</span>
+                                        @if (!string.IsNullOrEmpty(item.InvoiceCode))
+                                        {
+                                            <div class="small text-muted font-monospace mt-1">@item.InvoiceCode</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@(item.Patient?.FullName ?? "Chưa rõ")</div>
+                                        <small class="text-muted">@(item.Patient?.PhoneNumber ?? "—")</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-slate-700">@(item.Doctor?.Title) @(item.Doctor?.User?.FullName)</div>
+                                        <small class="text-muted">@(item.Specialty?.Name)</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            <span class="badge rounded-pill px-2 py-1" style="background:#eff6ff; color:#1d4ed8; font-size:.72rem;">
+                                                <i class="fa-solid fa-stethoscope me-1"></i>Khám
+                                            </span>
+                                            @if (hasLab)
+                                            {
+                                                <span class="badge rounded-pill px-2 py-1" style="background:#faf5ff; color:#7c3aed; font-size:.72rem;">
+                                                    <i class="fa-solid fa-flask me-1"></i>Xét nghiệm
+                                                </span>
+                                            }
+                                            @if (hasPrescription)
+                                            {
+                                                <span class="badge rounded-pill px-2 py-1" style="background:#ecfdf5; color:#059669; font-size:.72rem;">
+                                                    <i class="fa-solid fa-pills me-1"></i>Thuốc
+                                                </span>
+                                            }
+                                            @if (!hasCostSheet)
+                                            {
+                                                <span class="badge rounded-pill px-2 py-1" style="background:#fef9c3; color:#854d0e; font-size:.72rem;">
+                                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>Chưa lập phí
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-success font-monospace fs-6">
+                                            @displayFee.ToString("N0") đ
+                                        </div>
+                                        @if (!hasCostSheet)
+                                        {
+                                            <small class="text-muted">(tạm tính)</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.PaymentStatus == "Paid")
+                                        {
+                                            <span class="badge px-3 py-2 rounded-pill fw-semibold" style="background:#d1fae5; color:#065f46;">
+                                                <i class="fa-solid fa-circle-check me-1"></i>Đã thanh toán
+                                                @if (!string.IsNullOrEmpty(item.PaymentMethod))
+                                                {
+                                                    <span class="d-block small opacity-75">@(item.PaymentMethod == "Cash" ? "(Tiền mặt)" : item.PaymentMethod == "BankTransfer" ? "(Chuyển khoản)" : $"({item.PaymentMethod})")</span>
+                                                }
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge px-3 py-2 rounded-pill fw-semibold" style="background:#fef3c7; color:#92400e;">
+                                                <i class="fa-solid fa-clock me-1"></i>Chờ thanh toán
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center pe-4">
+                                        @if (item.PaymentStatus != "Paid")
+                                        {
+                                            <a asp-action="ProcessPayment" asp-route-id="@item.Id"
+                                               class="btn btn-success btn-sm rounded-2 px-3 fw-bold">
+                                                <i class="fa-solid fa-money-bill-wave me-1"></i>Thanh Toán
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-action="InvoiceReceipt" asp-route-id="@item.Id"
+                                               class="btn btn-outline-primary btn-sm rounded-2 px-3 fw-bold">
+                                                <i class="fa-solid fa-print me-1"></i>In Phiếu Thu
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
                         {
                             <tr>
-                                <td class="ps-3">
-                                    <span class="badge bg-light text-dark border font-monospace">@item.AppointmentCode</span>
-                                    @if (!string.IsNullOrEmpty(item.InvoiceCode))
-                                    {
-                                        <div class="small text-muted font-monospace">@item.InvoiceCode</div>
-                                    }
-                                </td>
-                                <td>
-                                    <div class="fw-bold">@(item.Patient?.FullName ?? "Chưa rõ")</div>
-                                    <small class="text-muted">@(item.Patient?.PhoneNumber ?? "—")</small>
-                                </td>
-                                <td>
-                                    <div>@(item.Doctor?.Title) @(item.Doctor?.User?.FullName)</div>
-                                    <small class="text-muted">@(item.Specialty?.Name)</small>
-                                </td>
-                                <td class="fw-bold text-success">
-                                    @((item.Doctor?.ConsultationFee ?? 0).ToString("N0")) đ
-                                </td>
-                                <td>
-                                    @if (item.PaymentStatus == "Paid")
-                                    {
-                                        <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-bold">
-                                            <i class="fa-solid fa-circle-check me-1"></i>Đã thanh toán (@(item.PaymentMethod == "Cash" ? "Tiền mặt" : "Chuyển khoản"))
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-warning-subtle text-dark px-3 py-2 rounded-pill fw-bold">
-                                            <i class="fa-solid fa-clock me-1"></i>Chưa thanh toán
-                                        </span>
-                                    }
-                                </td>
-                                <td class="text-center pe-3">
-                                    @if (item.PaymentStatus != "Paid")
-                                    {
-                                        <a asp-action="ProcessPayment" asp-route-id="@item.Id" class="btn btn-success btn-sm rounded-pill px-3 fw-bold">
-                                            <i class="fa-solid fa-money-bill-wave me-1"></i>Thanh Toán
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <a asp-action="InvoiceReceipt" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
-                                            <i class="fa-solid fa-print me-1"></i>In Phiếu Thu
-                                        </a>
-                                    }
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <i class="fa-solid fa-inbox fa-2x mb-2 d-block opacity-30"></i>
+                                    Không có bệnh nhân nào đã khám xong cần thanh toán.
                                 </td>
                             </tr>
                         }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">Không tìm thấy lịch hẹn hoặc hóa đơn phù hợp.</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

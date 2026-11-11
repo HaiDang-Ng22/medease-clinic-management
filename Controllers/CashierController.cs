@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Healthy_System.Data;
@@ -7,6 +7,7 @@ using Healthy_System.Models.ViewModels;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Healthy_System.Controllers
 {
@@ -20,38 +21,51 @@ namespace Healthy_System.Controllers
             _context = context;
         }
 
-        // --- Action 1: Danh sách hóa đơn & chờ thanh toán ---
+        // --- Action 1: Danh sách bệnh nhân đã khám xong ---
         public async Task<IActionResult> Index(string search, string status)
         {
+            // Chỉ lấy BN có Status == "Completed" (đã khám xong)
             var query = _context.Appointments
                 .Include(a => a.Patient)
                 .Include(a => a.Doctor).ThenInclude(d => d!.User)
                 .Include(a => a.Specialty)
+                .Where(a => a.Status == "Completed")
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim().ToLower();
-                query = query.Where(a => a.AppointmentCode.ToLower().Contains(term) ||
-                                         (a.Patient != null && a.Patient.FullName.ToLower().Contains(term)) ||
-                                         (a.Patient != null && a.Patient.PhoneNumber != null && a.Patient.PhoneNumber.Contains(term)));
+                query = query.Where(a =>
+                    a.AppointmentCode.ToLower().Contains(term) ||
+                    (a.Patient != null && a.Patient.FullName.ToLower().Contains(term)) ||
+                    (a.Patient != null && a.Patient.PhoneNumber != null && a.Patient.PhoneNumber.Contains(term)));
             }
 
             if (!string.IsNullOrEmpty(status))
             {
                 query = query.Where(a => a.PaymentStatus == status);
             }
-            else
-            {
-                query = query.OrderByDescending(a => a.AppointmentDate);
-            }
+
+            query = query.OrderByDescending(a => a.AppointmentDate);
 
             ViewBag.Search = search;
             ViewBag.Status = status;
-            ViewBag.UnpaidCount = await _context.Appointments.CountAsync(a => a.PaymentStatus == "Unpaid" && a.Status != "Cancelled");
-            ViewBag.PaidCount = await _context.Appointments.CountAsync(a => a.PaymentStatus == "Paid");
+            ViewBag.UnpaidCount = await _context.Appointments
+                .CountAsync(a => a.Status == "Completed" && a.PaymentStatus != "Paid");
+            ViewBag.PaidCount = await _context.Appointments
+                .CountAsync(a => a.Status == "Completed" && a.PaymentStatus == "Paid");
 
-            return View(await query.Take(50).ToListAsync());
+            var appointments = await query.Take(50).ToListAsync();
+
+            // Load PatientCosts dictionary để hiển thị phí thực tế + tóm tắt XN/Thuốc
+            var apptIds = appointments.Select(a => a.Id).ToList();
+            var costs = await _context.PatientCosts
+                .Where(c => apptIds.Contains(c.AppointmentId))
+                .ToDictionaryAsync(c => c.AppointmentId);
+
+            ViewBag.Costs = costs;
+
+            return View(appointments);
         }
 
         // --- Action 2: Giao diện form xác nhận thanh toán ---
@@ -83,6 +97,8 @@ namespace Healthy_System.Controllers
                 CashierName = User.Identity?.Name ?? "Thu ngân trực ca"
             };
 
+            ViewBag.Cost = cost;
+
             return View(vm);
         }
 
@@ -112,12 +128,9 @@ namespace Healthy_System.Controllers
                 cost.PaidAt = DateTime.UtcNow;
             }
             appt.CashierName = User.Identity?.Name ?? "Thu ngân";
-            appt.InvoiceCode = string.IsNullOrEmpty(appt.InvoiceCode) ? $"INV-{DateTime.Now:yyyyMMdd}-{appt.Id:D4}" : appt.InvoiceCode;
-
-            if (appt.Status == "Confirmed")
-            {
-                appt.Status = "Completed";
-            }
+            appt.InvoiceCode = string.IsNullOrEmpty(appt.InvoiceCode)
+                ? $"INV-{DateTime.Now:yyyyMMdd}-{appt.Id:D4}"
+                : appt.InvoiceCode;
 
             _context.Update(appt);
             await _context.SaveChangesAsync();
@@ -137,6 +150,9 @@ namespace Healthy_System.Controllers
                 .FirstOrDefaultAsync(a => a.Id == id);
 
             if (appt == null || appt.PaymentStatus != "Paid") return RedirectToAction("Index");
+
+            var cost = await _context.PatientCosts.FirstOrDefaultAsync(c => c.AppointmentId == id);
+            ViewBag.Cost = cost;
 
             return View(appt);
         }
