@@ -8,100 +8,276 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
-        body { background-color: #f0f4f8; }
-        .labtech-sidebar {
+        :root {
+            --sidebar-width: 260px;
+            --sidebar-bg: #0f172a;
+            --sidebar-accent: #3b82f6;
+            --topbar-h: 60px;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .ktv-sidebar {
+            width: var(--sidebar-width);
             min-height: 100vh;
-            background: linear-gradient(180deg, #0d6efd 0%, #0a58ca 100%);
-            color: white;
-            width: 240px;
+            background: var(--sidebar-bg);
             position: fixed;
             top: 0; left: 0;
-            z-index: 100;
-            padding-top: 1rem;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
         }
-        .labtech-sidebar .brand {
-            font-size: 1.1rem;
+
+        .ktv-sidebar .sidebar-brand {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .ktv-sidebar .sidebar-brand .brand-name {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+        .ktv-sidebar .sidebar-brand .brand-sub {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.45);
+            font-weight: 400;
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ktv-sidebar .sidebar-section-label {
+            font-size: 0.65rem;
             font-weight: 700;
-            padding: 1rem 1.25rem 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 1rem 1.5rem 0.4rem;
         }
-        .labtech-sidebar .nav-link {
-            color: rgba(255,255,255,0.85);
-            padding: 0.75rem 1.25rem;
-            border-radius: 0.5rem;
-            margin: 0.1rem 0.5rem;
+
+        .ktv-sidebar .nav-link {
+            color: rgba(255,255,255,0.65);
+            padding: 0.65rem 1.25rem;
+            border-radius: 0.6rem;
+            margin: 0.1rem 0.75rem;
+            font-size: 0.875rem;
             font-weight: 500;
-            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            transition: all 0.18s;
+            text-decoration: none;
         }
-        .labtech-sidebar .nav-link:hover,
-        .labtech-sidebar .nav-link.active {
-            background: rgba(255,255,255,0.2);
+        .ktv-sidebar .nav-link i {
+            width: 1.25rem;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+        .ktv-sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.08);
             color: #fff;
         }
-        .labtech-sidebar .nav-link i { width: 1.4rem; }
-        .main-content {
-            margin-left: 240px;
-            min-height: 100vh;
+        .ktv-sidebar .nav-link.active {
+            background: var(--sidebar-accent);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.4);
         }
-        .top-bar {
-            background: white;
-            border-bottom: 1px solid #e5e7eb;
-            padding: 0.75rem 1.5rem;
+
+        .ktv-sidebar .sidebar-footer {
+            padding: 1rem 1rem 1.25rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            margin-top: auto;
+        }
+        .ktv-sidebar .sidebar-footer .user-box {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 0.65rem;
+            padding: 0.5rem 0.6rem;
+            border-radius: 0.6rem;
+            background: rgba(255,255,255,0.06);
+            margin-bottom: 0.6rem;
+        }
+        .ktv-sidebar .sidebar-footer .user-avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: var(--sidebar-accent);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; font-weight: 700; color: #fff;
+            flex-shrink: 0;
+        }
+        .ktv-sidebar .sidebar-footer .user-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ktv-sidebar .sidebar-footer .user-role {
+            font-size: 0.68rem;
+            color: rgba(255,255,255,0.4);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .ktv-main {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ktv-topbar {
+            background: #fff;
+            height: var(--topbar-h);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .ktv-topbar .page-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .ktv-topbar .page-title i {
+            color: var(--sidebar-accent);
+        }
+        .ktv-topbar .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .ktv-topbar .topbar-date {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        .ktv-topbar .topbar-badge {
+            background: #f0f9ff;
+            color: var(--sidebar-accent);
+            border: 1px solid #bae6fd;
+            border-radius: 2rem;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .ktv-topbar .topbar-badge .dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+        @@keyframes pulse {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .ktv-body {
+            padding: 1.75rem;
+            flex: 1;
         }
     </style>
 </head>
 <body>
     <!-- Sidebar -->
-    <div class="labtech-sidebar d-flex flex-column">
-        <div class="brand">
-            <i class="fa-solid fa-flask-vial me-2"></i>MedEase
-            <div class="small fw-normal opacity-75 mt-1">Kỹ Thuật Viên XN</div>
+    <div class="ktv-sidebar">
+        <!-- Brand -->
+        <div class="sidebar-brand">
+            <div class="d-flex align-items-center gap-2">
+                <div style="width:36px;height:36px;background:var(--sidebar-accent);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fa-solid fa-flask-vial text-white" style="font-size:1rem;"></i>
+                </div>
+                <div>
+                    <div class="brand-name">MedEase</div>
+                    <div class="brand-sub">Kỹ Thuật Viên XN</div>
+                </div>
+            </div>
         </div>
-        <nav class="flex-grow-1 py-2">
+
+        <!-- Nav -->
+        <nav class="flex-grow-1 pt-2">
+            <div class="sidebar-section-label">Chức năng</div>
+
             <a asp-controller="LabTech" asp-action="Dashboard"
                class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")">
-                <i class="fa-solid fa-gauge me-2"></i>Tổng Quan (Dashboard)
+                <i class="fa-solid fa-gauge-high"></i>
+                <span>Tổng Quan</span>
             </a>
+
             <a asp-controller="LabTech" asp-action="Index"
-               class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
-                <i class="fa-solid fa-list-ul me-2"></i>Phiếu Yêu Cầu XN
+               class="nav-link @(new[]{"Index","LabRequestDetail","EnterResult"}.Contains(ViewContext.RouteData.Values["Action"]?.ToString()) ? "active" : "")">
+                <i class="fa-solid fa-flask-vial"></i>
+                <span>Phiếu Yêu Cầu XN</span>
             </a>
         </nav>
-        <div class="p-3 border-top border-white border-opacity-25">
-            <div class="small mb-2 opacity-75">
-                <i class="fa-solid fa-user-nurse me-1"></i>@User.Identity?.Name
+
+        <!-- Footer -->
+        <div class="sidebar-footer">
+            <div class="user-box">
+                <div class="user-avatar">
+                    @(User.Identity?.Name?.Length > 0 ? User.Identity.Name[0].ToString().ToUpper() : "K")
+                </div>
+                <div style="overflow:hidden;">
+                    <div class="user-name">@User.Identity?.Name</div>
+                    <div class="user-role">KTV Xét Nghiệm</div>
+                </div>
             </div>
             <form asp-controller="Account" asp-action="Logout" method="post">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-sm btn-outline-light w-100">
+                <button type="submit" class="btn btn-sm w-100"
+                        style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.75);border:1px solid rgba(255,255,255,0.12);font-size:0.8rem;">
                     <i class="fa-solid fa-right-from-bracket me-1"></i>Đăng xuất
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="top-bar">
-            <h6 class="mb-0 fw-bold text-primary">
-                <i class="fa-solid fa-microscope me-2"></i>@ViewData["Title"]
-            </h6>
+    <!-- Main -->
+    <div class="ktv-main">
+        <!-- Top Bar -->
+        <div class="ktv-topbar">
+            <div class="page-title">
+                <i class="fa-solid fa-microscope"></i>
+                @ViewData["Title"]
+            </div>
+            <div class="topbar-right">
+                <span class="topbar-date">
+                    <i class="fa-regular fa-calendar me-1"></i>@DateTime.Now.ToString("dd/MM/yyyy")
+                </span>
+                <span class="topbar-badge">
+                    <span class="dot"></span>Đang trực
+                </span>
+            </div>
         </div>
 
-        <div class="p-4">
+        <!-- Body -->
+        <div class="ktv-body">
             @if (TempData["SuccessMessage"] != null)
             {
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-3" role="alert">
                     <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             }
             @if (TempData["ErrorMessage"] != null)
             {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 mb-3" role="alert">
                     <i class="fa-solid fa-triangle-exclamation me-2"></i>@TempData["ErrorMessage"]
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
@@ -112,5 +288,6 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("Scripts", required: false)
 </body>
 </html>
