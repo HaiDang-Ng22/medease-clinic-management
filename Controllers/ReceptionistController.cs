@@ -84,6 +84,12 @@ namespace Healthy_System.Controllers
             var appt = _context.Appointments.Include(a => a.Patient).FirstOrDefault(a => a.Id == id);
             if (appt == null) return NotFound();
 
+            if (appt.Status != "Pending")
+            {
+                TempData["ErrorMessage"] = $"Không thể xác nhận lịch hẹn ở trạng thái '{appt.Status}'. Chỉ duyệt các ca hẹn đang chờ duyệt (Pending).";
+                return RedirectToAction(nameof(Dashboard));
+            }
+
             appt.Status = "Confirmed";
             appt.UpdatedAt = DateTime.UtcNow;
 
@@ -298,6 +304,18 @@ namespace Healthy_System.Controllers
             {
                 TempData["ErrorMessage"] = "Lịch hẹn này không thể hủy.";
                 return RedirectToAction(nameof(Appointments));
+            }
+
+            // Giải phóng khung giờ trực của bác sĩ
+            var schedule = _context.DoctorSchedules.FirstOrDefault(s =>
+                s.DoctorId == appt.DoctorId &&
+                s.WorkDate.Date == appt.AppointmentDate.Date &&
+                s.TimeSlot == appt.TimeSlot);
+
+            if (schedule != null)
+            {
+                schedule.BookedPatients = Math.Max(0, schedule.BookedPatients - 1);
+                schedule.IsAvailable = true;
             }
 
             appt.Status = "Cancelled";
@@ -549,6 +567,33 @@ namespace Healthy_System.Controllers
 
             var oldDoctorUserId = appt.Doctor?.UserId;
             var isDoctorChanged = appt.DoctorId != model.NewDoctorId;
+
+            // 1. Giải phóng khung giờ trực của bác sĩ cũ
+            var oldSchedule = _context.DoctorSchedules.FirstOrDefault(s =>
+                s.DoctorId == appt.DoctorId &&
+                s.WorkDate.Date == appt.AppointmentDate.Date &&
+                s.TimeSlot == appt.TimeSlot);
+
+            if (oldSchedule != null)
+            {
+                oldSchedule.BookedPatients = Math.Max(0, oldSchedule.BookedPatients - 1);
+                oldSchedule.IsAvailable = true;
+            }
+
+            // 2. Cập nhật số lượng đặt khám cho bác sĩ mới
+            var newSchedule = _context.DoctorSchedules.FirstOrDefault(s =>
+                s.DoctorId == model.NewDoctorId &&
+                s.WorkDate.Date == model.NewDate.Date &&
+                s.TimeSlot == model.NewTimeSlot);
+
+            if (newSchedule != null)
+            {
+                newSchedule.BookedPatients++;
+                if (newSchedule.BookedPatients >= newSchedule.MaxPatients)
+                {
+                    newSchedule.IsAvailable = false;
+                }
+            }
 
             appt.DoctorId = model.NewDoctorId;
             appt.SpecialtyId = model.NewSpecialtyId;

@@ -459,6 +459,18 @@ namespace Healthy_System.Controllers
 
 
 
+            // Giải phóng khung giờ trực của bác sĩ
+            var schedule = _context.DoctorSchedules.FirstOrDefault(s =>
+                s.DoctorId == doctor.Id &&
+                s.WorkDate.Date == appt.AppointmentDate.Date &&
+                s.TimeSlot == appt.TimeSlot);
+
+            if (schedule != null)
+            {
+                schedule.BookedPatients = Math.Max(0, schedule.BookedPatients - 1);
+                schedule.IsAvailable = true;
+            }
+
             appt.Status = "Cancelled";
 
             appt.CancellationReason = $"[Bác sĩ hủy khẩn cấp] {emergencyReason.Trim()}";
@@ -585,15 +597,37 @@ namespace Healthy_System.Controllers
 
 
             var oldDateStr = appt.AppointmentDate.ToString("dd/MM/yyyy");
-
             var oldTimeSlot = appt.TimeSlot;
 
+            // 1. Giải phóng khung giờ trực cũ của bác sĩ
+            var oldSchedule = _context.DoctorSchedules.FirstOrDefault(s =>
+                s.DoctorId == doctor.Id &&
+                s.WorkDate.Date == appt.AppointmentDate.Date &&
+                s.TimeSlot == appt.TimeSlot);
 
+            if (oldSchedule != null)
+            {
+                oldSchedule.BookedPatients = Math.Max(0, oldSchedule.BookedPatients - 1);
+                oldSchedule.IsAvailable = true;
+            }
+
+            // 2. Cập nhật số lượng đặt khám cho khung giờ trực mới
+            var newSchedule = _context.DoctorSchedules.FirstOrDefault(s =>
+                s.DoctorId == doctor.Id &&
+                s.WorkDate.Date == utcDate.Date &&
+                s.TimeSlot == newTimeSlot);
+
+            if (newSchedule != null)
+            {
+                newSchedule.BookedPatients++;
+                if (newSchedule.BookedPatients >= newSchedule.MaxPatients)
+                {
+                    newSchedule.IsAvailable = false;
+                }
+            }
 
             appt.AppointmentDate = DateTime.SpecifyKind(newDate.Date, DateTimeKind.Utc);
-
             appt.TimeSlot = newTimeSlot;
-
             appt.UpdatedAt = DateTime.UtcNow;
 
 
