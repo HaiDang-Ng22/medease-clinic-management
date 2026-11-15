@@ -146,9 +146,18 @@
                                     <div class="d-inline-flex gap-1">
                                         @if (!isPaid)
                                         {
-                                            <a asp-action="ProcessPayment" asp-route-id="@item.Id" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm" title="Thu viện phí">
-                                                <i class="fa-solid fa-cash-register me-1"></i>Thu Tiền
-                                            </a>
+                                            if (item.Status == "Completed")
+                                            {
+                                                <a asp-action="ProcessPayment" asp-route-id="@item.Id" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm" title="Thu viện phí">
+                                                    <i class="fa-solid fa-cash-register me-1"></i>Thu Tiền
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary rounded-pill px-3 py-1" title="Bác sĩ chưa xác nhận khám xong">
+                                                    <i class="fa-solid fa-user-clock me-1"></i>Chưa khám xong
+                                                </span>
+                                            }
                                         }
                                         else
                                         {

@@ -80,6 +80,12 @@ namespace Healthy_System.Controllers
 
             if (appt == null) return NotFound();
 
+            if (appt.Status != "Completed")
+            {
+                TempData["ErrorMessage"] = $"Ca khám {appt.AppointmentCode} chưa hoàn thành (trạng thái: {appt.Status}). Bác sĩ cần xác nhận khám xong trước khi thanh toán!";
+                return RedirectToAction(nameof(Index));
+            }
+
             var cost = await _context.PatientCosts.FirstOrDefaultAsync(c => c.AppointmentId == id);
             decimal total = cost != null ? cost.TotalAmount : (appt.Doctor?.ConsultationFee ?? 200000m);
 
@@ -112,6 +118,12 @@ namespace Healthy_System.Controllers
                 .FirstOrDefaultAsync(a => a.Id == model.AppointmentId);
 
             if (appt == null) return NotFound();
+
+            if (appt.Status != "Completed")
+            {
+                TempData["ErrorMessage"] = $"Ca khám {appt.AppointmentCode} chưa hoàn thành (trạng thái: {appt.Status}). Bác sĩ cần xác nhận khám xong trước khi thanh toán!";
+                return RedirectToAction(nameof(Index));
+            }
 
             var cost = await _context.PatientCosts.FirstOrDefaultAsync(c => c.AppointmentId == model.AppointmentId);
             decimal total = model.TotalAmount > 0 ? model.TotalAmount : (cost != null ? cost.TotalAmount : (appt.Doctor?.ConsultationFee ?? 200000m));
@@ -149,7 +161,7 @@ namespace Healthy_System.Controllers
                 .Include(a => a.Specialty)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
-            if (appt == null || appt.PaymentStatus != "Paid") return RedirectToAction("Index");
+            if (appt == null || appt.Status != "Completed" || appt.PaymentStatus != "Paid") return RedirectToAction("Index");
 
             var cost = await _context.PatientCosts.FirstOrDefaultAsync(c => c.AppointmentId == id);
             ViewBag.Cost = cost;

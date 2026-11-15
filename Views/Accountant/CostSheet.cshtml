@@ -88,9 +88,18 @@
         <div class="d-flex gap-2">
             @if (Model.PaymentStatus != "Paid")
             {
-                <button type="button" class="btn btn-warning btn-sm px-3 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#payModal">
-                    <i class="fa-solid fa-hand-holding-dollar me-1"></i>Xác Nhận Thu Tiền
-                </button>
+                if (Model.Appointment?.Status == "Completed")
+                {
+                    <button type="button" class="btn btn-warning btn-sm px-3 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#payModal">
+                        <i class="fa-solid fa-hand-holding-dollar me-1"></i>Xác Nhận Thu Tiền
+                    </button>
+                }
+                else
+                {
+                    <span class="badge bg-secondary d-inline-flex align-items-center px-3 py-2 text-wrap" title="Bác sĩ chưa hoàn thành ca khám">
+                        <i class="fa-solid fa-user-clock me-1"></i>Chờ bác sĩ khám xong
+                    </span>
+                }
             }
             <button type="button" class="btn btn-outline-dark btn-sm px-3 py-2 fw-semibold" onclick="window.print()">
                 <i class="fa-solid fa-print me-1"></i>In bảng chi phí
@@ -296,7 +305,7 @@
 </div>
 
 <!-- Modal xác nhận thanh toán -->
-@if (Model.PaymentStatus != "Paid")
+@if (Model.PaymentStatus != "Paid" && Model.Appointment?.Status == "Completed")
 {
     <div class="modal fade" id="payModal" tabindex="-1">
         <div class="modal-dialog">

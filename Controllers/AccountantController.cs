@@ -153,6 +153,13 @@ namespace Healthy_System.Controllers
                 return RedirectToAction(nameof(PatientCosts));
             }
 
+            // Chỉ cho phép lập bảng chi phí khi bác sĩ đã xác nhận khám xong (Status == "Completed")
+            if (appt.Status != "Completed")
+            {
+                TempData["ErrorMessage"] = $"Ca khám {appt.AppointmentCode} chưa hoàn thành khám bệnh (trạng thái: {appt.Status}). Bác sĩ cần xác nhận khám xong trước khi kế toán tính tiền!";
+                return RedirectToAction(nameof(PatientCosts));
+            }
+
             var existingCost = _context.PatientCosts.FirstOrDefault(c => c.AppointmentId == targetId);
 
             // Bóc tách tiền khám
@@ -282,6 +289,13 @@ namespace Healthy_System.Controllers
             if (appt == null)
             {
                 TempData["ErrorMessage"] = "Không tìm thấy hồ sơ ca khám.";
+                return RedirectToAction(nameof(PatientCosts));
+            }
+
+            // Chỉ cho phép lập bảng chi phí khi bác sĩ đã xác nhận khám xong (Status == "Completed")
+            if (appt.Status != "Completed")
+            {
+                TempData["ErrorMessage"] = $"Ca khám {appt.AppointmentCode} chưa hoàn thành khám bệnh (trạng thái: {appt.Status}). Bác sĩ cần xác nhận khám xong trước khi kế toán tính tiền!";
                 return RedirectToAction(nameof(PatientCosts));
             }
 
@@ -457,6 +471,13 @@ namespace Healthy_System.Controllers
                 return RedirectToAction(nameof(Invoices));
             }
 
+            // Chỉ cho phép thu tiền khi ca khám đã được bác sĩ xác nhận hoàn thành (Status == "Completed")
+            if (appt.Status != "Completed")
+            {
+                TempData["ErrorMessage"] = $"Ca khám {appt.AppointmentCode} chưa hoàn thành khám bệnh (trạng thái: {appt.Status}). Bác sĩ cần xác nhận khám xong trước khi kế toán thu viện phí!";
+                return RedirectToAction(nameof(Invoices));
+            }
+
             var cost = _context.PatientCosts.FirstOrDefault(c => c.AppointmentId == id);
 
             decimal totalAmount = 0m;
@@ -503,6 +524,13 @@ namespace Healthy_System.Controllers
             if (appt == null)
             {
                 TempData["ErrorMessage"] = "Không tìm thấy hồ sơ ca khám.";
+                return RedirectToAction(nameof(Invoices));
+            }
+
+            // Chỉ cho phép thu tiền khi ca khám đã được bác sĩ xác nhận hoàn thành (Status == "Completed")
+            if (appt.Status != "Completed")
+            {
+                TempData["ErrorMessage"] = $"Ca khám {appt.AppointmentCode} chưa hoàn thành khám bệnh (trạng thái: {appt.Status}). Bác sĩ cần xác nhận khám xong trước khi kế toán thu viện phí!";
                 return RedirectToAction(nameof(Invoices));
             }
 
@@ -563,12 +591,18 @@ namespace Healthy_System.Controllers
                 return RedirectToAction(nameof(PatientCosts));
             }
 
+            var appt = cost.Appointment;
+            if (appt == null || appt.Status != "Completed")
+            {
+                TempData["ErrorMessage"] = "Không thể thanh toán do ca khám chưa được bác sĩ xác nhận hoàn thành.";
+                return RedirectToAction(nameof(PatientCosts));
+            }
+
             cost.PaymentStatus = "Paid";
             cost.PaymentMethod = string.IsNullOrWhiteSpace(paymentMethod) ? "Tiền mặt" : paymentMethod;
             cost.PaidAt = DateTime.UtcNow;
             cost.AccountantId ??= GetCurrentUserId();
 
-            var appt = cost.Appointment;
             if (appt != null)
             {
                 appt.PaymentStatus = "Paid";
@@ -628,9 +662,9 @@ namespace Healthy_System.Controllers
                 .Include(a => a.Specialty)
                 .FirstOrDefault(a => a.Id == id);
 
-            if (appt == null)
+            if (appt == null || appt.Status != "Completed" || appt.PaymentStatus != "Paid")
             {
-                TempData["ErrorMessage"] = "Không tìm thấy thông tin hóa đơn.";
+                TempData["ErrorMessage"] = "Không tìm thấy thông tin hóa đơn hợp lệ hoặc ca khám chưa hoàn tất.";
                 return RedirectToAction(nameof(Invoices));
             }
 
