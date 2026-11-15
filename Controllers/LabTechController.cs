@@ -42,7 +42,7 @@ namespace Healthy_System.Controllers
                 .Include(a => a.Patient)
                 .Include(a => a.Doctor).ThenInclude(d => d!.User)
                 .Include(a => a.Specialty)
-                .Where(a => !string.IsNullOrWhiteSpace(a.LabRequest))
+                .Where(a => !string.IsNullOrWhiteSpace(a.LabRequest) && a.Status != "Cancelled" && a.Status != "Expired")
                 .OrderByDescending(a => a.AppointmentDate)
                 .ThenBy(a => a.TimeSlot)
                 .ToList();
@@ -70,7 +70,7 @@ namespace Healthy_System.Controllers
                 .Include(a => a.Patient)
                 .Include(a => a.Doctor).ThenInclude(d => d!.User)
                 .Include(a => a.Specialty)
-                .Where(a => !string.IsNullOrWhiteSpace(a.LabRequest))
+                .Where(a => !string.IsNullOrWhiteSpace(a.LabRequest) && a.Status != "Cancelled" && a.Status != "Expired")
                 .AsQueryable();
 
             // Tim kiem theo ten BN hoac ma lich hen
@@ -121,6 +121,11 @@ namespace Healthy_System.Controllers
                 .FirstOrDefault(a => a.Id == id);
 
             if (appointment == null) return NotFound();
+            if (appointment.Status == "Cancelled" || appointment.Status == "Expired")
+            {
+                TempData["ErrorMessage"] = "Lịch hẹn này đã bị hủy hoặc hết hạn, không thể xử lý xét nghiệm.";
+                return RedirectToAction(nameof(Index));
+            }
             if (string.IsNullOrWhiteSpace(appointment.LabRequest))
             {
                 TempData["ErrorMessage"] = "Lịch hẹn này không có phiếu yêu cầu xét nghiệm.";
@@ -148,6 +153,11 @@ namespace Healthy_System.Controllers
                 .FirstOrDefault(a => a.Id == id);
 
             if (appointment == null) return NotFound();
+            if (appointment.Status == "Cancelled" || appointment.Status == "Expired")
+            {
+                TempData["ErrorMessage"] = "Lịch hẹn này đã bị hủy hoặc hết hạn, không thể nhập kết quả xét nghiệm.";
+                return RedirectToAction(nameof(Index));
+            }
 
             // Neu da co ket qua roi -> load len de xem/sua
             var existing = _context.LabResults
@@ -185,6 +195,11 @@ namespace Healthy_System.Controllers
                 .FirstOrDefault(a => a.Id == appointmentId);
 
             if (appointment == null) return NotFound();
+            if (appointment.Status == "Cancelled" || appointment.Status == "Expired")
+            {
+                TempData["ErrorMessage"] = "Lịch hẹn này đã bị hủy hoặc hết hạn, không thể lưu kết quả xét nghiệm.";
+                return RedirectToAction(nameof(Index));
+            }
 
             // Kiem tra da co ket qua chua (neu co -> cap nhat, chua -> tao moi)
             var existing = _context.LabResults.FirstOrDefault(r => r.AppointmentId == appointmentId);
