@@ -41,7 +41,7 @@ namespace Healthy_System.Controllers
             var payrollList = new List<PayrollDetailViewModel>();
 
             DateTime startDate = new DateTime(selectedYear, selectedMonth, 1, 0, 0, 0, DateTimeKind.Utc);
-            DateTime endDate = startDate.AddMonths(1).AddDays(-1);
+            DateTime endDate = startDate.AddMonths(1);
 
             foreach (var staff in staffUsers)
             {
@@ -67,7 +67,7 @@ namespace Healthy_System.Controllers
                             .Where(a => a.DoctorId == doctor.Id &&
                                         a.Status == "Completed" &&
                                         a.AppointmentDate >= startDate &&
-                                        a.AppointmentDate <= endDate)
+                                        a.AppointmentDate < endDate)
                             .ToListAsync();
 
                         totalExams = completedExams.Count;
@@ -80,7 +80,7 @@ namespace Healthy_System.Controllers
                 int totalShifts = await _context.DoctorSchedules
                     .CountAsync(s => s.Doctor!.UserId == staff.Id &&
                                      s.WorkDate >= startDate &&
-                                     s.WorkDate <= endDate);
+                                     s.WorkDate < endDate);
 
                 decimal allowance = totalShifts * config.ShiftAllowance;
                 decimal deductions = 0; // Có thể mở rộng khấu trừ thuế/bảo hiểm
@@ -179,7 +179,7 @@ namespace Healthy_System.Controllers
             var config = await _context.PayrollConfigs.FirstOrDefaultAsync(c => c.UserId == userId) ?? new PayrollConfig();
 
             DateTime startDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
-            DateTime endDate = startDate.AddMonths(1).AddDays(-1);
+            DateTime endDate = startDate.AddMonths(1);
 
             int totalExams = 0;
             decimal performanceSalary = 0;
@@ -187,7 +187,7 @@ namespace Healthy_System.Controllers
             if (doctor != null)
             {
                 var completedExams = await _context.Appointments
-                    .Where(a => a.DoctorId == doctor.Id && a.Status == "Completed" && a.AppointmentDate >= startDate && a.AppointmentDate <= endDate)
+                    .Where(a => a.DoctorId == doctor.Id && a.Status == "Completed" && a.AppointmentDate >= startDate && a.AppointmentDate < endDate)
                     .ToListAsync();
 
                 totalExams = completedExams.Count;
@@ -195,7 +195,7 @@ namespace Healthy_System.Controllers
             }
 
             int totalShifts = await _context.DoctorSchedules
-                .CountAsync(s => s.Doctor!.UserId == userId && s.WorkDate >= startDate && s.WorkDate <= endDate);
+                .CountAsync(s => s.Doctor!.UserId == userId && s.WorkDate >= startDate && s.WorkDate < endDate);
 
             decimal allowance = totalShifts * config.ShiftAllowance;
             decimal deductions = 0;
