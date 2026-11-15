@@ -359,6 +359,24 @@ namespace Healthy_System.Controllers
 
             }
 
+            if (appt.Status == "Cancelled" || appt.Status == "Expired")
+            {
+                TempData["ErrorMessage"] = "Không thể hoàn thành ca khám cho lịch hẹn đã bị hủy hoặc hết hạn.";
+                return RedirectToAction(nameof(Queue));
+            }
+
+            if (appt.Status == "Completed")
+            {
+                TempData["InfoMessage"] = "Ca khám này đã được kết luận y khoa trước đó.";
+                return RedirectToAction(nameof(MedicalRecord), new { id = appt.Id });
+            }
+
+            if (string.IsNullOrWhiteSpace(diagnosis) || string.IsNullOrWhiteSpace(prescription))
+            {
+                TempData["ErrorMessage"] = "Vui lòng nhập đầy đủ chẩn đoán và đơn thuốc trước khi hoàn thành ca khám.";
+                return RedirectToAction(nameof(Examination), new { id = appointmentId });
+            }
+
 
 
             appt.Status = "Completed";
@@ -443,6 +461,18 @@ namespace Healthy_System.Controllers
 
                 return RedirectToAction(nameof(Queue));
 
+            }
+
+            if (appt.Status == "Completed")
+            {
+                TempData["ErrorMessage"] = "Không thể hủy ca khám đã hoàn thành khám bệnh.";
+                return RedirectToAction(nameof(Queue));
+            }
+
+            if (appt.Status == "Cancelled" || appt.Status == "Expired")
+            {
+                TempData["ErrorMessage"] = "Ca khám này đã bị hủy hoặc đã hết hạn trước đó.";
+                return RedirectToAction(nameof(Queue));
             }
 
 
@@ -547,6 +577,18 @@ namespace Healthy_System.Controllers
 
                 return RedirectToAction(nameof(Queue));
 
+            }
+
+            if (appt.Status == "Completed")
+            {
+                TempData["ErrorMessage"] = "Không thể dời lịch ca khám đã hoàn thành khám bệnh.";
+                return RedirectToAction(nameof(Queue));
+            }
+
+            if (appt.Status == "Cancelled" || appt.Status == "Expired")
+            {
+                TempData["ErrorMessage"] = "Không thể dời lịch cho ca khám đã bị hủy hoặc hết hạn.";
+                return RedirectToAction(nameof(Queue));
             }
 
 
@@ -1454,6 +1496,12 @@ namespace Healthy_System.Controllers
 
             }
 
+            if (appointment.Status == "Cancelled" || appointment.Status == "Expired")
+            {
+                TempData["ErrorMessage"] = "Không thể lập phiếu xét nghiệm cho ca khám đã bị hủy hoặc hết hạn.";
+                return RedirectToAction(nameof(PatientList));
+            }
+
 
 
             ViewBag.Doctor = doctor;
@@ -1494,6 +1542,12 @@ namespace Healthy_System.Controllers
 
                 return RedirectToAction(nameof(PatientList));
 
+            }
+
+            if (appt.Status == "Cancelled" || appt.Status == "Expired")
+            {
+                TempData["ErrorMessage"] = "Không thể lập phiếu xét nghiệm cho ca khám đã bị hủy hoặc hết hạn.";
+                return RedirectToAction(nameof(PatientList));
             }
 
 
@@ -1672,6 +1726,12 @@ namespace Healthy_System.Controllers
 
             }
 
+            if (appointment.Status == "Cancelled" || appointment.Status == "Expired")
+            {
+                TempData["ErrorMessage"] = "Không thể kê đơn thuốc cho ca khám đã bị hủy hoặc hết hạn.";
+                return RedirectToAction(nameof(PatientList));
+            }
+
 
 
             ViewBag.Doctor = doctor;
@@ -1712,6 +1772,18 @@ namespace Healthy_System.Controllers
 
                 return RedirectToAction(nameof(PatientList));
 
+            }
+
+            if (appt.Status == "Cancelled" || appt.Status == "Expired")
+            {
+                TempData["ErrorMessage"] = "Không thể kê đơn thuốc cho ca khám đã bị hủy hoặc hết hạn.";
+                return RedirectToAction(nameof(PatientList));
+            }
+
+            if (appt.PaymentStatus == "Paid")
+            {
+                TempData["ErrorMessage"] = "Ca khám đã được thanh toán viện phí, không thể chỉnh sửa đơn thuốc.";
+                return RedirectToAction(nameof(PatientList));
             }
 
 
